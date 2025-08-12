@@ -1,17 +1,15 @@
-import {BrowserRouter, Outlet, Route, Routes} from 'react-router-dom';
-import LoggedInRoute from './LoggedInRoute';
+import {BrowserRouter, Route, Routes} from 'react-router-dom';
 import DashboardPage from "../pages/DashboardPage.tsx";
 import NotFoundPage from "../pages/NotFoundPage.tsx";
+import LandingPage from '../pages/LandingPage.tsx';
 
 function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<LoggedInRoute><Outlet /></LoggedInRoute>}>
-                    <Route path="/dashboard" element={<DashboardPage/>}/>
-                </Route>
+                <Route path="/dashboard" element={<DashboardPage/>}/>
                 <Route path="*" element={<NotFoundPage/>}/>
-                <Route path="/" element={<DashboardPage/>}/>
+                <Route path="/" element={<LandingPage/>}/>
             </Routes>
         </BrowserRouter>
     );
