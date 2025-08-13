@@ -2,30 +2,8 @@ import {useState} from 'react';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import MainLayout from "../layouts/MainLayout.tsx";
-import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    Chip,
-    FormControl,
-    IconButton,
-    InputLabel,
-    MenuItem,
-    Select,
-    TextField,
-    Typography
-} from '@mui/material';
-import {
-    Add as AddIcon,
-    CheckBox as CheckBoxIcon,
-    Close as CloseIcon,
-    FormatListBulleted as ListIcon,
-    Save as SaveIcon,
-    TextFormat as TypeIcon,
-    Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+import {Box, Button, Card, CardContent, CardHeader, Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Typography} from '@mui/material';
+import {Add as AddIcon, CheckBox as CheckBoxIcon, Close as CloseIcon, FormatListBulleted as ListIcon, Save as SaveIcon, TextFormat as TypeIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 
 type QuestionType = 'multiple-choice' | 'text' | 'yes-no';
 

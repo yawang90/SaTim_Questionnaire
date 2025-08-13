@@ -1,13 +1,15 @@
 import express from 'express';
+import dotenv from 'dotenv';
+import userRoutes from "./routes/userRoutes.js";
+
+dotenv.config();
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 app.use(express.json());
 
-app.get('/api/hello', (req, res) => {
-    res.json({ message: 'Hello from backend!' });
-});
+app.use('/api/users', userRoutes);
 
 app.listen(port, () => {
     console.log(`Backend listening on http://localhost:${port}`);
