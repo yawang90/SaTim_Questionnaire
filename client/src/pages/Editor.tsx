@@ -91,7 +91,7 @@ export default function EditorPage() {
 
     return (
         <MainLayout>
-            <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column'}}>
+            <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                 <Box sx={{width: '100%', pl: 3}}>
                     <Card>
                     <CardHeader title={

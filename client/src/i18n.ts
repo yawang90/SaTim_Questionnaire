@@ -11,10 +11,10 @@ i18n
             en: { translation: en },
             de: { translation: de }
         },
-        lng: 'en', // default language
-        fallbackLng: 'en',
+        lng: 'de',
+        fallbackLng: 'de',
         interpolation: {
-            escapeValue: false // React already escapes
+            escapeValue: false
         }
     });
 
