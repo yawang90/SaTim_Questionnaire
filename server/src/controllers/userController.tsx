@@ -5,7 +5,8 @@ import {findUser, loginUserService, saveNewUser} from "../services/userService.j
 import type {Request, Response} from 'express';
 
 interface RegisterRequestBody {
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
     password: string;
 }

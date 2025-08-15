@@ -4,6 +4,7 @@ import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import MainLayout from "../layouts/MainLayout.tsx";
 import {Box, Button, Card, CardContent, CardHeader, Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Typography} from '@mui/material';
 import {Add as AddIcon, CheckBox as CheckBoxIcon, Close as CloseIcon, FormatListBulleted as ListIcon, Save as SaveIcon, TextFormat as TypeIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
+const API_URL = import.meta.env.VITE_API_URL;
 
 type QuestionType = 'multiple-choice' | 'text' | 'yes-no';
 
@@ -106,6 +107,14 @@ export default function EditorPage() {
                             <CKEditor
                                 editor={ClassicEditor}
                                 data={editorData}
+                                config={{
+                                    simpleUpload: {
+                                        uploadUrl: `${API_URL}/api/editor/imageUpload`,
+                                        withCredentials: false,
+                                        headers: {
+                                        },
+                                    },
+                                }}
                                 onChange={(_, editor) => setEditorData(editor.getData())}
                             />
 
