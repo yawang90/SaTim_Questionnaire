@@ -1,8 +1,11 @@
 import express from 'express';
-import {registerUser} from "../controllers/userController.js";
+import {uploadImage} from "../controllers/editorController.js";
+import multer from "multer";
 
 const router = express.Router();
 
-router.post('/imageUpload', registerUser);
+const upload = multer({ dest: "temp/" });
+
+router.post("/imageUpload", upload.single("upload"), uploadImage);
 
 export default router;
