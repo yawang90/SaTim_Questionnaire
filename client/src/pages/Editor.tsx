@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout.tsx';
 import {Box, Button, Card, CardContent, CardHeader, Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Typography,} from '@mui/material';
 import {Add as AddIcon, CheckBox as CheckBoxIcon, Close as CloseIcon, FormatListBulleted as ListIcon, Save as SaveIcon, TextFormat as TypeIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import { ClassicEditor, Essentials, Paragraph, Bold, Italic } from 'ckeditor5';
+import { ClassicEditor, Essentials, Paragraph, Bold, Italic, List, Heading } from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -106,13 +106,13 @@ export default function EditorPage() {
                             }
                             sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
                         />
-                        <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, width: '1450px' }}>
+                        <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <CKEditor
                                 editor={ ClassicEditor }
                                 config={ {
                                     licenseKey: 'GPL',
-                                    plugins: [ Essentials, Paragraph, Bold, Italic ],
-                                    toolbar: [ 'undo', 'redo', '|', 'bold', 'italic' ],
+                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List ],
+                                    toolbar: [ 'undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList' ],
                                     initialData: '<p>Editiere hier deine Aufgabe...</p>'}}
                                 onChange={(_, editor) => setEditorData(editor.getData())}
                             />
@@ -123,8 +123,7 @@ export default function EditorPage() {
                                 <Select
                                     value={question.type}
                                     label="Frage Typ"
-                                    onChange={(e) => updateQuestionType(e.target.value as QuestionType)}
-                                >
+                                    onChange={(e) => updateQuestionType(e.target.value as QuestionType)}>
                                     <MenuItem value="multiple-choice">
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <ListIcon sx={{ fontSize: 16 }} /> Multiple Choice
