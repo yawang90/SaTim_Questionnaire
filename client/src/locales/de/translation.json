@@ -30,5 +30,14 @@
     "password": "Passwort",
     "amAnmelden": "Wir melden dich an..",
     "anmelden": "Anmelden"
+  },
+  "editor": {
+    "text": "Freitext Antwort",
+    "choice": "Single/Multiple Choice",
+    "table": "Tabellen Antwort",
+    "number": "Numerische Antwort",
+    "algebra": "Algebraische Gleichung",
+    "dragDrop": "Drag and Drop",
+    "geometry": "Geometrisch"
   }
 }

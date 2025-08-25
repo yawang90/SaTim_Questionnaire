@@ -5,6 +5,8 @@ import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-materi
 import {CKEditor} from '@ckeditor/ckeditor5-react';
 import {Bold, ClassicEditor, Essentials, Heading, Italic, List, Paragraph} from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
+import Choice from "../components/ChoicePlugin/Choice.tsx";
+import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -30,8 +32,8 @@ export default function EditorPage() {
                                 editor={ ClassicEditor }
                                 config={ {
                                     licenseKey: 'GPL',
-                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List ],
-                                    toolbar: [ 'undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList' ],
+                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, Choice, ChoiceUI],
+                                    toolbar: [ 'undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList', 'insertChoiceBox' ],
                                     initialData: '<p>Editiere hier deine Aufgabe...</p>'}}
                                 onChange={(_, editor) => setEditorData(editor.getData())}
                             />
