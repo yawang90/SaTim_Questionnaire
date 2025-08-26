@@ -7,12 +7,14 @@ import {Bold, ClassicEditor, Essentials, Heading, Italic, List, Paragraph} from 
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
+import {useTranslation} from "react-i18next";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function EditorPage() {
     const [editorData, setEditorData] = useState<string>('<p>Editiere hier deine Aufgabe...</p>');
     const [showPreview, setShowPreview] = useState(false);
+    const {t} = useTranslation();
 
     return (
         <MainLayout>
@@ -33,8 +35,23 @@ export default function EditorPage() {
                                 config={ {
                                     licenseKey: 'GPL',
                                     plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, Choice, ChoiceUI],
-                                    toolbar: [ 'undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList', 'insertChoiceBox' ],
+                                    toolbar: {
+                                        items: ['undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList', '-',
+                                            {
+                                                label: t('editor.addAnswer'),
+                                                icon: 'plus',
+                                                tooltip: t('editor.answerTooltip'),
+                                                withText: true,
+                                                items: ['insertChoiceBox', '-']
+                                            }
+                                        ],
+                                        shouldNotGroupWhenFull: true
+                                    },
+                                    choice: {
+                                        label: t('editor.choice')
+                                    },
                                     initialData: '<p>Editiere hier deine Aufgabe...</p>'}}
+
                                 onChange={(_, editor) => setEditorData(editor.getData())}
                             />
                             <Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }}></Box>

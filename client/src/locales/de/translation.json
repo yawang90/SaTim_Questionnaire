@@ -33,11 +33,13 @@
   },
   "editor": {
     "text": "Freitext Antwort",
-    "choice": "Single/Multiple Choice",
+    "choice": "Checkbox/Choice",
     "table": "Tabellen Antwort",
     "number": "Numerische Antwort",
     "algebra": "Algebraische Gleichung",
     "dragDrop": "Drag and Drop",
-    "geometry": "Geometrisch"
+    "geometry": "Geometrisch",
+    "addAnswer": "Antwort Option",
+    "answerTooltip": "Antwort Möglichkeiten einfügen"
   }
 }
