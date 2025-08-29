@@ -12,11 +12,7 @@ export default class ChoiceUI extends Plugin {
                 withText: true
             });
 
-            view.on('execute', () => {
-                editor.execute('insertChoiceBox');
-                editor.editing.view.focus();
-            });
-
+            view.on('execute', () => editor.execute('insertChoiceBox'));
             return view;
         });
     }

@@ -1,9 +1,9 @@
 import {useState} from 'react';
 import MainLayout from '../layouts/MainLayout.tsx';
-import {Box, Button, Card, CardContent, CardHeader, Typography,} from '@mui/material';
+import {Box, Button, Card, CardContent, CardHeader, Typography} from '@mui/material';
 import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {Bold, ClassicEditor, Essentials, Heading, Italic, List, Paragraph} from 'ckeditor5';
+import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font } from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
@@ -34,9 +34,10 @@ export default function EditorPage() {
                                 editor={ ClassicEditor }
                                 config={ {
                                     licenseKey: 'GPL',
-                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, Choice, ChoiceUI],
+                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Alignment, Choice, ChoiceUI],
                                     toolbar: {
-                                        items: ['undo', 'redo', '|', 'heading', 'bold', 'italic', '|', 'numberedList', 'bulletedList', '-',
+                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList',  'outdent', 'indent', '|' , 'specialCharacters', 'sourceEditing',
+                                            '-',
                                             {
                                                 label: t('editor.addAnswer'),
                                                 icon: 'plus',
@@ -46,6 +47,10 @@ export default function EditorPage() {
                                             }
                                         ],
                                         shouldNotGroupWhenFull: true
+                                    },
+                                    list: {
+                                        properties: {
+                                            styles: true}
                                     },
                                     choice: {
                                         label: t('editor.choice')
@@ -71,7 +76,17 @@ export default function EditorPage() {
                                     <Typography variant="h6" sx={{ mb: 1 }}>
                                         Vorschau
                                     </Typography>
-                                    <Box sx={{ border: '1px solid #ccc', p: 2, borderRadius: 1, backgroundColor: '#fafafa' }} dangerouslySetInnerHTML={{ __html: editorData }}/>
+                                    <CKEditor
+                                        editor={ClassicEditor}
+                                        data={editorData}
+                                        disabled={true}
+                                        config={{
+                                            licenseKey: 'GPL',
+                                            plugins: [Essentials, Paragraph, Choice, ChoiceUI],
+                                            toolbar: []
+                                        }}
+                                    />
+
                                 </Box>
                             )}
                         </CardContent>

@@ -2,13 +2,17 @@ import { Command } from 'ckeditor5';
 
 export default class InsertChoiceBoxCommand extends Command {
     public execute(): void {
-        this.editor.model.change((writer) => {
-            const choiceBox = writer.createElement('choiceBox');
-            const option = writer.createElement('choiceOption');
-            writer.insertText('Antwort Option', option);
-            writer.append(option, choiceBox);
+        this.editor.model.change(writer => {
+            const checkbox = writer.createElement('checkbox');
+            const text = writer.createElement('checkboxText');
 
-            this.editor.model.insertContent(choiceBox);
+            writer.insertText('Antwort Option', text);
+            writer.append(text, checkbox);
+
+            this.editor.model.insertContent(checkbox);
+
+            const range = writer.createRangeIn(text);
+            writer.setSelection(range);
         });
     }
 
@@ -22,7 +26,7 @@ export default class InsertChoiceBoxCommand extends Command {
             return;
         }
 
-        const allowedIn = model.schema.findAllowedParent(firstPosition, 'choiceBox');
+        const allowedIn = model.schema.findAllowedParent(firstPosition, 'checkbox');
         this.isEnabled = allowedIn !== null;
     }
 }

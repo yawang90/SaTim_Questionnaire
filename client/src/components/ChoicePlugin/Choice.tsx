@@ -1,4 +1,4 @@
-import { Plugin, toWidgetEditable, Widget, ViewDowncastWriter } from 'ckeditor5';
+import {Plugin, toWidget, Widget, toWidgetEditable} from 'ckeditor5';
 import InsertChoiceBoxCommand from './InsertChoiceCommand';
 
 export default class Choice extends Plugin {
@@ -15,59 +15,92 @@ export default class Choice extends Plugin {
     private _defineSchema(): void {
         const schema = this.editor.model.schema;
 
-        schema.register('choiceBox', {
+        schema.register('checkbox', {
+            allowWhere: '$text',
             isObject: true,
-            allowWhere: '$block'
+            isInline: true,
+            allowChildren: ['checkboxText'],
+            allowAttributes: ['checked']
         });
 
-        schema.register('choiceOption', {
-            isLimit: true,
-            allowIn: 'choiceBox',
-            allowContentOf: '$block'
+        schema.register('checkboxText', {
+            allowIn: 'checkbox',
+            allowContentOf: '$text',
+            isLimit: true
         });
+
+        schema.extend('$text', { allowIn: 'checkboxText' });
     }
 
     private _defineConverters(): void {
         const conversion = this.editor.conversion;
 
-        conversion.for('upcast').elementToElement({
-            model: 'choiceBox',
-            view: { name: 'section', classes: 'choice-box' }
-        });
-        conversion.for('dataDowncast').elementToElement({
-            model: 'choiceBox',
-            view: { name: 'section', classes: 'choice-box' }
-        });
         conversion.for('editingDowncast').elementToElement({
-            model: 'choiceBox',
-            view: (_modelElement, { writer }: { writer: ViewDowncastWriter }) => {
-                const section = writer.createContainerElement('section', { class: 'choice-box' });
-                return toWidgetEditable(section, writer, { label: 'multiple choice box' });
+            model: 'checkbox',
+            view: (modelElement, { writer }) => {
+                const label = writer.createContainerElement('label', {
+                    class: 'ck-checkbox-label',
+                    style: 'display:inline-flex; align-items:center; gap:0.3em; margin-right:0.5em; cursor:pointer;'
+                });
+
+                const input = writer.createEmptyElement('input', {
+                    type: 'checkbox',
+                    class: 'ck-checkbox-input'
+                });
+
+                writer.insert(writer.createPositionAt(label, 0), input);
+
+                return toWidget(label, writer, {
+                    label: 'checkbox widget',
+                    hasSelectionHandle: true
+                });
+            }
+        });
+
+        conversion.for('dataDowncast').elementToElement({
+            model: 'checkbox',
+            view: (modelElement, { writer }) => {
+                return writer.createContainerElement('label', {
+                    class: 'checkbox-container',
+                    style: 'display:inline-flex; align-items:center; gap:0.3em;'
+                });
+            }
+        });
+
+        conversion.for('editingDowncast').elementToElement({
+            model: 'checkboxText',
+            view: (modelElement, { writer }) => {
+                const span = writer.createEditableElement('span', {
+                    class: 'ck-checkbox-text',
+                    style: 'min-width: 1em; outline: none;'
+                });
+                return toWidgetEditable(span, writer);
+            }
+        });
+
+        conversion.for('dataDowncast').elementToElement({
+            model: 'checkboxText',
+            view: (modelElement, { writer }) => {
+                return writer.createContainerElement('span', {
+                    class: 'checkbox-text'
+                });
             }
         });
 
         conversion.for('upcast').elementToElement({
-            model: 'choiceOption',
-            view: { name: 'div', classes: 'choice-option' }
-        });
-        conversion.for('dataDowncast').elementToElement({
-            model: 'choiceOption',
-            view: { name: 'div', classes: 'choice-option' }
-        });
-        conversion.for('editingDowncast').elementToElement({
-            model: 'choiceOption',
-            view: (_modelElement, { writer }) => {
-                const label = writer.createContainerElement('label', { class: 'choice-option' });
-                const checkbox = writer.createUIElement('input', { type: 'checkbox' });
-                const span = writer.createEditableElement('span');
-
-                writer.insert(writer.createPositionAt(label, 0), checkbox);
-                writer.insert(writer.createPositionAt(label, 1), span);
-                return toWidgetEditable(label, writer, { label: 'Choice Antwort' });
-            }
+            view: {
+                name: 'label',
+                classes: /^(ck-checkbox-label|checkbox-container)$/
+            },
+            model: 'checkbox'
         });
 
-
-
+        conversion.for('upcast').elementToElement({
+            view: {
+                name: 'span',
+                classes: /^(ck-checkbox-text|checkbox-text)$/
+            },
+            model: 'checkboxText'
+        });
     }
 }
