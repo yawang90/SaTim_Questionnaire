@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout.tsx';
 import {Box, Button, Card, CardContent, CardHeader, Typography} from '@mui/material';
 import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font } from 'ckeditor5';
+import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, Table, TableToolbar, TableCellProperties, TableProperties, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font } from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
@@ -34,9 +34,9 @@ export default function EditorPage() {
                                 editor={ ClassicEditor }
                                 config={ {
                                     licenseKey: 'GPL',
-                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Alignment, Choice, ChoiceUI],
+                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Alignment, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI],
                                     toolbar: {
-                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList',  'outdent', 'indent', '|' , 'specialCharacters', 'sourceEditing',
+                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList',  'outdent', 'indent', '|' , 'insertTable', 'specialCharacters', 'sourceEditing',
                                             '-',
                                             {
                                                 label: t('editor.addAnswer'),
@@ -47,6 +47,16 @@ export default function EditorPage() {
                                             }
                                         ],
                                         shouldNotGroupWhenFull: true
+                                    },
+                                    table: {
+                                        contentToolbar: [
+                                            'tableColumn', 'tableRow', 'mergeTableCells',
+                                            'tableProperties', 'tableCellProperties'
+                                        ],
+                                        tableProperties: {
+                                        },
+                                        tableCellProperties: {
+                                        }
                                     },
                                     list: {
                                         properties: {
@@ -82,11 +92,25 @@ export default function EditorPage() {
                                         disabled={true}
                                         config={{
                                             licenseKey: 'GPL',
-                                            plugins: [Essentials, Paragraph, Choice, ChoiceUI],
+                                            plugins: [
+                                                Essentials,
+                                                Paragraph,
+                                                Heading,
+                                                Bold,
+                                                Italic,
+                                                List,
+                                                Alignment,
+                                                Font,
+                                                Table,
+                                                TableToolbar,
+                                                TableCellProperties,
+                                                TableProperties,
+                                                Choice,
+                                                ChoiceUI
+                                            ],
                                             toolbar: []
                                         }}
                                     />
-
                                 </Box>
                             )}
                         </CardContent>

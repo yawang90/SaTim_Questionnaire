@@ -5,6 +5,7 @@ import LandingPage from '../pages/LandingPage.tsx';
 import EditorPage from "../pages/Editor.tsx";
 import LoginPage from "../pages/LoginPage.tsx";
 import GraphComponent from '../components/GraphComponent.tsx';
+import AnswerConfiguratorPage from "../pages/AnswerConfiguratorPage.tsx";
 
 function AppRoutes() {
     return (
@@ -14,6 +15,7 @@ function AppRoutes() {
                 <Route path="*" element={<NotFoundPage/>}/>
                 <Route path="/login" element={<LoginPage/>}/>
                 <Route path="/editor" element={<EditorPage/>}/>
+                <Route path="/answers" element={<AnswerConfiguratorPage/>}/>
                 <Route path="/dashboard" element={<DashboardPage/>}/>
                 <Route path="/graph" element={<GraphComponent/>}/>
             </Routes>
