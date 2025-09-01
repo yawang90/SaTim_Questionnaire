@@ -66,7 +66,7 @@ export default function EditorPage() {
                                         label: t('editor.choice')
                                     },
                                     simpleUpload: {
-                                        uploadUrl: 'http://localhost:5000/api/editor/imageUpload',
+                                        uploadUrl: API_URL + '/api/editor/imageUpload',
                                         headers: {
                                             'X-CSRF-TOKEN': 'CSRF-Token',
                                             Authorization: 'Bearer <JSON Web Token>'
