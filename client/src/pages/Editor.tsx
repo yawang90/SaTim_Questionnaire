@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout.tsx';
 import {Box, Button, Card, CardContent, CardHeader, Typography} from '@mui/material';
 import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, Table, TableToolbar, TableCellProperties, TableProperties, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font } from 'ckeditor5';
+import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, Table, TableToolbar, TableCellProperties, TableProperties, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font, Image, ImageInsert,ImageCaption, ImageResize, ImageStyle, ImageToolbar, LinkImage,  SimpleUploadAdapter} from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
@@ -34,9 +34,9 @@ export default function EditorPage() {
                                 editor={ ClassicEditor }
                                 config={ {
                                     licenseKey: 'GPL',
-                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Alignment, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI],
+                                    plugins: [ Essentials, Paragraph, Heading, Bold, Italic, List, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Image, ImageInsert, Alignment, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI,ImageCaption, ImageResize, ImageStyle, ImageToolbar, LinkImage, SimpleUploadAdapter],
                                     toolbar: {
-                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList',  'outdent', 'indent', '|' , 'insertTable', 'specialCharacters', 'sourceEditing',
+                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList',  'outdent', 'indent', '|' , 'insertTable', 'specialCharacters', 'insertImage', 'sourceEditing',
                                             '-',
                                             {
                                                 label: t('editor.addAnswer'),
@@ -64,6 +64,29 @@ export default function EditorPage() {
                                     },
                                     choice: {
                                         label: t('editor.choice')
+                                    },
+                                    simpleUpload: {
+                                        uploadUrl: 'http://localhost:5000/api/editor/imageUpload',
+                                        headers: {
+                                            'X-CSRF-TOKEN': 'CSRF-Token',
+                                            Authorization: 'Bearer <JSON Web Token>'
+                                        }
+                                    },
+                                    image: {
+                                        toolbar: [
+                                            'imageStyle:inline',
+                                            'imageStyle:alignLeft',
+                                            'imageStyle:alignRight',
+                                            'imageStyle:alignCenter',
+                                            '|',
+                                            'toggleImageCaption',
+                                            'imageTextAlternative',
+                                            '|',
+                                            'linkImage'
+                                        ],
+                                        insert : {
+                                            type: 'inline'
+                                        }
                                     },
                                     initialData: '<p>Editiere hier deine Aufgabe...</p>'}}
 

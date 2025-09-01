@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
 
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
