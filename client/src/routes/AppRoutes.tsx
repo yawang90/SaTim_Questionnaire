@@ -4,7 +4,6 @@ import NotFoundPage from "../pages/NotFoundPage.tsx";
 import LandingPage from '../pages/LandingPage.tsx';
 import EditorPage from "../pages/Editor.tsx";
 import LoginPage from "../pages/LoginPage.tsx";
-import GraphComponent from '../components/GraphComponent.tsx';
 import AnswerConfiguratorPage from "../pages/AnswerConfiguratorPage.tsx";
 
 function AppRoutes() {
@@ -17,7 +16,6 @@ function AppRoutes() {
                 <Route path="/editor" element={<EditorPage/>}/>
                 <Route path="/answers" element={<AnswerConfiguratorPage/>}/>
                 <Route path="/dashboard" element={<DashboardPage/>}/>
-                <Route path="/graph" element={<GraphComponent/>}/>
             </Routes>
         </BrowserRouter>
     );

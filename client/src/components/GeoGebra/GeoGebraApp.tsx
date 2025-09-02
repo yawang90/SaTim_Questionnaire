@@ -3,41 +3,23 @@ import React, { useEffect, useRef } from "react";
 export interface GeoGebraProps {
     width?: number;
     height?: number;
-
     showAlgebraInput?: boolean;
     showGraphView?: boolean;
     showToolBar?: boolean;
     showMenuBar?: boolean;
     showCAS?: boolean;
     show3D?: boolean;
-
     onChange?: (expression: string) => void;
-
-    materialId?: string;  // e.g. "abcd1234" from geogebra.org/m/abcd1234
-    fileUrl?: string;     // e.g. "https://your-server.com/mygraph.ggb"
+    materialId?: string;
 }
 
-const GeoGebraApp: React.FC<GeoGebraProps> = ({
-                                                  width = 800,
-                                                  height = 600,
-                                                  showAlgebraInput = true,
-                                                  showGraphView = true,
-                                                  showToolBar = true,
-                                                  showMenuBar = true,
-                                                  showCAS = false,
-                                                  show3D = false,
-                                                  onChange,
-                                                  materialId,
-                                                  fileUrl,
-                                              }) => {
+const GeoGebraApp: React.FC<GeoGebraProps> = ({width, height, showAlgebraInput = false, showGraphView = false, showToolBar = false, showMenuBar = false, showCAS = false, show3D = false, onChange, materialId}) => {
     const ggbDiv = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (window.GGBApplet && ggbDiv.current) {
             const appletConfig: any = {
                 appName: "classic",
-                width,
-                height,
                 showAlgebraInput,
                 showToolBar,
                 showMenuBar,
@@ -45,32 +27,28 @@ const GeoGebraApp: React.FC<GeoGebraProps> = ({
                 show3D,
                 showGraphView,
             };
-
-            // Load material if provided
-            if (materialId) {
-                appletConfig.materialId = materialId;
+            if (width) {
+                appletConfig.width = width;
             }
-
-            // Load .ggb file if provided
-            if (fileUrl) {
-                appletConfig.filename = fileUrl;
+            if (height) {
+                appletConfig.height = height;
+            }
+            if (materialId) {
+                appletConfig.material_id = materialId;
             }
 
             const applet = new window.GGBApplet(appletConfig, true);
             applet.inject(ggbDiv.current);
 
-            // Delay to ensure applet is initialized
             setTimeout(() => {
                 const ggb = applet.getAppletObject();
 
                 if (onChange && ggb) {
-                    // Listen to updates of any object
                     ggb.registerUpdateListener((objName: string) => {
                         const value = ggb.getValueString(objName);
                         onChange(value);
                     });
 
-                    // Listen to new objects being created
                     ggb.registerAddListener((objName: string) => {
                         const value = ggb.getValueString(objName);
                         onChange(value);
@@ -78,19 +56,7 @@ const GeoGebraApp: React.FC<GeoGebraProps> = ({
                 }
             }, 500);
         }
-    }, [
-        width,
-        height,
-        showAlgebraInput,
-        showGraphView,
-        showToolBar,
-        showMenuBar,
-        showCAS,
-        show3D,
-        onChange,
-        materialId,
-        fileUrl,
-    ]);
+    }, [width, height, showAlgebraInput, showGraphView, showToolBar, showMenuBar, showCAS, show3D, onChange, materialId]);
 
     return <div ref={ggbDiv}></div>;
 };

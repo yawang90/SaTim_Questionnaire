@@ -5,7 +5,6 @@ export const uploadImage = (req: Request, res: Response) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
     }
-    console.log("aaaaaaaa")
     try {
         const imageUrl = saveImage(req.file);
         res.status(201).json({ url: imageUrl });

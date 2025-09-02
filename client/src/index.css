@@ -32,3 +32,8 @@ code {
   min-height: 1.2em;
   display: inline-block;
 }
+
+.ck-content img {
+  float: left;
+  margin-right: 1em;
+}
