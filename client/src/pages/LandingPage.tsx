@@ -3,14 +3,25 @@ import {useTranslation} from "react-i18next";
 import {Box, Typography, Button, Dialog, DialogContent} from "@mui/material";
 import {LoginForm} from "../components/LoginForm.tsx";
 import {RegisterForm} from "../components/RegisterForm.tsx";
+import {useNavigate} from "react-router-dom";
 
 const LandingPage = () => {
     const {t} = useTranslation();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+    const navigate = useNavigate();
 
-    const handleLoginSuccess = () => setIsLoginOpen(false);
-    const handleRegisterSuccess = () => setIsRegisterOpen(false);
+    const handleLoginSuccess = () =>
+    {
+        setIsLoginOpen(false);
+        navigate('/dashboard');
+
+    }
+    const handleRegisterSuccess = () =>
+    {
+        setIsRegisterOpen(false);
+        navigate('/dashboard');
+    }
 
     const openRegister = () => {
         setIsLoginOpen(false);

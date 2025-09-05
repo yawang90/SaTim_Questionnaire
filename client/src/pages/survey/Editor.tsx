@@ -1,13 +1,13 @@
 import {useState} from 'react';
-import MainLayout from '../layouts/MainLayout.tsx';
+import MainLayout from '../../layouts/MainLayout.tsx';
 import {Box, Button, Card, CardContent, CardHeader, Typography} from '@mui/material';
 import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
 import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, Table, TableToolbar, TableCellProperties, TableProperties, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font, Image, ImageInsert,ImageCaption, ImageResize, ImageStyle, ImageToolbar, LinkImage,  SimpleUploadAdapter} from 'ckeditor5';
 // @ts-ignore
 import 'ckeditor5/ckeditor5.css';
-import Choice from "../components/ChoicePlugin/Choice.tsx";
-import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
+import Choice from "../../components/ChoicePlugin/Choice.tsx";
+import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
 import {useTranslation} from "react-i18next";
 
 // @ts-ignore

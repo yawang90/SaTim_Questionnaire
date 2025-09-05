@@ -1,9 +1,9 @@
 import {Box, Card, CardContent, CardHeader, Typography} from '@mui/material';
-import MainLayout from '../layouts/MainLayout.tsx';
-import GeoGebraApp from "../components/GeoGebra/GeoGebraApp.tsx";
+import MainLayout from '../../layouts/MainLayout.tsx';
+import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
 import {useState} from "react";
 import "mathlive";
-import MathField from "../components/MathField.tsx";
+import MathField from "../../components/MathField.tsx";
 
 export default function AnswerConfiguratorPage() {
    // const { t } = useTranslation();
