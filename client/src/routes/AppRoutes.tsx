@@ -10,12 +10,12 @@ function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<LandingPage/>}/>
-                <Route path="*" element={<NotFoundPage/>}/>
-                <Route path="/login" element={<LoginPage/>}/>
-                <Route path="/editor" element={<EditorPage/>}/>
-                <Route path="/answers" element={<AnswerConfiguratorPage/>}/>
-                <Route path="/dashboard" element={<DashboardPage/>}/>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/editor" element={<EditorPage />} />
+                <Route path="/answers" element={<AnswerConfiguratorPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>
     );
