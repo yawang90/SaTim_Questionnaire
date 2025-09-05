@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from "react";
 
+declare global {
+    interface Window {
+        GGBApplet: any;
+    }
+}
+
 export interface GeoGebraProps {
     width?: number;
     height?: number;

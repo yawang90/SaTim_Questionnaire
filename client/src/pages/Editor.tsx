@@ -4,11 +4,13 @@ import {Box, Button, Card, CardContent, CardHeader, Typography} from '@mui/mater
 import {Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
 import {Bold, ClassicEditor, Essentials, Alignment, Heading, Italic, Table, TableToolbar, TableCellProperties, TableProperties, List, ListProperties, SpecialCharacters, SpecialCharactersEssentials, Paragraph, SourceEditing, Indent, IndentBlock, Font, Image, ImageInsert,ImageCaption, ImageResize, ImageStyle, ImageToolbar, LinkImage,  SimpleUploadAdapter} from 'ckeditor5';
+// @ts-ignore
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../components/ChoicePlugin/ChoiceUI.tsx";
 import {useTranslation} from "react-i18next";
 
+// @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function EditorPage() {
@@ -62,6 +64,7 @@ export default function EditorPage() {
                                         properties: {
                                             styles: true}
                                     },
+                                    // @ts-ignore
                                     choice: {
                                         label: t('editor.choice')
                                     },

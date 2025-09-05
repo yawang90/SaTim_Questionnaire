@@ -37,7 +37,7 @@ export default class Choice extends Plugin {
 
         conversion.for('editingDowncast').elementToElement({
             model: 'checkbox',
-            view: (modelElement, { writer }) => {
+            view: (_modelElement, { writer }) => {
                 const label = writer.createContainerElement('label', {
                     class: 'ck-checkbox-label',
                     style: 'display:inline-flex; align-items:center; gap:0.3em; margin-right:0.5em; cursor:pointer;'
@@ -59,7 +59,7 @@ export default class Choice extends Plugin {
 
         conversion.for('dataDowncast').elementToElement({
             model: 'checkbox',
-            view: (modelElement, { writer }) => {
+            view: (_modelElement, { writer }) => {
                 return writer.createContainerElement('label', {
                     class: 'checkbox-container',
                     style: 'display:inline-flex; align-items:center; gap:0.3em;'
@@ -69,7 +69,7 @@ export default class Choice extends Plugin {
 
         conversion.for('editingDowncast').elementToElement({
             model: 'checkboxText',
-            view: (modelElement, { writer }) => {
+            view: (_modelElement, { writer }) => {
                 const span = writer.createEditableElement('span', {
                     class: 'ck-checkbox-text',
                     style: 'min-width: 1em; outline: none;'
@@ -80,7 +80,7 @@ export default class Choice extends Plugin {
 
         conversion.for('dataDowncast').elementToElement({
             model: 'checkboxText',
-            view: (modelElement, { writer }) => {
+            view: (_modelElement, { writer }) => {
                 return writer.createContainerElement('span', {
                     class: 'checkbox-text'
                 });
