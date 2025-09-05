@@ -18,10 +18,12 @@
     "ckeditor5": "^46.0.1",
     "i18next": "^25.3.4",
     "jsxgraph": "^1.11.1",
+    "mathlive": "^0.107.0",
     "notistack": "^3.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^15.6.1",
+    "react-mathlive": "^3.0.5-preview.1",
     "react-router-dom": "^7.8.0"
   },
   "devDependencies": {

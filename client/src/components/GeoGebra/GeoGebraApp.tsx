@@ -20,21 +20,20 @@ const GeoGebraApp: React.FC<GeoGebraProps> = ({width, height, showAlgebraInput =
         if (window.GGBApplet && ggbDiv.current) {
             const appletConfig: any = {
                 appName: "classic",
-                showAlgebraInput,
-                showToolBar,
-                showMenuBar,
-                showCAS,
-                show3D,
-                showGraphView,
             };
-            if (width) {
-                appletConfig.width = width;
-            }
-            if (height) {
-                appletConfig.height = height;
-            }
+
+            if (width) appletConfig.width = width;
+            if (height) appletConfig.height = height;
+
             if (materialId) {
                 appletConfig.material_id = materialId;
+            } else {
+                appletConfig.showAlgebraInput = showAlgebraInput;
+                appletConfig.showToolBar = showToolBar;
+                appletConfig.showMenuBar = showMenuBar;
+                appletConfig.showCAS = showCAS;
+                appletConfig.show3D = show3D;
+                appletConfig.showGraphView = showGraphView;
             }
 
             const applet = new window.GGBApplet(appletConfig, true);

@@ -2,9 +2,12 @@ import {Box, Card, CardContent, CardHeader, Typography} from '@mui/material';
 import MainLayout from '../layouts/MainLayout.tsx';
 import { useTranslation } from "react-i18next";
 import GeoGebraApp from "../components/GeoGebra/GeoGebraApp.tsx";
+import {useState} from "react";
+import "mathlive";
 
 export default function AnswerConfiguratorPage() {
     const { t } = useTranslation();
+    const [latex, setLatex] = useState("\\frac{1}{2}");
 
     return (
         <MainLayout>
@@ -21,9 +24,22 @@ export default function AnswerConfiguratorPage() {
                         />
                         <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <GeoGebraApp
-                                materialId="uehyagmj"
+                                materialId="pfeKePU3"
                                 onChange={(expr) => console.log("Formula changed:", expr)}
                             />
+                            <div style={{ padding: "20px" }}>
+                                <math-field
+                                    value={latex}
+                                    onInput={(evt) => setLatex(evt.target.value)}
+                                    style={{
+                                        border: "1px solid #ccc",
+                                        borderRadius: "8px",
+                                        padding: "8px",
+                                        fontSize: "1.2rem",
+                                        minWidth: "300px",
+                                    }}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
                 </Box>
