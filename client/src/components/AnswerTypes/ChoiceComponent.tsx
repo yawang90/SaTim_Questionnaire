@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
 import { Add, Delete } from '@mui/icons-material';
 
-export default function MultipleChoice() {
-    const [answers, setAnswers] = useState<string[]>(['']); // start with one answer field
+interface ChoiceComponentProps {
+    title: string;
+}
+
+export default function ChoiceComponent({ title }: ChoiceComponentProps) {
+    const [answers, setAnswers] = useState<string[]>(['']);
 
     const addAnswer = () => {
         setAnswers(prev => [...prev, '']);
@@ -19,8 +23,9 @@ export default function MultipleChoice() {
 
     return (
         <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 2, mt: 2 }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>Multiple Choice Antworten</Typography>
-
+            <Typography variant="h6" sx={{ mb: 2 }}>
+                {title}
+            </Typography>
             {answers.map((answer, index) => (
                 <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <TextField

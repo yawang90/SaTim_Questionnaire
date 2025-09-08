@@ -1,20 +1,65 @@
 import React, {type JSX, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {Box, Button, CardContent, Dialog, DialogTitle, List, ListItemButton, ListItemText, Paper, Typography} from '@mui/material';
+import {
+    Box,
+    Button,
+    CardContent,
+    Dialog,
+    DialogTitle,
+    List,
+    ListItemButton,
+    ListItemText,
+    Paper,
+    Typography
+} from '@mui/material';
 import {Add, Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {Alignment, Bold, ClassicEditor, Essentials, Font, GeneralHtmlSupport, Heading, HtmlEmbed, Image, ImageCaption, ImageInsert, ImageResize, ImageStyle, ImageToolbar, Indent, IndentBlock, Italic, LinkImage, List as ListPlugin, ListProperties, Paragraph, SimpleUploadAdapter, SourceEditing, SpecialCharacters, SpecialCharactersEssentials, Table, TableCellProperties, TableProperties, TableToolbar} from 'ckeditor5';
+import {
+    Alignment,
+    Bold,
+    ClassicEditor,
+    Essentials,
+    Font,
+    GeneralHtmlSupport,
+    Heading,
+    HtmlEmbed,
+    Image,
+    ImageCaption,
+    ImageInsert,
+    ImageResize,
+    ImageStyle,
+    ImageToolbar,
+    Indent,
+    IndentBlock,
+    Italic,
+    LinkImage,
+    List as ListPlugin,
+    ListProperties,
+    Paragraph,
+    SimpleUploadAdapter,
+    SourceEditing,
+    SpecialCharacters,
+    SpecialCharactersEssentials,
+    Table,
+    TableCellProperties,
+    TableProperties,
+    TableToolbar
+} from 'ckeditor5';
 // @ts-ignore
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import MultipleChoice from "../../components/AnswerTypes/MultipleChoiceComponent.tsx";
-
+import ChoiceComponent from "../../components/AnswerTypes/ChoiceComponent.tsx";
+import "mathlive";
+import NumericComponent from "../../components/AnswerTypes/NumericComponent.tsx";
+import AlgebraComponent from "../../components/AnswerTypes/AlgebraComponent.tsx";
+import GeogebraComponent from "../../components/AnswerTypes/GeogebraComponent.tsx";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
-type AnswerOptions = 'Multiple Choice' | 'Freitext' | 'Numerische Eingabe';
+
+const AnswerOptions = ['Single Choice', 'Multiple Choice', 'Freitext', 'Numerische Eingabe', 'Algebraische Gleichung', 'Geogebra Applet', 'Tabellarische Eingabe', 'Drag and Drop'];
 
 export default function EditorPage() {
     const {t} = useTranslation();
@@ -31,8 +76,11 @@ export default function EditorPage() {
     const handleOptionClick = (option: string) => {
         setDialogOpen(false);
         switch(option) {
+            case 'Single Choice':
+                setAnswerComponents(prev => [...prev, <ChoiceComponent key={prev.length} title="Single Choice Frage" />]);
+                break;
             case 'Multiple Choice':
-                setAnswerComponents(prev => [...prev, <MultipleChoice key={prev.length} />]);
+                setAnswerComponents(prev => [...prev, <ChoiceComponent key={prev.length} title="Multiple Choice Frage"/>]);
                 break;
             case 'Freitext':
                 setAnswerComponents(prev => [
@@ -48,12 +96,19 @@ export default function EditorPage() {
             case 'Numerische Eingabe':
                 setAnswerComponents(prev => [
                     ...prev,
-                    <input
-                        key={prev.length}
-                        type="number"
-                        placeholder="Zahl eingeben"
-                        style={{ padding: '8px', fontSize: '1rem', width: '100%' }}
-                    />
+                    <NumericComponent/>
+                ]);
+                break;
+            case 'Algebraische Gleichung':
+                setAnswerComponents(prev => [
+                    ...prev,
+                    <AlgebraComponent/>
+                ]);
+                break;
+            case 'Geogebra Applet':
+                setAnswerComponents(prev => [
+                    ...prev,
+                    <GeogebraComponent/>
                 ]);
                 break;
         }
@@ -196,7 +251,7 @@ export default function EditorPage() {
                     <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
                         <DialogTitle>Antwort Typ auswählen</DialogTitle>
                         <List>
-                            {['Single Choice', 'Multiple Choice', 'Freitext', 'Numerische Eingabe', 'Algebraische Gleichung', 'Graph einzeichnen', 'Tabellarische Eingabe', 'Drag and Drop'].map((option) => (
+                            {AnswerOptions.map((option) => (
                                 <ListItemButton key={option} onClick={() => handleOptionClick(option)}>
                                     <ListItemText primary={option}/>
                                 </ListItemButton>
