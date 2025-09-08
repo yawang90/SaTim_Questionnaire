@@ -56,6 +56,7 @@ import "mathlive";
 import NumericComponent from "../../components/AnswerTypes/NumericComponent.tsx";
 import AlgebraComponent from "../../components/AnswerTypes/AlgebraComponent.tsx";
 import GeogebraComponent from "../../components/AnswerTypes/GeogebraComponent.tsx";
+import TextComponent from "../../components/AnswerTypes/TextComponent.tsx";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -83,33 +84,16 @@ export default function EditorPage() {
                 setAnswerComponents(prev => [...prev, <ChoiceComponent key={prev.length} title="Multiple Choice Frage"/>]);
                 break;
             case 'Freitext':
-                setAnswerComponents(prev => [
-                    ...prev,
-                    <input
-                        key={prev.length}
-                        type="text"
-                        placeholder="Freitext"
-                        style={{ padding: '8px', fontSize: '1rem', width: '100%' }}
-                    />
-                ]);
+                setAnswerComponents(prev => [...prev, <TextComponent key={prev.length}/>]);
                 break;
             case 'Numerische Eingabe':
-                setAnswerComponents(prev => [
-                    ...prev,
-                    <NumericComponent/>
-                ]);
+                setAnswerComponents(prev => [...prev, <NumericComponent/>]);
                 break;
             case 'Algebraische Gleichung':
-                setAnswerComponents(prev => [
-                    ...prev,
-                    <AlgebraComponent/>
-                ]);
+                setAnswerComponents(prev => [...prev, <AlgebraComponent/>]);
                 break;
             case 'Geogebra Applet':
-                setAnswerComponents(prev => [
-                    ...prev,
-                    <GeogebraComponent/>
-                ]);
+                setAnswerComponents(prev => [...prev, <GeogebraComponent/>]);
                 break;
         }
     };
