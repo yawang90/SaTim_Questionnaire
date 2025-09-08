@@ -1,6 +1,6 @@
 import {useState} from "react";
-import {Box, Button, Card, CardActions, CardContent, CardHeader, Grid, Icon, IconButton, Typography, LinearProgress} from "@mui/material";
-import {Add, BarChart, MoreVert, BorderColor, CheckCircleOutline, Visibility } from "@mui/icons-material";
+import {Box, Button, Card, CardActions, CardContent, CardHeader, Grid, IconButton, Typography} from "@mui/material";
+import {Add, BarChart, BorderColor, CheckCircleOutline, MoreVert, Visibility} from "@mui/icons-material";
 import {useNavigate} from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 
@@ -13,12 +13,12 @@ interface Question {
     previewDone?: boolean;
 }
 
-const QuestionsPage = () => {
+export default function QuestionsPage() {
     const navigate = useNavigate();
     const [questions, setQuestions] = useState<Question[]>([
         { id: "1", title: "Aufgabe 1", description: "Aufgabe mit Gleichung", createDone: true, answersDone: true, previewDone: false },
         { id: "2", title: "Aufgabe 2", description: "Aufgabe mit Begründung", createDone: true, answersDone: false, previewDone: false },
-        { id: "3", title: "Aufgabe 3", description: "Aufgabe mit Gleichung", createDone: true, answersDone: true, previewDone: true }
+        { id: "3", title: "Aufgabe 3", description: "Aufgabe mit Gleichung", createDone: false, answersDone: false, previewDone: false }
     ]);
 
     const handleCreateQuestion = (e: React.FormEvent<HTMLFormElement>) => {
@@ -58,20 +58,20 @@ const QuestionsPage = () => {
                                     </Box>
                                     <Box display="flex" flexDirection="column" sx={{pt: 1}}>
                                         <Box display="flex" alignItems="center" gap={1.5}>
-                                            <Box display="flex" alignItems="center" justifyContent="center" width={32} height={32} borderRadius="50%" border={2} sx={{bgcolor: question.createDone ? "primary.main" : "background.paper", color: question.createDone ? "primary.contrastText" : "text.disabled", borderColor: question.createDone ? "primary.main" : "text.disabled", transition: "all 0.2s ease",}}>
+                                            <Box display="flex" alignItems="center" justifyContent="center" width={32} height={32} borderRadius="50%" border={2} sx={{bgcolor: question.answersDone ? "primary.main" : "background.paper", color: question.answersDone ? "primary.contrastText" : "text.disabled", borderColor: question.answersDone ? "primary.main" : "text.disabled", transition: "all 0.2s ease",}}>
                                                 <CheckCircleOutline fontSize="small" />
                                             </Box>
-                                            <Typography variant="body2" color={question.createDone ? "text.primary" : "text.secondary"}>
+                                            <Typography variant="body2" color={question.answersDone ? "text.primary" : "text.secondary"}>
                                                 {"Antworten definieren"}
                                             </Typography>
                                         </Box>
                                     </Box>
                                     <Box display="flex" flexDirection="column" sx={{pt: 1}}>
                                         <Box display="flex" alignItems="center" gap={1.5}>
-                                            <Box display="flex" alignItems="center" justifyContent="center" width={32} height={32} borderRadius="50%" border={2} sx={{bgcolor: question.createDone ? "primary.main" : "background.paper", color: question.createDone ? "primary.contrastText" : "text.disabled", borderColor: question.createDone ? "primary.main" : "text.disabled", transition: "all 0.2s ease",}}>
+                                            <Box display="flex" alignItems="center" justifyContent="center" width={32} height={32} borderRadius="50%" border={2} sx={{bgcolor: question.previewDone ? "primary.main" : "background.paper", color: question.previewDone ? "primary.contrastText" : "text.disabled", borderColor: question.previewDone ? "primary.main" : "text.disabled", transition: "all 0.2s ease",}}>
                                                 <Visibility fontSize="small" />
                                             </Box>
-                                            <Typography variant="body2" color={question.createDone ? "text.primary" : "text.secondary"}>
+                                            <Typography variant="body2" color={question.previewDone ? "text.primary" : "text.secondary"}>
                                                 {"Prüfen & testen"}
                                             </Typography>
                                         </Box>
@@ -107,4 +107,3 @@ const QuestionsPage = () => {
     );
 };
 
-export default QuestionsPage;

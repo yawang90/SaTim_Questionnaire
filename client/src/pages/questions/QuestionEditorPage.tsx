@@ -9,6 +9,7 @@ import 'ckeditor5/ckeditor5.css';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
 import {useTranslation} from "react-i18next";
+import {useNavigate} from "react-router-dom";
 
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
@@ -17,7 +18,11 @@ export default function EditorPage() {
     const [editorData, setEditorData] = useState<string>('<p>Editiere hier deine Aufgabe...</p>');
     const [showPreview, setShowPreview] = useState(false);
     const {t} = useTranslation();
+    const navigate = useNavigate();
 
+    const saveQuestion = () => {
+        navigate('/answers')
+    }
     return (
         <MainLayout>
             <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
@@ -102,7 +107,7 @@ export default function EditorPage() {
                                 <Button onClick={() => setShowPreview(!showPreview)} variant="outlined" fullWidth startIcon={<VisibilityIcon />}>
                                     {showPreview ? 'Vorschau verstecken' : 'Vorschau'}
                                 </Button>
-                                <Button variant="contained" fullWidth startIcon={<SaveIcon />}>
+                                <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={() => saveQuestion()}>
                                     Frage speichern
                                 </Button>
                             </Box>
