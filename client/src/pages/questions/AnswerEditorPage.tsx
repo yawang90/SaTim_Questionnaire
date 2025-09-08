@@ -113,18 +113,10 @@ export default function AnswerEditorPage() {
 
     return (
         <MainLayout>
-            <Box sx={{
-                minHeight: '100vh',
-                backgroundColor: 'background.default',
-                py: 3,
-                px: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                mt: 6
-            }}>
+            <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                 <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                     <Typography variant="h4" component="h1" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
-                        Antwort Auswertung erfassen
+                        Antworten definieren
                     </Typography>
 
                     <Accordion>
