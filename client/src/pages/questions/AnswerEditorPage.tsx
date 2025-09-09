@@ -11,9 +11,12 @@ import {
     FormControlLabel,
     FormGroup,
     FormLabel,
+    IconButton,
+    MenuItem,
     Paper,
     Radio,
     RadioGroup,
+    Select,
     TextField,
     Typography
 } from '@mui/material';
@@ -22,6 +25,7 @@ import MathField from "../../components/MathField.tsx";
 import "mathlive";
 import {useNavigate} from "react-router-dom";
 import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
+import { Delete } from '@mui/icons-material';
 
 interface Answer {
     multipleChoice: string;
@@ -29,6 +33,14 @@ interface Answer {
     numberInput: string;
     checkboxes: string[];
     graph: string;
+}
+
+type Operator = "equals" | "greater" | "less" | "greaterOrEqual" | "lessOrEqual";
+type Connector = "and" | "or";
+interface Condition {
+    operator: Operator;
+    value: string;
+    connector?: Connector;
 }
 
 export default function AnswerEditorPage() {
@@ -47,7 +59,11 @@ export default function AnswerEditorPage() {
         checkboxes: ['option1', 'option3'],
         graph: '1'
     });
+    const [conditions, setConditions] = useState<Condition[]>([
+        { operator: "equals", value: "" }
+    ]);
     const [latex, setLatex] = useState("\\frac{1}{2}");
+    const [numberSolution, setNumberSolution] = useState("");
     const navigate = useNavigate();
     const [showResults, setShowResults] = useState(false);
 
@@ -110,6 +126,32 @@ export default function AnswerEditorPage() {
                 return false;
         }
     };
+
+    const addCondition = () => {
+        setConditions((prev) => [
+            ...prev,
+            { connector: "and", operator: "equals", value: "" }
+        ]);
+    };
+
+    const handleOperatorChange = (index: number, newOp: Operator) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? { ...c, operator: newOp } : c))
+        );
+    };
+
+    const handleValueChange = (index: number, newVal: string) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? { ...c, value: newVal } : c))
+        );
+    };
+
+    const handleConnectorChange = (index: number, newConn: Connector) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? { ...c, connector: newConn } : c))
+        );
+    };
+
 
     return (
         <MainLayout>
@@ -187,11 +229,65 @@ export default function AnswerEditorPage() {
                         <AccordionDetails>
                             <FormControl fullWidth>
                                 <FormLabel>Was ist die Lösung für xyz?</FormLabel>
-                                <MathField
-                                    value={latex}
-                                    onChange={setLatex}
-                                    style={{fontSize: "1.2rem", border: "1px solid #ccc", padding: 8}}
-                                />
+                                <MathField value={latex} onChange={setLatex} style={{fontSize: "1.2rem", border: "1px solid #ccc", padding: 8}}/>
+
+                                {conditions.map((cond, index) => (
+                                    <Box key={index} sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                                        {index > 0 && (
+                                            <Select<Connector>
+                                                value={cond.connector ?? "and"}
+                                                onChange={(e) =>
+                                                    handleConnectorChange(index, e.target.value as Connector)}
+                                                size="small"
+                                                sx={{ minWidth: 80 }}>
+                                                <MenuItem value="and">und</MenuItem>
+                                                <MenuItem value="or">oder</MenuItem>
+                                            </Select>
+                                        )}
+
+                                        <Typography>Die Lösung soll</Typography>
+                                        <Select<Operator>
+                                            value={cond.operator}
+                                            onChange={(e) => handleOperatorChange(index, e.target.value as Operator)}
+                                            size="small"
+                                            sx={{ minWidth: 140 }}>
+                                            <MenuItem value="equals">= gleich</MenuItem>
+                                            <MenuItem value="greater">&gt; größer</MenuItem>
+                                            <MenuItem value="less">&lt; kleiner</MenuItem>
+                                            <MenuItem value="greaterOrEqual">≥ größer gleich</MenuItem>
+                                            <MenuItem value="lessOrEqual">≤ kleiner gleich</MenuItem>
+                                        </Select>
+                                        <Typography>(als)</Typography>
+                                        <MathField
+                                            value={cond.value}
+                                            onChange={(val) => handleValueChange(index, val)}
+                                            style={{fontSize: "1.2rem", border: "1px solid #ccc", padding: 8, width: 300,}}
+                                        />
+                                        <Typography>sein</Typography>
+                                        <IconButton
+                                            aria-label="Entfernen"
+                                            onClick={() =>
+                                                setConditions((prev) => {
+                                                    const newConds = prev.filter((_, i) => i !== index);
+                                                    if (newConds.length > 0) {
+                                                        newConds[0] = { ...newConds[0], connector: undefined };
+                                                    }
+                                                    return newConds;})}
+                                            disabled={conditions.length === 1}>
+                                            <Delete />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+
+
+
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={addCondition}
+                                    sx={{ alignSelf: "flex-start", mt: 1 }}>
+                                    Weitere Bedingung hinzufügen
+                                </Button>
                             </FormControl>
                         </AccordionDetails>
                     </Accordion>
