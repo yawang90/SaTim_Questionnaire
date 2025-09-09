@@ -38,8 +38,7 @@ export default function ChoiceComponent({ title }: ChoiceComponentProps) {
                     <IconButton
                         aria-label="Löschen"
                         onClick={() => removeAnswer(index)}
-                        disabled={answers.length === 1}
-                    >
+                        disabled={answers.length === 1}>
                         <Delete />
                     </IconButton>
                 </Box>

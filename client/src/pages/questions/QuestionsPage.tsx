@@ -79,7 +79,7 @@ export default function QuestionsPage() {
 
                                 </CardContent>
                                 <CardActions>
-                                    <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/questions`)}>
+                                    <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/editor`)}>
                                         Bearbeiten
                                     </Button>
                                     <Button size="small" variant="outlined" fullWidth>

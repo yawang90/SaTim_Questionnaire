@@ -1,50 +1,9 @@
 import React, {type JSX, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {
-    Box,
-    Button,
-    CardContent,
-    Dialog,
-    DialogTitle,
-    List,
-    ListItemButton,
-    ListItemText,
-    Paper,
-    Typography
-} from '@mui/material';
-import {Add, Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
+import {Box, Button, CardContent, Dialog, DialogTitle, IconButton, List, ListItemButton, ListItemText, Paper, Typography} from '@mui/material';
+import {Add, Clear, Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {
-    Alignment,
-    Bold,
-    ClassicEditor,
-    Essentials,
-    Font,
-    GeneralHtmlSupport,
-    Heading,
-    HtmlEmbed,
-    Image,
-    ImageCaption,
-    ImageInsert,
-    ImageResize,
-    ImageStyle,
-    ImageToolbar,
-    Indent,
-    IndentBlock,
-    Italic,
-    LinkImage,
-    List as ListPlugin,
-    ListProperties,
-    Paragraph,
-    SimpleUploadAdapter,
-    SourceEditing,
-    SpecialCharacters,
-    SpecialCharactersEssentials,
-    Table,
-    TableCellProperties,
-    TableProperties,
-    TableToolbar
-} from 'ckeditor5';
+import {Alignment, Bold, ClassicEditor, Essentials, Font, GeneralHtmlSupport, Heading, HtmlEmbed, Image, ImageCaption, ImageInsert, ImageResize, ImageStyle, ImageToolbar, Indent, IndentBlock, Italic, LinkImage, List as ListPlugin, ListProperties, Paragraph, SimpleUploadAdapter, SourceEditing, SpecialCharacters, SpecialCharactersEssentials, Table, TableCellProperties, TableProperties, TableToolbar} from 'ckeditor5';
 // @ts-ignore
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
@@ -185,9 +144,19 @@ export default function EditorPage() {
                         />
                         <Box sx={{borderBottom: '1px solid', borderColor: 'divider'}}></Box>
 
-                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {answerComponents.map((component, idx) => component)}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {answerComponents.map((component, idx) => (
+                                <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                    <IconButton aria-label="Entfernen" onClick={() => setAnswerComponents(prev => prev.filter((_, i) => i !== idx))}>
+                                        <Clear />
+                                    </IconButton>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        {component}
+                                    </Box>
+                                </Box>
+                            ))}
                         </Box>
+
                         <Button variant="contained" startIcon={<Add/>} onClick={() => setDialogOpen(true)}>Antwort Typ hinzufügen</Button>
 
                         <Box sx={{display: 'flex', gap: 2}}>
