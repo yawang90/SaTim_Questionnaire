@@ -20,13 +20,17 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {ExpandMore, Save } from '@mui/icons-material';
 import MathField from "../../components/MathField.tsx";
 import "mathlive";
 import {useNavigate} from "react-router-dom";
 import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
 import { Delete } from '@mui/icons-material';
-
+import Choice from "../../components/ChoicePlugin/Choice.tsx";
+import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
+import {CKEditor} from "@ckeditor/ckeditor5-react";
+import {Alignment, Bold, ClassicEditor, Essentials, Font, GeneralHtmlSupport, Heading, HtmlEmbed, Italic, List, Paragraph, Table, TableCellProperties, TableProperties, TableToolbar
+} from "ckeditor5";
 interface Answer {
     multipleChoice: string;
     freeText: string;
@@ -44,6 +48,11 @@ interface Condition {
 }
 
 export default function AnswerEditorPage() {
+    const [editorData, setEditorData] = useState<string>(`
+    <h2>Beispielaufgabe</h2>
+    <p>Welche der folgenden Aussagen sind korrekt?</p>
+    <p>Bitte kreuzen Sie die richtige(n) Lösung(en) an.</p>
+`);
     const [answers, setAnswers] = useState<Answer>({
         multipleChoice: '',
         freeText: '',
@@ -51,7 +60,6 @@ export default function AnswerEditorPage() {
         checkboxes: [],
         graph: ''
     });
-
     const [correctAnswers] = useState({
         multipleChoice: 'option2',
         freeText: 'react',
@@ -160,9 +168,33 @@ export default function AnswerEditorPage() {
                     <Typography variant="h4" component="h1" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                         Antworten definieren
                     </Typography>
+                    <CKEditor
+                        editor={ClassicEditor}
+                        data={editorData}
+                        disabled={true}
+                        config={{
+                            licenseKey: 'GPL',
+                            plugins: [Essentials, Paragraph, Heading, Bold, Italic, List, Alignment, Font, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI, GeneralHtmlSupport, HtmlEmbed],
+                            toolbar: [],
+                            htmlSupport: {
+                                allow: [
+                                    {
+                                        name: /.*/,
+                                        attributes: true,
+                                        classes: true,
+                                        styles: true
+                                    }
+                                ]
+                            },
+                            htmlEmbed: {
+                                showPreviews: true
+                            }
+                        }}
+                    />
 
+                    {/* Single Choice Section */}
                     <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                        <AccordionSummary expandIcon={<ExpandMore/>}>
                             <Typography variant="h6">
                                 Single Choice Frage
                                 {showResults && (
@@ -188,7 +220,7 @@ export default function AnswerEditorPage() {
 
                     {/* Free Text Section */}
                     <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                        <AccordionSummary expandIcon={<ExpandMore/>}>
                             <Typography variant="h6">
                                 Freie Text Frage
                                 {showResults && (
@@ -215,7 +247,7 @@ export default function AnswerEditorPage() {
 
                     {/* Number Input Section */}
                     <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                        <AccordionSummary expandIcon={<ExpandMore/>}>
                             <Typography variant="h6">
                                 Algebraische Gleichung oder Numerische Eingabe
                                 {showResults && (
@@ -292,9 +324,9 @@ export default function AnswerEditorPage() {
                         </AccordionDetails>
                     </Accordion>
 
-                    {/* Checkbox Section */}
+                    {/* Multiple Choice Section */}
                     <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                        <AccordionSummary expandIcon={<ExpandMore/>}>
                             <Typography variant="h6">
                                 Multiple Choice Frage
                                 {showResults && (
@@ -352,7 +384,7 @@ export default function AnswerEditorPage() {
 
                     {/* Geogebra Section */}
                     <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
+                        <AccordionSummary expandIcon={<ExpandMore/>}>
                             <Typography variant="h6">
                                 Frage mit Graphen Eingabe
                                 {showResults && (
@@ -397,6 +429,7 @@ export default function AnswerEditorPage() {
                         </Button>
                         <Button
                             variant="contained"
+                            startIcon={<Save/>}
                             onClick={() => navigate('/preview')}
                             sx={{bgcolor: '#000', color: '#fff', '&:hover': {bgcolor: '#333'}}}>
                             Auswertung speichern
