@@ -1,9 +1,51 @@
-import React, {type JSX, useState} from 'react';
+import React, {type JSX, useEffect, useRef, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {Box, Button, CardContent, Dialog, DialogTitle, IconButton, List, ListItemButton, ListItemText, Paper, Typography} from '@mui/material';
+import {
+    Box,
+    Button,
+    CardContent,
+    Dialog,
+    DialogTitle,
+    IconButton,
+    List,
+    ListItemButton,
+    ListItemText,
+    Paper,
+    Typography
+} from '@mui/material';
 import {Add, Clear, Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
 import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {Alignment, Bold, ClassicEditor, Essentials, Font, GeneralHtmlSupport, Heading, HtmlEmbed, Image, ImageCaption, ImageInsert, ImageResize, ImageStyle, ImageToolbar, Indent, IndentBlock, Italic, LinkImage, List as ListPlugin, ListProperties, Paragraph, SimpleUploadAdapter, SourceEditing, SpecialCharacters, SpecialCharactersEssentials, Table, TableCellProperties, TableProperties, TableToolbar} from 'ckeditor5';
+import {
+    Alignment,
+    Bold,
+    ClassicEditor,
+    Essentials,
+    Font,
+    GeneralHtmlSupport,
+    Heading,
+    HtmlEmbed,
+    Image,
+    ImageCaption,
+    ImageInsert,
+    ImageResize,
+    ImageStyle,
+    ImageToolbar,
+    Indent,
+    IndentBlock,
+    Italic,
+    LinkImage,
+    List as ListPlugin,
+    ListProperties,
+    Paragraph,
+    SimpleUploadAdapter,
+    SourceEditing,
+    SpecialCharacters,
+    SpecialCharactersEssentials,
+    Table,
+    TableCellProperties,
+    TableProperties,
+    TableToolbar
+} from 'ckeditor5';
 // @ts-ignore
 import 'ckeditor5/ckeditor5.css';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
@@ -16,9 +58,16 @@ import NumericComponent from "../../components/AnswerTypes/NumericComponent.tsx"
 import AlgebraComponent from "../../components/AnswerTypes/AlgebraComponent.tsx";
 import GeogebraComponent from "../../components/AnswerTypes/GeogebraComponent.tsx";
 import TextComponent from "../../components/AnswerTypes/TextComponent.tsx";
+import {MathJaxContext} from "better-react-mathjax";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
-
+declare global {
+    interface Window {
+        MathJax?: {
+            typesetPromise?: (elements?: HTMLElement[]) => Promise<void>;
+        };
+    }
+}
 const AnswerOptions = ['Single Choice', 'Multiple Choice', 'Freitext', 'Numerische Eingabe', 'Algebraische Gleichung', 'Geogebra Applet', 'Tabellarische Eingabe', 'Drag and Drop'];
 
 export default function EditorPage() {
@@ -28,10 +77,21 @@ export default function EditorPage() {
     const [showPreview, setShowPreview] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [answerComponents, setAnswerComponents] = useState<JSX.Element[]>([]);
-
+    const mathJaxConfig = {
+        loader: { load: ["input/tex", "output/chtml"] },
+        tex: {
+            inlineMath: [["$", "$"], ["\\(", "\\)"]],
+            displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        },
+    };
     const saveQuestion = () => {
         navigate('/answers')
     }
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        window.MathJax?.typesetPromise?.([containerRef.current!]);
+    }, [editorData]);
 
     const handleOptionClick = (option: string) => {
         setDialogOpen(false);
@@ -175,29 +235,34 @@ export default function EditorPage() {
                                 <Typography variant="h6" sx={{mb: 1}}>
                                     Vorschau
                                 </Typography>
-                                <CKEditor
-                                    editor={ClassicEditor}
-                                    data={editorData}
-                                    disabled={true}
-                                    config={{
-                                        licenseKey: 'GPL',
-                                        plugins: [Essentials, Paragraph, Heading, Bold, Italic, ListPlugin, Alignment, Font, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI, GeneralHtmlSupport, HtmlEmbed],
-                                        toolbar: [],
-                                        htmlSupport: {
-                                            allow: [
-                                                {
-                                                    name: /.*/,
-                                                    attributes: true,
-                                                    classes: true,
-                                                    styles: true
+                                <MathJaxContext config={mathJaxConfig}>
+                                    <div ref={containerRef}>
+                                        <CKEditor
+                                            editor={ClassicEditor}
+                                            data={editorData}
+                                            disabled={true}
+                                            config={{
+                                                licenseKey: 'GPL',
+                                                plugins: [Essentials, Paragraph, Heading, Bold, Italic, ListPlugin, Alignment, Font, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI, GeneralHtmlSupport, HtmlEmbed],
+                                                toolbar: [],
+                                                htmlSupport: {
+                                                    allow: [
+                                                        {
+                                                            name: /.*/,
+                                                            attributes: true,
+                                                            classes: true,
+                                                            styles: true
+                                                        }
+                                                    ]
+                                                },
+                                                htmlEmbed: {
+                                                    showPreviews: true
                                                 }
-                                            ]
-                                        },
-                                        htmlEmbed: {
-                                            showPreviews: true
-                                        }
-                                    }}
-                                />
+                                            }}
+                                        />
+                                        <div className="ck-content" dangerouslySetInnerHTML={{ __html: editorData }} />
+                                    </div>
+                                </MathJaxContext>
                             </Box>
                         )}
                     </CardContent>

@@ -42,3 +42,15 @@ input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px white inset !important;
   -webkit-text-fill-color: black !important;
 }
+
+.ck-content table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.ck-content table, .ck-content th, .ck-content td {
+  border: 1px solid #ccc;
+}
+.ck-content caption {
+  text-align: center;
+  font-style: italic;
+}

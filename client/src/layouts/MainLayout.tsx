@@ -18,6 +18,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <Link component={RouterLink} to="/" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
                             Home
                         </Link>
+
+                        <Link component={RouterLink} to="/dashboard" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
+                            Erhebungen
+                        </Link>
+
+                        <Link component={RouterLink} to="/questions" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
+                            Aufgaben
+                        </Link>
                     </Box>
 
                     <Box>
