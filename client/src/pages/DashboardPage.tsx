@@ -1,7 +1,8 @@
 import { useState } from "react";
 import MainLayout from "../layouts/MainLayout";
 import {Box, Button, Card, CardActions, CardContent, CardHeader,
-    Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, TextField, Typography } from "@mui/material";
+    Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton,
+    RadioGroup, TextField, Typography, Radio } from "@mui/material";
 import { Add, BarChart, People, CalendarToday, MoreVert } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +13,9 @@ interface Survey {
     responses: number;
     createdAt: string;
     status: "Aktiv" | "Entwurf" | "Geschlossen";
+    fromDate?: string;
+    toDate?: string;
+    mode?: "adaptiv" | "design";
 }
 
 const DashboardPage = () => {
@@ -43,10 +47,7 @@ const DashboardPage = () => {
         }
     ]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string }>({
-        title: "",
-        description: ""
-    });
+    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "adaptiv" | "design"; }>({title: "", description: "", fromDate: "", toDate: "", mode: "adaptiv",});
 
     const handleCreateSurvey = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -59,7 +60,7 @@ const DashboardPage = () => {
             status: "Entwurf"
         };
         setSurveys([survey, ...surveys]);
-        setNewSurvey({ title: "", description: "" });
+        setNewSurvey({ title: "", description: "", fromDate: "", toDate: "", mode: "adaptiv" });
         setIsDialogOpen(false);
     };
 
@@ -78,13 +79,13 @@ const DashboardPage = () => {
 
     return (
         <MainLayout>
-            <Box sx={{ minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
+            <Box sx={{minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Box>
                         <Typography variant="h4">Erhebungs Übersicht</Typography>
                         <Typography color="textSecondary">Erstelle und bearbeite Erhebungen</Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => setIsDialogOpen(true)}>
+                    <Button variant="contained" startIcon={<Add/>} onClick={() => setIsDialogOpen(true)}>
                         Neue Erhebung
                     </Button>
                 </Box>
@@ -92,9 +93,25 @@ const DashboardPage = () => {
                 <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
                     <DialogTitle>Erhebung erstellen</DialogTitle>
                     <form onSubmit={handleCreateSurvey}>
-                        <DialogContent>
-                            <TextField label="Titel" fullWidth required margin="normal" value={newSurvey.title} onChange={(e) => setNewSurvey({ ...newSurvey, title: e.target.value })}/>
-                            <TextField label="Beschreibung" fullWidth required multiline rows={4} margin="normal" value={newSurvey.description} onChange={(e) => setNewSurvey({ ...newSurvey, description: e.target.value })}/>
+                        <DialogContent sx={{pt: 0}}>
+                            <TextField label="Titel" fullWidth required margin="normal" value={newSurvey.title}
+                                       onChange={(e) => setNewSurvey({...newSurvey, title: e.target.value})}/>
+                            <TextField label="Beschreibung" fullWidth required multiline rows={4} margin="normal"
+                                       value={newSurvey.description}
+                                       onChange={(e) => setNewSurvey({...newSurvey, description: e.target.value})}/>
+                            <Box display="flex" gap={2} mt={2} mb={2}>
+                                <TextField label="Von" type="date" slotProps={{inputLabel: { shrink: true },}} fullWidth onChange={(e) => setNewSurvey({...newSurvey, fromDate: e.target.value})}/>
+                                <TextField label="Bis" type="date" slotProps={{inputLabel: { shrink: true },}} fullWidth onChange={(e) => setNewSurvey({...newSurvey, toDate: e.target.value})}/>
+                            </Box>
+
+                            {/* Mode radio buttons */}
+                            <Typography variant="subtitle1" gutterBottom>
+                                Modus
+                            </Typography>
+                            <RadioGroup row onChange={(e) => setNewSurvey({...newSurvey, mode: e.target.value as "adaptiv" | "design"})}>
+                                <FormControlLabel value="adaptiv" control={<Radio/>} label="Adaptiv"/>
+                                <FormControlLabel value="design" control={<Radio/>} label="Design Matrix"/>
+                            </RadioGroup>
                         </DialogContent>
                         <DialogActions>
                             <Button variant="outlined" onClick={() => setIsDialogOpen(false)}>
@@ -110,31 +127,28 @@ const DashboardPage = () => {
                 <Grid container spacing={3}>
                     {surveys.map((survey) => (
                         //@ts-ignore
-                        <Grid item key={survey.id} sx={{ width: 350, flexGrow: 0}}>
+                        <Grid item key={survey.id} sx={{width: 350, flexGrow: 0}}>
                             <Card>
-                                <CardHeader
-                                    title={survey.title}
-                                    subheader={
-                                    <Chip label={survey.status} color={getStatusColor(survey.status)} size="small" />}
-                                    action={<IconButton><MoreVert /></IconButton>}
-                                />
+                                <CardHeader title={survey.title} subheader={<Chip label={survey.status} color={getStatusColor(survey.status)} size="small"/>}
+                                    action={<IconButton><MoreVert/></IconButton>}/>
                                 <CardContent>
                                     <Typography variant="body2" color="textSecondary">
                                         {survey.description}
                                     </Typography>
                                     <Box display="flex" justifyContent="space-between" fontSize="0.875rem">
                                         <Box display="flex" alignItems="center" gap={0.5}>
-                                            <People fontSize="small" />
+                                            <People fontSize="small"/>
                                             {survey.responses} responses
                                         </Box>
                                         <Box display="flex" alignItems="center" gap={0.5}>
-                                            <CalendarToday fontSize="small" />
+                                            <CalendarToday fontSize="small"/>
                                             {new Date(survey.createdAt).toLocaleDateString()}
                                         </Box>
                                     </Box>
                                 </CardContent>
                                 <CardActions>
-                                    <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/questions`)}>
+                                    <Button size="small" variant="contained" fullWidth
+                                            onClick={() => navigate(`/survey`)}>
                                         Bearbeiten
                                     </Button>
                                     <Button size="small" variant="outlined" fullWidth>
@@ -148,11 +162,11 @@ const DashboardPage = () => {
 
                 {surveys.length === 0 && (
                     <Box textAlign="center" py={12}>
-                        <BarChart fontSize="large" color="disabled" />
+                        <BarChart fontSize="large" color="disabled"/>
                         <Typography variant="h6" mt={2}>
                             Noch keine Erhebungen
                         </Typography>
-                        <Button variant="contained" startIcon={<Add />} onClick={() => setIsDialogOpen(true)}>
+                        <Button variant="contained" startIcon={<Add/>} onClick={() => setIsDialogOpen(true)}>
                             Erhebung erstellen
                         </Button>
                     </Box>

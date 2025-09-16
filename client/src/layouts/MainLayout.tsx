@@ -23,7 +23,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             Erhebungen
                         </Link>
 
-                        <Link component={RouterLink} to="/questions" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
+                        <Link component={RouterLink} to="/table" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
                             Aufgaben
                         </Link>
                     </Box>

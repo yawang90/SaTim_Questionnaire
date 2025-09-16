@@ -6,6 +6,8 @@ import AnswerEditorPage from "../pages/questions/AnswerEditorPage.tsx";
 import EditorPage from "../pages/questions/QuestionEditorPage.tsx";
 import QuestionsPage from "../pages/questions/QuestionsPage.tsx";
 import QuestionPreviewPage from "../pages/questions/QuestionPreviewPage.tsx";
+import QuestionsTablePage from "../pages/QuestionsTablePage.tsx";
+import SurveyPage from "../pages/SurveyPage.tsx";
 
 function AppRoutes() {
     return (
@@ -17,6 +19,8 @@ function AppRoutes() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/questions" element={<QuestionsPage />} />
                 <Route path="/preview" element={<QuestionPreviewPage />} />
+                <Route path="/table" element={<QuestionsTablePage />} />
+                <Route path="/survey" element={<SurveyPage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>

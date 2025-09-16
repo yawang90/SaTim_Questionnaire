@@ -31,8 +31,8 @@ export default function QuestionsPage() {
             <Box sx={{ minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Box>
-                        <Typography variant="h4">Aufgaben Übersicht</Typography>
-                        <Typography color="textSecondary">Alle Aufgaben zu der Erhebung</Typography>
+                        <Typography variant="h4">Aufgaben in Bearbeitung</Typography>
+                        <Typography color="textSecondary">Alle aktuell in Bearbeitung befindlichen Aufgaben</Typography>
                     </Box>
                     <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/editor')}>
                         Neue Aufgabe erstellen
