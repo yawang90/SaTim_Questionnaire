@@ -9,6 +9,7 @@ import QuestionPreviewPage from "../pages/questions/QuestionPreviewPage.tsx";
 import QuestionsTablePage from "../pages/QuestionsTablePage.tsx";
 import SurveyPage from "../pages/SurveyPage.tsx";
 import ProfilePage from "../pages/ProfilePage.tsx";
+import MetaDataPage from "../pages/questions/MetaDataPage.tsx";
 
 function AppRoutes() {
     return (
@@ -19,6 +20,7 @@ function AppRoutes() {
                 <Route path="/answers" element={<AnswerEditorPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/questions" element={<QuestionsPage />} />
+                <Route path="/meta" element={<MetaDataPage />} />
                 <Route path="/preview" element={<QuestionPreviewPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/survey" element={<SurveyPage />} />

@@ -72,7 +72,7 @@ export default function QuestionsTablePage() {
                             Alle Aufgaben mit Filter- und Suchoptionen
                         </Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/editor')}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/meta')}>
                         Neue Aufgabe erstellen
                     </Button>
                 </Box>

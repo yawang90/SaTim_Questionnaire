@@ -5,6 +5,8 @@
   "pageReload": "Seite neu laden.",
   "login": "Login",
   "register": "Registrieren",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
   "landing": {
     "title": "Willkommen beim Aufgabeneditor!",
     "subtitle": "Bitte wählen Sie eine Option",
@@ -41,6 +43,7 @@
     "dragDrop": "Drag and Drop",
     "geometry": "Geometrisch",
     "addAnswer": "Antwort Option",
-    "answerTooltip": "Antwort Möglichkeiten einfügen"
+    "answerTooltip": "Antwort Möglichkeiten einfügen",
+    "create": "Aufgabe erstellen"
   }
 }

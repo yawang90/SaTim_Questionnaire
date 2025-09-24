@@ -34,7 +34,7 @@ export default function QuestionsPage() {
                         <Typography variant="h4">Aufgaben in Bearbeitung</Typography>
                         <Typography color="textSecondary">Alle aktuell in Bearbeitung befindlichen Aufgaben</Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/editor')}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/meta')}>
                         Neue Aufgabe erstellen
                     </Button>
                 </Box>
