@@ -22,7 +22,8 @@ export const saveNewUser = async ({first_name, last_name, email, password}: NewU
             roles: ["GENERAL"]
         },
         select: {
-            id: true
+            id: true,
+            email: true
         }
     });
 };
@@ -37,7 +38,15 @@ export const findUser = async (userId: string | number) => {
     const id = typeof userId === "string" ? Number(userId) : userId;
 
     return prisma.users.findUnique({
-        where: {id}
+        where: { id },
+        select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            roles: true,
+        },
     });
+
 };
 

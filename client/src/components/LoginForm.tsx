@@ -1,28 +1,39 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {Box, TextField, Button, Card, CardContent, CardHeader, Typography,} from "@mui/material";
 import { useSnackbar } from "notistack";
-import {useTranslation} from "react-i18next";
+import { useTranslation } from "react-i18next";
+import {getUserById, loginUser} from "../services/UserService.tsx";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 interface LoginFormProps {
     onSuccess?: () => void;
 }
 
 export const LoginForm = ({ onSuccess }: LoginFormProps) => {
-    const {t} = useTranslation();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
+    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        setTimeout(() => {
-            setIsLoading(false);
-            enqueueSnackbar("You have successfully logged in.", { variant: "success" });
+        try {
+            const auth = await loginUser(email, password);
+            const user = await getUserById(auth.userId);
+            login(user, auth.token);
+            enqueueSnackbar(t("loginForm.successMessage"), { variant: "success" });
             onSuccess?.();
-        }, 1000);
+        } catch (err: any) {
+            enqueueSnackbar(err.message || t("loginForm.errorMessage"), {
+                variant: "error",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -31,8 +42,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
                 title={
                     <Typography variant="h5" align="center" fontWeight="bold">
                         {t("loginForm.title")}
-                    </Typography>
-                }
+                    </Typography>}
                 subheader={
                     <Typography variant="body2" align="center" color="text.secondary">
                         {t("loginForm.subtitle")}

@@ -27,16 +27,26 @@ export const registerUser = async (req: Request<{}, {}, RegisterRequestBody>, re
     }
 
     try {
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET not set');
+        }
         const result = await saveNewUser(req.body);
+        const token = jwt.sign(
+            { userId: result.id.toString(), email: result.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
         res.status(201).json({
             message: 'User registered successfully',
-            userId: result.id.toString()
+            userId: result.id.toString(),
+            token,
         });
     } catch (err) {
         console.error('Error registering user:', err);
         res.status(500).json({ message: 'Database error' });
     }
 };
+
 
 export const loginUser = async (req: Request<{}, {}, LoginRequestBody>, res: Response) => {
     const { email, password } = req.body;

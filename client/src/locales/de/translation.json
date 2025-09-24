@@ -16,7 +16,8 @@
   "registerForm": {
     "title": "Registrierung",
     "subtitle": "Jetzt registrieren und direkt loslegen",
-    "name": "Nachname",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
     "email": "Email",
     "password": "Passwort",
     "passwordConfirm": "Passwort bestätigen",

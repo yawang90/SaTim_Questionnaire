@@ -1,56 +1,59 @@
-import {createContext, type ReactNode, useContext, useEffect, useState} from 'react';
+import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
+import {getUserById} from "../services/UserService.tsx";
 
 interface AuthContextType {
-    isLoggedIn: boolean;
     userId: string | null;
-    login: () => void;
+    token: string | null;
+    login: (userId: string, token: string) => void;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-    children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [userId, setUserId] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
 
-    const login = () => {
-        const token = localStorage.getItem('token');
-        const storedUserId = localStorage.getItem('userId');
-        if (token && storedUserId) {
-            setIsLoggedIn(true);
-            setUserId(storedUserId);
-        } else {
-            setIsLoggedIn(false);
-            setUserId(null);
-        }
+    useEffect(() => {
+        const loadUser = async () => {
+            const storedToken = localStorage.getItem("token");
+            const storedUserId = localStorage.getItem("userId");
+            if (storedToken && storedUserId) {
+                try {
+                    const fetchedUser = await getUserById(storedUserId);
+                    setUserId(fetchedUser.id);
+                    setToken(storedToken);
+                } catch {
+                    logout();
+                }
+            }
+        };
+        loadUser();
+    }, []);
+
+    const login = (userId: string, token: string) => {
+        setUserId(userId);
+        setToken(token);
+        localStorage.setItem("token", token);
+        localStorage.setItem("userId", userId);
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        setIsLoggedIn(false);
         setUserId(null);
+        setToken(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
     };
 
-    useEffect(() => {
-        login();
-    }, []);
-
     return (
-        <AuthContext.Provider value={{ isLoggedIn, userId, login, logout }}>
+        <AuthContext.Provider value={{ userId, token, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = (): AuthContextType => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+export const useAuth = () => {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+    return ctx;
 };
