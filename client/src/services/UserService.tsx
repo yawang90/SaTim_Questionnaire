@@ -20,6 +20,13 @@ export interface User {
     token: string;
 }
 
+export interface FullUser {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+}
+
 export const registerUser = async (formData: RegisterFormData): Promise<User> => {
     const res = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
@@ -52,7 +59,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
     return data;
 };
 
-export const getUserById = async (userId: string): Promise<User> => {
+export const getUserById = async (userId: string): Promise<FullUser> => {
     const token = localStorage.getItem("token");
     const res = await fetch(`${API_URL}/api/users/get?userId=${userId}`, {
         headers: { Authorization: `Bearer ${token}` },

@@ -8,6 +8,7 @@ import QuestionsPage from "../pages/questions/QuestionsPage.tsx";
 import QuestionPreviewPage from "../pages/questions/QuestionPreviewPage.tsx";
 import QuestionsTablePage from "../pages/QuestionsTablePage.tsx";
 import SurveyPage from "../pages/SurveyPage.tsx";
+import ProfilePage from "../pages/ProfilePage.tsx";
 
 function AppRoutes() {
     return (
@@ -21,6 +22,7 @@ function AppRoutes() {
                 <Route path="/preview" element={<QuestionPreviewPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/survey" element={<SurveyPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>

@@ -1,15 +1,23 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Box, Typography, Button, Dialog, DialogContent} from "@mui/material";
 import {LoginForm} from "../components/LoginForm.tsx";
 import {RegisterForm} from "../components/RegisterForm.tsx";
 import {useNavigate} from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 const LandingPage = () => {
     const {t} = useTranslation();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     const navigate = useNavigate();
+    const { token } = useAuth();
+
+    useEffect(() => {
+        if (token) {
+            navigate("/dashboard");
+        }
+    }, [token, navigate]);
 
     const handleLoginSuccess = () =>
     {

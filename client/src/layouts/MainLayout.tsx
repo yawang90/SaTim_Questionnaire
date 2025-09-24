@@ -29,8 +29,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     </Box>
 
                     <Box>
-                        <Link component={RouterLink} to="/login" color="inherit" underline="none" variant="button">
-                            Login
+                        <Link component={RouterLink} to="/profile" color="inherit" underline="none" variant="button">
+                            Profil
                         </Link>
                     </Box>
                 </Toolbar>
