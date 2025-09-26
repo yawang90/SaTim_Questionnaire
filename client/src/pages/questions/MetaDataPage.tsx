@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, {useEffect, useState } from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {Box, Button, CardContent, Paper, TextField, Typography, FormGroup, FormControlLabel, Checkbox,} from "@mui/material";
 import { Save as SaveIcon } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {initialFormSchema} from "./FormSchema.tsx";
+import {loadQuestionForm, createQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
 
@@ -19,8 +20,14 @@ export interface MetaField {
 
 export default function MetaDataPage() {
     const navigate = useNavigate();
-
+    const { id } = useParams();
     const [formSchema, setFormSchema] = useState<MetaField[]>(initialFormSchema);
+    const [loading, setLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success" as "success" | "error",
+    });
 
     const handleTextChange = (key: string, value: string) => {
         setFormSchema((prev) =>
@@ -36,9 +43,45 @@ export default function MetaDataPage() {
         );
     };
 
-    const saveMetadata = () => {
-        console.log("Form Schema with Values:", formSchema);
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            if (id) {
+                await updateQuestionForm(id, formSchema);
+                setSnackbar({
+                    open: true,
+                    message: "Aufgabe erfolgreich aktualisiert!",
+                    severity: "success",
+                });
+            } else {
+                await createQuestionForm(formSchema);
+                setSnackbar({
+                    open: true,
+                    message: "Aufgabe erfolgreich gespeichert!",
+                    severity: "success",
+                });
+            }
+            navigate("/questions");
+        } catch (err: any) {
+            setSnackbar({
+                open: true,
+                message: err?.message || "Fehler beim Speichern der Aufgabe.",
+                severity: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => {
+        if (id) {
+            setLoading(true);
+            loadQuestionForm(id)
+                .then((data) => setFormSchema(data))
+                .catch((err) => console.error("Error loading question form data", err))
+                .finally(() => setLoading(false));
+        }
+    }, [id]);
 
     return (
         <MainLayout>
@@ -87,7 +130,7 @@ export default function MetaDataPage() {
                             <Button variant="outlined" fullWidth onClick={() => navigate("/questions")}>
                                 Abbrechen
                             </Button>
-                            <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={saveMetadata}>
+                            <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
                                 Speichern
                             </Button>
                         </Box>
