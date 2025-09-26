@@ -1,12 +1,38 @@
 import type { MetaField } from "./MetaDataPage";
 
-export const formSchema: MetaField[] = [
-    { key: "author", label: "Autor:in", type: "text", placeholder: "Name hier eingeben" },
-    { key: "series", label: "Aufgaben-Serie", type: "text" },
-    { key: "taskId", label: "Aufgaben-ID", type: "text" },
-    { key: "version", label: "Versionsnummer", type: "text" },
+export const initialFormSchema: MetaField[] = [
+    {
+        key: "author",
+        label: "Autor:in",
+        type: "text",
+        placeholder: "Name hier eingeben",
+        value: "",
+    },
+    {
+        key: "series",
+        label: "Aufgaben-Serie",
+        type: "text",
+        value: "",
+    },
+    {
+        key: "taskId",
+        label: "Aufgaben-ID",
+        type: "text",
+        value: "",
+    },
+    {
+        key: "version",
+        label: "Versionsnummer",
+        type: "text",
+        value: "",
+    },
 
-    { key: "competencies", label: "Liste der getesteten Kompetenzen (Semikolon getrennt)", type: "textarea" },
+    {
+        key: "competencies",
+        label: "Liste der getesteten Kompetenzen (Semikolon getrennt)",
+        type: "textarea",
+        value: "",
+    },
 
     {
         key: "mathProcesses",
@@ -22,9 +48,15 @@ export const formSchema: MetaField[] = [
             "Instrumente und Werkzeuge verwenden",
             "Interpretieren und Reflektieren von Resultaten",
         ],
+        optionsValue: {},
     },
 
-    { key: "competenceLevel", label: "Kompetenzstufe aus Lehrplan 21", type: "text" },
+    {
+        key: "competenceLevel",
+        label: "Kompetenzstufe aus Lehrplan 21",
+        type: "text",
+        value: "",
+    },
 
     {
         key: "competenceLevelOptions",
@@ -36,6 +68,7 @@ export const formSchema: MetaField[] = [
             "Kompetenzniveau III (Jahrgangsstufe 8)",
             "Kompetenzniveau IV (Jahrgangsstufe 8)",
         ],
+        optionsValue: {},
     },
 
     {
@@ -52,9 +85,15 @@ export const formSchema: MetaField[] = [
             "Darstellungswechsel",
             "Lineares Wachstum / Modellierung",
         ],
+        optionsValue: {},
     },
 
-    { key: "addressedConcepts", label: "Liste adressierter Grundvorstellungen (Semikolon getrennt)", type: "textarea" },
+    {
+        key: "addressedConcepts",
+        label: "Liste adressierter Grundvorstellungen (Semikolon getrennt)",
+        type: "textarea",
+        value: "",
+    },
 
     {
         key: "taskRepresentations",
@@ -68,6 +107,7 @@ export const formSchema: MetaField[] = [
             "Funktionsterm / Funktionsgleichung",
             "Arithmetisches Register",
         ],
+        optionsValue: {},
     },
 
     {
@@ -82,18 +122,45 @@ export const formSchema: MetaField[] = [
             "Funktionsterm / Funktionsgleichung",
             "Arithmetisches Register",
         ],
+        optionsValue: {},
     },
 
-    { key: "answerFormat", label: "Antwortformat", type: "text" },
-    { key: "expectedTime", label: "Erwartete mittlere Bearbeitungszeit (Minuten)", type: "text" },
-    { key: "additionalNotes", label: "Zusätzliche Hinweise oder Kommentare", type: "textarea" },
-    { key: "sourceTask", label: "Quelle(n) Aufgabenidee", type: "textarea" },
-    { key: "sourceImage", label: "Quelle Bild(er)", type: "textarea" },
+    {
+        key: "answerFormat",
+        label: "Antwortformat",
+        type: "text",
+        value: "",
+    },
+    {
+        key: "expectedTime",
+        label: "Erwartete mittlere Bearbeitungszeit (Minuten)",
+        type: "text",
+        value: "",
+    },
+    {
+        key: "additionalNotes",
+        label: "Zusätzliche Hinweise oder Kommentare",
+        type: "textarea",
+        value: "",
+    },
+    {
+        key: "sourceTask",
+        label: "Quelle(n) Aufgabenidee (Autor, Jahr, Titel, Zeitschriftentitel, URL)",
+        type: "textarea",
+        value: "",
+    },
+    {
+        key: "sourceImage",
+        label: "Quelle Bild(er) (Angabe oder Link zum Originalbild)",
+        type: "textarea",
+        value: "",
+    },
 
     {
         key: "gradeLevels",
         label: "Jahrgangsstufe",
         type: "checkbox",
         options: ["7", "8", "9", "10", "11", "12"],
+        optionsValue: {},
     },
 ];

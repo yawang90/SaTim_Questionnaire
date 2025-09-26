@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {Box, Button, CardContent, Paper, TextField, Typography, FormGroup, FormControlLabel, Checkbox,} from "@mui/material";
 import { Save as SaveIcon } from "@mui/icons-material";
-import {formSchema} from "./FormSchema.tsx";
+import { useNavigate } from "react-router-dom";
+import {initialFormSchema} from "./FormSchema.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
 
@@ -10,27 +11,33 @@ export interface MetaField {
     key: string;
     label: string;
     type: FieldType;
-    options?: string[]; // for checkbox
+    value?: string;
+    options?: string[];
+    optionsValue?: Record<string, boolean>;
     placeholder?: string;
 }
 
 export default function MetaDataPage() {
-    const [formData, setFormData] = useState<Record<string, any>>({});
+    const navigate = useNavigate();
 
-    const handleChange = (key: string, value: any) => {
-        setFormData((prev) => ({ ...prev, [key]: value }));
+    const [formSchema, setFormSchema] = useState<MetaField[]>(initialFormSchema);
+
+    const handleTextChange = (key: string, value: string) => {
+        setFormSchema((prev) =>
+            prev.map((field) => field.key === key ? { ...field, value } : field)
+        );
     };
 
     const handleCheckboxChange = (key: string, option: string, checked: boolean) => {
-        setFormData((prev) => ({
-            ...prev,
-            [key]: { ...(prev[key] || {}), [option]: checked },
-        }));
+        setFormSchema((prev) =>
+            prev.map((field) =>
+                field.key === key
+                    ? {...field, optionsValue: { ...(field.optionsValue || {}), [option]: checked },} : field)
+        );
     };
 
     const saveMetadata = () => {
-        console.log("Form Data:", formData);
-        alert("Metadaten gespeichert! Schau in der Konsole nach.");
+        console.log("Form Schema with Values:", formSchema);
     };
 
     return (
@@ -47,35 +54,27 @@ export default function MetaDataPage() {
                             if (field.type === "text" || field.type === "textarea") {
                                 return (
                                     <Box key={field.key}>
-                                        <Typography variant="h6" sx={{ mb: 1 }}>{field.label}</Typography>
-                                        <TextField key={field.key} label={field.label} fullWidth multiline={field.type === "textarea"} value={formData[field.key] || ""} onChange={(e) => handleChange(field.key, e.target.value)} placeholder={field.placeholder}/>
-                                    </Box>
-                                );
-                            }
+                                        <Typography variant="h6" sx={{ mb: 1 }}>
+                                            {field.label}
+                                        </Typography>
+                                        <TextField fullWidth multiline={field.type === "textarea"} value={field.value || ""} onChange={(e) => handleTextChange(field.key, e.target.value)} placeholder={field.placeholder}/>
+                                    </Box>);}
 
                             if (field.type === "checkbox") {
                                 return (
                                     <Box key={field.key}>
-                                        <Typography variant="h6" sx={{ mb: 1 }}>{field.label}</Typography>
+                                        <Typography variant="h6" sx={{ mb: 1 }}>
+                                            {field.label}
+                                        </Typography>
                                         <FormGroup row>
                                             {field.options?.map((option) => (
                                                 <FormControlLabel
                                                     key={option}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={formData[field.key]?.[option] || false}
+                                                    control={<Checkbox
+                                                            checked={field.optionsValue?.[option] || false}
                                                             onChange={(e) =>
-                                                                handleCheckboxChange(
-                                                                    field.key,
-                                                                    option,
-                                                                    e.target.checked
-                                                                )
-                                                            }
-                                                        />
-                                                    }
-                                                    label={option}
-                                                />
-                                            ))}
+                                                                handleCheckboxChange(field.key, option, e.target.checked)}/>}
+                                                    label={option}/>))}
                                         </FormGroup>
                                     </Box>
                                 );
@@ -85,8 +84,12 @@ export default function MetaDataPage() {
                         })}
 
                         <Box sx={{ display: "flex", gap: 2 }}>
-                            <Button variant="outlined" fullWidth onClick={() => alert("Zurück zur Übersicht")}>Abbrechen</Button>
-                            <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={saveMetadata}>Speichern</Button>
+                            <Button variant="outlined" fullWidth onClick={() => navigate("/questions")}>
+                                Abbrechen
+                            </Button>
+                            <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={saveMetadata}>
+                                Speichern
+                            </Button>
                         </Box>
                     </CardContent>
                 </Paper>
