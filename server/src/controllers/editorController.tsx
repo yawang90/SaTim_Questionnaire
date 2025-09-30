@@ -1,5 +1,11 @@
 import type {Request, Response} from 'express';
-import {findMetadataById, saveImage, saveMetadata, updateMetadataById} from "../services/editorService.js";
+import {
+    findMetadataById,
+    getQuestionsByGroupId,
+    saveImage,
+    saveMetadata,
+    updateMetadataById
+} from "../services/editorService.js";
 
 interface FieldInput {
     key: string;
@@ -65,5 +71,20 @@ export const updateQuestionForm = async  (req: Request, res: Response)  => {
     } catch (err) {
         console.error("Error updating metadata:", err);
         res.status(500).json({ error: "Failed to update metadata" });
+    }
+};
+
+export const loadAllQuestions = async (req: Request, res: Response) => {
+    try {
+        const groupId = Number(req.params.groupId);
+        if (!groupId) {
+            return res.status(400).json({ error: "Missing groupId parameter" });
+        }
+
+        const questions = await getQuestionsByGroupId(groupId);
+        res.json(questions);
+    } catch (err) {
+        console.error("Error loading questions:", err);
+        res.status(500).json({ error: "Failed to load questions" });
     }
 };

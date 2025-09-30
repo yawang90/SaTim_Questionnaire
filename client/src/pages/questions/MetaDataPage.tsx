@@ -4,9 +4,10 @@ import {Box, Button, CardContent, Paper, TextField, Typography, FormGroup, FormC
 import { Save as SaveIcon } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import {initialFormSchema} from "./FormSchema.tsx";
-import {loadQuestionForm, createQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
+import {loadQuestionForm, createQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
+export const groupId = "999";
 
 export interface MetaField {
     key: string;
@@ -20,7 +21,7 @@ export interface MetaField {
 
 export default function MetaDataPage() {
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id } = useParams<{ id?: string }>();
     const [formSchema, setFormSchema] = useState<MetaField[]>(initialFormSchema);
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({
@@ -47,21 +48,22 @@ export default function MetaDataPage() {
         setLoading(true);
         try {
             if (id) {
-                await updateQuestionForm(id, formSchema);
+                const questionResponse = await updateQuestionForm(id, formSchema);
                 setSnackbar({
                     open: true,
                     message: "Aufgabe erfolgreich aktualisiert!",
                     severity: "success",
                 });
+                navigate(`/editor/${questionResponse.id}`);
             } else {
-                await createQuestionForm(formSchema);
+                const questionResponse = await createQuestionForm(formSchema, groupId);
                 setSnackbar({
                     open: true,
                     message: "Aufgabe erfolgreich gespeichert!",
                     severity: "success",
                 });
+                navigate(`/editor/${questionResponse.id}`);
             }
-            navigate("/questions");
         } catch (err: any) {
             setSnackbar({
                 open: true,

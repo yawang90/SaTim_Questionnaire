@@ -51,7 +51,7 @@ import 'ckeditor5/ckeditor5.css';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
 import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
 import {useTranslation} from "react-i18next";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import ChoiceComponent from "../../components/AnswerTypes/ChoiceComponent.tsx";
 import "mathlive";
 import NumericComponent from "../../components/AnswerTypes/NumericComponent.tsx";
@@ -73,6 +73,7 @@ const AnswerOptions = ['Single Choice', 'Multiple Choice', 'Freitext', 'Numerisc
 export default function EditorPage() {
     const {t} = useTranslation();
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
     const [editorData, setEditorData] = useState<string>('<p>Editiere hier deine Aufgabe...</p>');
     const [showPreview, setShowPreview] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);

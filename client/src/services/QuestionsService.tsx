@@ -15,11 +15,10 @@ async function handleResponse(response: Response) {
 /**
  * Save new metadata entry
  * @param formData - The metadata key/value object
+ * @param groupId
  */
-export async function createQuestionForm(formData: Record<string, any>) {
+export async function createQuestionForm(formData: Record<string, any>, groupId: string) {
     const token = localStorage.getItem("token");
-    console.log(token)
-    const groupId = 999;
     const payload = {
         formData: formData,
         group_id: groupId
@@ -70,3 +69,21 @@ export async function updateQuestionForm(id: string, formData: Record<string, an
     return handleResponse(response);
 }
 
+
+/**
+ * Load all questions for a specific group
+ * @param groupId - The ID of the group
+ */
+export async function loadAllQuestions(groupId: string) {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_URL}/api/editor/questions/${groupId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+
+    return handleResponse(response);
+}

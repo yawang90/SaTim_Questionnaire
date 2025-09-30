@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import {Box, Button, TextField, Typography, MenuItem, Select, InputLabel, FormControl,} from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import {Add} from "@mui/icons-material";
 import {useNavigate} from "react-router-dom";
+import {loadAllQuestions} from "../services/QuestionsService.tsx";
+import {groupId} from "./questions/MetaDataPage.tsx";
 
 interface Aufgabe {
     id: string;
@@ -16,33 +18,12 @@ interface Aufgabe {
     kompetenzstufe: string;
 }
 
-const mockData: Aufgabe[] = [
-    {
-        id: "1",
-        aufgabenId: "A101",
-        ersteller: "Fabian Nachname",
-        erstellungszeit: "2025-09-15 10:30",
-        kompetenzen: "Mathematik, Algebra",
-        serie: "Serie 1",
-        kompetenzniveau: "B1",
-        kompetenzstufe: "2",
-    },
-    {
-        id: "2",
-        aufgabenId: "A102",
-        ersteller: "Peter Nachname",
-        erstellungszeit: "2025-09-14 15:20",
-        kompetenzen: "Sprache, Lesen",
-        serie: "Serie 2",
-        kompetenzniveau: "A2",
-        kompetenzstufe: "1",
-    },
-];
-
 export default function QuestionsTablePage() {
     const navigate = useNavigate();
     const [filterSerie, setFilterSerie] = useState<string>("");
     const [searchText, setSearchText] = useState<string>("");
+    const [rows, setRows] = useState<Aufgabe[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const columns: GridColDef[] = [
         { field: "id", headerName: "ID", width: 80 },
@@ -55,7 +36,25 @@ export default function QuestionsTablePage() {
         { field: "kompetenzstufe", headerName: "Kompetenzstufe (Lehrplan 21)", width: 180 },
     ];
 
-    const filteredRows = mockData.filter((row) => {
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const response = await loadAllQuestions(groupId);
+                if (!response.ok) throw new Error("Aufgaben konnten nicht geladen werden.");
+                const data: Aufgabe[] = await response.json();
+                setRows(data);
+            } catch (error) {
+                console.error("Aufgaben konnten nicht geladen werden: ", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const filteredRows = rows.filter((row) => {
         return (
             (!filterSerie || row.serie === filterSerie) &&
             row.ersteller.toLowerCase().includes(searchText.toLowerCase())

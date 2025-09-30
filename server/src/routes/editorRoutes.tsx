@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    createQuestionsForm,
+    createQuestionsForm, loadAllQuestions,
     getQuestionFormById,
     updateQuestionForm,
     uploadImage
@@ -17,5 +17,6 @@ router.post("/imageUpload", upload.single("upload"), uploadImage);
 router.put("/question", updateQuestionForm);
 router.post("/question", createQuestionsForm);
 router.get("/question", getQuestionFormById);
+router.get("/questions", loadAllQuestions);
 
 export default router;

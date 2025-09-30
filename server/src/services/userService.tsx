@@ -19,15 +19,22 @@ export const saveNewUser = async ({first_name, last_name, email, password}: NewU
             last_name,
             email,
             password: hashedPassword,
-            roles: ["GENERAL"]
+            roles: ["GENERAL"],
+            group_access: {
+                create: [
+                    {
+                        group_id: 999,
+                    },
+                ],
+            },
         },
         select: {
             id: true,
-            email: true
-        }
+            email: true,
+            group_access: true,
+        },
     });
 };
-
 export const loginUserService = async (email: string) => {
     return prisma.users.findUnique({
         where: {email}
