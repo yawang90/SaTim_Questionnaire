@@ -1,6 +1,17 @@
 import type {Request, Response} from 'express';
 import {findMetadataById, saveImage, saveMetadata, updateMetadataById} from "../services/editorService.js";
 
+interface FieldInput {
+    key: string;
+    value?: any;
+    optionsValue?: Record<string, boolean>;
+}
+
+interface QuestionFormInput {
+    formData: FieldInput[];
+    group_id: number;
+}
+
 export const uploadImage = (req: Request, res: Response) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -14,11 +25,19 @@ export const uploadImage = (req: Request, res: Response) => {
     }
 };
 
-
-export const createQuestionsForm = async  (req: Request, res: Response)  => {
+export const createQuestionsForm = async (req: Request, res: Response) => {
     try {
-        const data = await saveMetadata(req.body);
-        res.json(data);
+        const { formData, group_id } = req.body as QuestionFormInput;
+
+        if (!formData || !Array.isArray(formData)) {
+            return res.status(400).json({ error: "Invalid form data" });
+        }
+        const userId = Number((req as any).user?.id);
+        if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+        const newQuestion = await saveMetadata({metadata: formData, createdById: userId, updatedById: userId, group_id,});
+
+        res.status(201).json(newQuestion);
     } catch (err) {
         console.error("Error creating metadata:", err);
         res.status(500).json({ error: "Failed to save metadata" });

@@ -3,6 +3,13 @@ import fs from "fs";
 import prisma from "../config/prismaClient.js";
 import type {question} from "@prisma/client";
 
+interface SaveMetadataInput {
+    metadata: Record<string, any>;
+    createdById: number;
+    updatedById: number;
+    group_id: number;
+}
+
 const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
 
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -25,12 +32,7 @@ export const saveImage = (file: Express.Multer.File): string => {
 /**
  * Create a new metadata entry
  */
-export const saveMetadata = async (data: {
-    metadata: any;
-    createdById: number;
-    updatedById: number;
-    group_id: number;
-}): Promise<question> => {
+export const saveMetadata = async (data: SaveMetadataInput): Promise<question> => {
     return prisma.question.create({ data });
 };
 /**

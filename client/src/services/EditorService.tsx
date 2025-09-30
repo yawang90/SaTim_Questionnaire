@@ -17,12 +17,21 @@ async function handleResponse(response: Response) {
  * @param formData - The metadata key/value object
  */
 export async function createQuestionForm(formData: Record<string, any>) {
+    const token = localStorage.getItem("token");
+    console.log(token)
+    const groupId = 999;
+    const payload = {
+        formData: formData,
+        group_id: groupId
+    };
+
     const response = await fetch(`${API_URL}/api/editor/question`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
     });
     return handleResponse(response);
 }
@@ -32,10 +41,12 @@ export async function createQuestionForm(formData: Record<string, any>) {
  * @param id - The ID of the metadata
  */
 export async function loadQuestionForm(id: string) {
+    const token = localStorage.getItem("token");
     const response = await fetch(`${API_URL}/api/editor/question/${id}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
     });
     return handleResponse(response);
@@ -47,10 +58,12 @@ export async function loadQuestionForm(id: string) {
  * @param formData - Updated content
  */
 export async function updateQuestionForm(id: string, formData: Record<string, any>) {
+    const token = localStorage.getItem("token");
     const response = await fetch(`${API_URL}/api/editor/question/${id}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(formData),
     });
