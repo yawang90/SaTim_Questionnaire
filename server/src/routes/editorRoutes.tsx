@@ -14,9 +14,9 @@ const upload = multer({ dest: "temp/" });
 router.use(authenticateToken);
 
 router.post("/imageUpload", upload.single("upload"), uploadImage);
-router.put("/question", updateQuestionForm);
+router.put("/question/:id", updateQuestionForm);
 router.post("/question", createQuestionsForm);
-router.get("/question", getQuestionFormById);
+router.get("/question/:id", getQuestionFormById);
 router.get("/questions", loadAllQuestions);
 
 export default router;

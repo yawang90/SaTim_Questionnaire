@@ -66,7 +66,7 @@ export const getQuestionFormById = async  (req: Request, res: Response) => {
 export const updateQuestionForm = async  (req: Request, res: Response)  => {
     try {
         const id = Number(req.params.id);
-        const updated = await updateMetadataById(id, req.body);
+        const updated = await updateMetadataById(id, { metadata: req.body });
         res.json(updated);
     } catch (err) {
         console.error("Error updating metadata:", err);

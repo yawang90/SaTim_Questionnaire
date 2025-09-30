@@ -1,10 +1,20 @@
-import React, {useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {Box, Button, CardContent, Paper, TextField, Typography, FormGroup, FormControlLabel, Checkbox,} from "@mui/material";
-import { Save as SaveIcon } from "@mui/icons-material";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+    Box,
+    Button,
+    CardContent,
+    Checkbox,
+    FormControlLabel,
+    FormGroup,
+    Paper,
+    TextField,
+    Typography,
+} from "@mui/material";
+import {Save as SaveIcon} from "@mui/icons-material";
+import {useNavigate, useParams} from "react-router-dom";
 import {initialFormSchema} from "./FormSchema.tsx";
-import {loadQuestionForm, createQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
+import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
 const groupId = "999";
@@ -21,7 +31,6 @@ export interface MetaField {
 
 export default function MetaDataPage() {
     const navigate = useNavigate();
-    const { id } = useParams<{ id?: string }>();
     const [formSchema, setFormSchema] = useState<MetaField[]>(initialFormSchema);
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({
@@ -29,7 +38,7 @@ export default function MetaDataPage() {
         message: "",
         severity: "success" as "success" | "error",
     });
-
+    const { id } = useParams<{ id: string }>();
     const handleTextChange = (key: string, value: string) => {
         setFormSchema((prev) =>
             prev.map((field) => field.key === key ? { ...field, value } : field)
@@ -79,7 +88,9 @@ export default function MetaDataPage() {
         if (id) {
             setLoading(true);
             loadQuestionForm(id)
-                .then((data) => setFormSchema(data))
+                .then((data) => {
+                    setFormSchema(data.metadata ?? []);
+                })
                 .catch((err) => console.error("Error loading question form data", err))
                 .finally(() => setLoading(false));
         }
