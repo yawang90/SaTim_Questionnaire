@@ -1,46 +1,50 @@
-import React, {useEffect, useState} from "react";
-import {Box, Button, TextField, Typography, MenuItem, Select, InputLabel, FormControl,} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import {Add} from "@mui/icons-material";
-import {useNavigate} from "react-router-dom";
-import {loadAllQuestions} from "../services/QuestionsService.tsx";
+import { Add } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { loadAllQuestions } from "../services/QuestionsService.tsx";
 
 const groupId = "999";
-interface Aufgabe {
-    id: string;
-    aufgabenId: string;
-    ersteller: string;
-    erstellungszeit: string;
-    kompetenzen: string;
-    serie: string;
-    kompetenzniveau: string;
-    kompetenzstufe: string;
-}
+
+type QuestionRow = {
+    id: number;
+    metadata: {
+        key: string;
+        label: string;
+        value: string;
+    }[];
+};
 
 export default function QuestionsTablePage() {
     const navigate = useNavigate();
     const [filterSerie, setFilterSerie] = useState<string>("");
     const [searchText, setSearchText] = useState<string>("");
-    const [rows, setRows] = useState<Aufgabe[]>([]);
+    const [rows, setRows] = useState<QuestionRow[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
-    const columns: GridColDef[] = [
-        { field: "id", headerName: "ID", width: 80 },
-        { field: "aufgabenId", headerName: "Aufgaben ID", width: 120 },
-        { field: "ersteller", headerName: "Ersteller", width: 150 },
-        { field: "erstellungszeit", headerName: "Erstellungszeit", width: 180 },
-        { field: "kompetenzen", headerName: "Kompetenzen", width: 200 },
-        { field: "serie", headerName: "Serie", width: 120 },
-        { field: "kompetenzniveau", headerName: "Kompetenzniveau", width: 130 },
-        { field: "kompetenzstufe", headerName: "Kompetenzstufe (Lehrplan 21)", width: 180 },
-    ];
+    const transformedRows = rows.map((row) => {
+        const flatRow: Record<string, any> = { id: row.id};
+        row.metadata.forEach((meta) => {
+            flatRow[meta.key] = meta.value;
+        });
+        return flatRow;
+    });
+
+    const columns: GridColDef[] = [];
+    if (rows.length > 0) {
+        columns.push({ field: "id", headerName: "ID", width: 80 });
+        rows[0].metadata.forEach((meta) => {
+            columns.push({ field: meta.key, headerName: meta.label, width: 200 });
+        });
+    }
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const data: Aufgabe[] = await loadAllQuestions(groupId);
+                const data: QuestionRow[] = await loadAllQuestions(groupId);
                 setRows(data);
             } catch (error) {
                 console.error("Aufgaben konnten nicht geladen werden: ", error);
@@ -48,29 +52,23 @@ export default function QuestionsTablePage() {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
-    const filteredRows = rows.filter((row) => {
+    const filteredRows = transformedRows.filter((row) => {
         const name = row.ersteller ?? "";
-        return (
-            (!filterSerie || row.serie === filterSerie) &&
-            name.toLowerCase().includes(searchText.toLowerCase())
-        );
+        return (!filterSerie || row.serie === filterSerie) && name.toLowerCase().includes(searchText.toLowerCase());
     });
 
     return (
         <MainLayout>
-            <Box sx={{ minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
+            <Box sx={{ minHeight: "100vh", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Box>
                         <Typography variant="h4">Aufgabenübersicht</Typography>
-                        <Typography color="textSecondary">
-                            Alle Aufgaben mit Filter- und Suchoptionen
-                        </Typography>
+                        <Typography color="textSecondary">Alle Aufgaben mit Filter- und Suchoptionen</Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate('/meta')}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => navigate("/meta")}>
                         Neue Aufgabe erstellen
                     </Button>
                 </Box>
@@ -85,11 +83,7 @@ export default function QuestionsTablePage() {
                     />
                     <FormControl size="small" sx={{ minWidth: 150 }}>
                         <InputLabel>Serie</InputLabel>
-                        <Select
-                            value={filterSerie}
-                            label="Serie"
-                            onChange={(e) => setFilterSerie(e.target.value)}
-                        >
+                        <Select value={filterSerie} label="Serie" onChange={(e) => setFilterSerie(e.target.value)}>
                             <MenuItem value="">Alle</MenuItem>
                             <MenuItem value="Serie 1">Serie 1</MenuItem>
                             <MenuItem value="Serie 2">Serie 2</MenuItem>
@@ -102,16 +96,11 @@ export default function QuestionsTablePage() {
                         rows={filteredRows}
                         columns={columns}
                         pageSizeOptions={[5, 10, 20]}
-                        initialState={{
-                            pagination: { paginationModel: { pageSize: 5 } },
-                        }}
+                        initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+                        showToolbar
                         loading={loading}
-                        showToolbar={true}
                         slotProps={{
-                            toolbar: {
-                                showQuickFilter: true,
-                                quickFilterProps: { debounceMs: 200 },
-                            },
+                            toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 200 } },
                         }}
                     />
                 </Box>

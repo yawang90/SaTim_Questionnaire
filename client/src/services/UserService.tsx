@@ -1,3 +1,5 @@
+import {authFetch} from "./AuthFetchHelper.tsx";
+
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -28,7 +30,7 @@ export interface FullUser {
 }
 
 export const registerUser = async (formData: RegisterFormData): Promise<User> => {
-    const res = await fetch(`${API_URL}/api/users/register`, {
+    const res = await authFetch(`${API_URL}/api/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -43,7 +45,7 @@ export const registerUser = async (formData: RegisterFormData): Promise<User> =>
 };
 
 export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
-    const res = await fetch(`${API_URL}/api/users/login`, {
+    const res = await authFetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -61,7 +63,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
 
 export const getUserById = async (userId: string): Promise<FullUser> => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${API_URL}/api/users/get?userId=${userId}`, {
+    const res = await authFetch(`${API_URL}/api/users/get?userId=${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error("Failed to fetch user");
@@ -70,7 +72,7 @@ export const getUserById = async (userId: string): Promise<FullUser> => {
 
 export const findUsersByNameOrEmail = async (nameOrEmail: string, projectId: string): Promise<User[]> => {
     const token = localStorage.getItem("token");
-    const res = await fetch(
+    const res = await authFetch(
         `${API_URL}/api/users/search?query=${encodeURIComponent(nameOrEmail)}&projectId=${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
     );

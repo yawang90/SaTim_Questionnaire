@@ -1,3 +1,5 @@
+import {authFetch} from "./AuthFetchHelper.tsx";
+
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -23,7 +25,7 @@ export async function createQuestionForm(formData: Record<string, any>, groupId:
         formData: formData,
         group_id: groupId
     };
-    const response = await fetch(`${API_URL}/api/editor/question`, {
+    const response = await authFetch(`${API_URL}/api/editor/question`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -40,7 +42,7 @@ export async function createQuestionForm(formData: Record<string, any>, groupId:
  */
 export async function loadQuestionForm(id: string) {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/api/editor/question/${id}`, {
+    const response = await authFetch(`${API_URL}/api/editor/question/${id}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -57,7 +59,7 @@ export async function loadQuestionForm(id: string) {
  */
 export async function updateQuestionForm(id: string, formData: Record<string, any>) {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/api/editor/question/${id}`, {
+    const response = await authFetch(`${API_URL}/api/editor/question/${id}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
@@ -75,7 +77,7 @@ export async function updateQuestionForm(id: string, formData: Record<string, an
  */
 export async function loadAllQuestions(groupId: string) {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/api/editor/questions?groupId=${groupId}`, {
+    const response = await authFetch(`${API_URL}/api/editor/questions?groupId=${groupId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
