@@ -4,6 +4,7 @@ import {getUserById} from "../services/UserService.tsx";
 interface AuthContextType {
     userId: string | null;
     token: string | null;
+    isLoggedIn: boolean;
     login: (userId: string, token: string) => void;
     logout: () => void;
 }
@@ -13,6 +14,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [userId, setUserId] = useState<string | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+    const isLoggedIn = !!token && !!userId;
 
     useEffect(() => {
         const loadUser = async () => {
@@ -46,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ userId, token, login, logout }}>
+        <AuthContext.Provider value={{ userId, token, isLoggedIn, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
