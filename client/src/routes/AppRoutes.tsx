@@ -16,15 +16,18 @@ function AppRoutes() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/editor/:id" element={<EditorPage />} />
-                <Route path="/answers" element={<AnswerEditorPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/questions" element={<QuestionsPage />} />
+
+                <Route path="/editor/:id" element={<EditorPage />} />
                 <Route path="/meta/:id?" element={<MetaDataPage />} />
+                <Route path="/answers" element={<AnswerEditorPage />} />
+                <Route path="/questions" element={<QuestionsPage />} />
                 <Route path="/preview" element={<QuestionPreviewPage />} />
+
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/survey" element={<SurveyPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>

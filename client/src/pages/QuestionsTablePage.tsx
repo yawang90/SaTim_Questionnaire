@@ -5,8 +5,8 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import {Add} from "@mui/icons-material";
 import {useNavigate} from "react-router-dom";
 import {loadAllQuestions} from "../services/QuestionsService.tsx";
-import {groupId} from "./questions/MetaDataPage.tsx";
 
+const groupId = "999";
 interface Aufgabe {
     id: string;
     aufgabenId: string;
@@ -40,9 +40,7 @@ export default function QuestionsTablePage() {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const response = await loadAllQuestions(groupId);
-                if (!response.ok) throw new Error("Aufgaben konnten nicht geladen werden.");
-                const data: Aufgabe[] = await response.json();
+                const data: Aufgabe[] = await loadAllQuestions(groupId);
                 setRows(data);
             } catch (error) {
                 console.error("Aufgaben konnten nicht geladen werden: ", error);
@@ -55,9 +53,10 @@ export default function QuestionsTablePage() {
     }, []);
 
     const filteredRows = rows.filter((row) => {
+        const name = row.ersteller ?? "";
         return (
             (!filterSerie || row.serie === filterSerie) &&
-            row.ersteller.toLowerCase().includes(searchText.toLowerCase())
+            name.toLowerCase().includes(searchText.toLowerCase())
         );
     });
 
@@ -106,6 +105,7 @@ export default function QuestionsTablePage() {
                         initialState={{
                             pagination: { paginationModel: { pageSize: 5 } },
                         }}
+                        loading={loading}
                         showToolbar={true}
                         slotProps={{
                             toolbar: {

@@ -7,7 +7,7 @@ import {initialFormSchema} from "./FormSchema.tsx";
 import {loadQuestionForm, createQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
-export const groupId = "999";
+const groupId = "999";
 
 export interface MetaField {
     key: string;

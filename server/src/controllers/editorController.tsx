@@ -41,7 +41,7 @@ export const createQuestionsForm = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const newQuestion = await saveMetadata({metadata: formData, createdById: userId, updatedById: userId, group_id,});
+        const newQuestion = await saveMetadata({metadata: formData, createdById: userId, updatedById: userId, group_id: Number(group_id)});
 
         res.status(201).json(newQuestion);
     } catch (err) {
@@ -76,7 +76,7 @@ export const updateQuestionForm = async  (req: Request, res: Response)  => {
 
 export const loadAllQuestions = async (req: Request, res: Response) => {
     try {
-        const groupId = Number(req.params.groupId);
+        const groupId = Number(req.query.groupId);
         if (!groupId) {
             return res.status(400).json({ error: "Missing groupId parameter" });
         }

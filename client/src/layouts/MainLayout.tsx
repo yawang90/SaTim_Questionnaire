@@ -4,12 +4,20 @@ import Box from '@mui/material/Box';
 import {Link as RouterLink} from 'react-router-dom';
 import Link from '@mui/material/Link';
 import type {ReactNode} from "react";
+import {Button} from "@mui/material";
 
 interface MainLayoutProps {
     children: ReactNode;
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        window.location.href = "/";
+    };
+
     return (
         <>
             <AppBar position="fixed" sx={{ width: '100%' }}>
@@ -26,12 +34,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <Link component={RouterLink} to="/table" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
                             Aufgaben
                         </Link>
-                    </Box>
 
-                    <Box>
                         <Link component={RouterLink} to="/profile" color="inherit" underline="none" variant="button">
                             Profil
                         </Link>
+                    </Box>
+
+                    <Box>
+                        <Button color="inherit" onClick={handleLogout}>
+                            Logout
+                        </Button>
                     </Box>
                 </Toolbar>
             </AppBar>

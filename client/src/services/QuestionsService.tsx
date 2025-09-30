@@ -23,7 +23,6 @@ export async function createQuestionForm(formData: Record<string, any>, groupId:
         formData: formData,
         group_id: groupId
     };
-
     const response = await fetch(`${API_URL}/api/editor/question`, {
         method: "POST",
         headers: {
@@ -76,8 +75,7 @@ export async function updateQuestionForm(id: string, formData: Record<string, an
  */
 export async function loadAllQuestions(groupId: string) {
     const token = localStorage.getItem("token");
-
-    const response = await fetch(`${API_URL}/api/editor/questions/${groupId}`, {
+    const response = await fetch(`${API_URL}/api/editor/questions?groupId=${groupId}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
