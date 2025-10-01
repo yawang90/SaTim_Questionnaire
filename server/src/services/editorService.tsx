@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import prisma from "../config/prismaClient.js";
-import type {question} from "@prisma/client";
+import {type question, question_status} from "@prisma/client";
 
 interface SaveMetadataInput {
     metadata: Record<string, any>;
@@ -32,13 +32,17 @@ export const saveImage = (file: Express.Multer.File): string => {
 /**
  * Create a new metadata entry
  */
-export const saveMetadata = async (data: SaveMetadataInput): Promise<question> => {
-    return prisma.question.create({data});
-};
+export const createQuestionMeta = async (data: SaveMetadataInput): Promise<question> => {
+    return prisma.question.create({
+        data: {
+            metadata: data,
+            status: question_status.ACTIVE,
+        },
+    });};
 /**
  * Find a metadata entry by ID
  */
-export const findMetadataById = async (id: number): Promise<question | null> => {
+export const findQuestionById = async (id: number): Promise<question | null> => {
     return prisma.question.findUnique({
         where: {id},
     });
@@ -47,7 +51,7 @@ export const findMetadataById = async (id: number): Promise<question | null> => 
 /**
  * Update a metadata entry by ID
  */
-export const updateMetadataById = async (id: number, data: Partial<{
+export const updateQuestionMetaById = async (id: number, data: Partial<{
     metadata: any;
     createdById: number;
     updatedById: number;

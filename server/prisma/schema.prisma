@@ -27,15 +27,22 @@ model group_access {
 }
 
 model question {
-  id        Int      @id @default(autoincrement())
+  id        Int             @id @default(autoincrement())
   metadata  Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   group_id  Int
+  status    question_status
 
   createdById Int
   updatedById Int
 
   createdBy users @relation("CreatedQuestions", fields: [createdById], references: [id])
   updatedBy users @relation("UpdatedQuestions", fields: [updatedById], references: [id])
+}
+
+enum question_status {
+  ACTIVE
+  FINISHED
+  DELETED
 }

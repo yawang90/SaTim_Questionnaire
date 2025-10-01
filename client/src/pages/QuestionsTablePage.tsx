@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
+import {Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Add } from "@mui/icons-material";
@@ -10,6 +10,7 @@ const groupId = "999";
 
 type QuestionRow = {
     id: number;
+    status: string;
     metadata: {
         key: string;
         label: string;
@@ -25,7 +26,7 @@ export default function QuestionsTablePage() {
     const [loading, setLoading] = useState<boolean>(true);
 
     const transformedRows = rows.map((row) => {
-        const flatRow: Record<string, any> = { id: row.id};
+        const flatRow: Record<string, any> = { id: row.id, status: row.status};
         row.metadata.forEach((meta) => {
             flatRow[meta.key] = meta.value;
         });
@@ -35,6 +36,19 @@ export default function QuestionsTablePage() {
     const columns: GridColDef[] = [];
     if (rows.length > 0) {
         columns.push({ field: "id", headerName: "ID", width: 80 });
+        columns.push({ field: "status", headerName: "Status", width: 140,   renderCell: (params) => {
+                const value = params.value as string;
+                switch (value) {
+                    case "ACTIVE":
+                        return <Chip label="In Bearbeitung" color="warning" size="small" />;
+                    case "DELETED":
+                        return <Chip label="Gelöscht" color="error" size="small" />;
+                    case "FINISHED":
+                        return <Chip label="Abgeschlossen" color="success" size="small" />;
+                    default:
+                        return <Chip label={value || "Unbekannt"} size="small" />;
+                }
+            }, });
         rows[0].metadata.forEach((meta) => {
             columns.push({ field: meta.key, headerName: meta.label, width: 200 });
         });
@@ -45,6 +59,7 @@ export default function QuestionsTablePage() {
             setLoading(true);
             try {
                 const data: QuestionRow[] = await loadAllQuestions(groupId);
+                console.log(data)
                 setRows(data);
             } catch (error) {
                 console.error("Aufgaben konnten nicht geladen werden: ", error);

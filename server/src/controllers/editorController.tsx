@@ -1,10 +1,10 @@
 import type {Request, Response} from 'express';
 import {
-    findMetadataById,
+    findQuestionById,
     getQuestionsByGroupId,
     saveImage,
-    saveMetadata,
-    updateMetadataById
+    createQuestionMeta,
+    updateQuestionMetaById
 } from "../services/editorService.js";
 
 interface FieldInput {
@@ -41,7 +41,7 @@ export const createQuestionsForm = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const newQuestion = await saveMetadata({metadata: formData, createdById: userId, updatedById: userId, group_id: Number(group_id)});
+        const newQuestion = await createQuestionMeta({metadata: formData, createdById: userId, updatedById: userId, group_id: Number(group_id)});
 
         res.status(201).json(newQuestion);
     } catch (err) {
@@ -53,7 +53,7 @@ export const createQuestionsForm = async (req: Request, res: Response) => {
 export const getQuestionFormById = async  (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        const entry = await findMetadataById(id);
+        const entry = await findQuestionById(id);
 
         if (!entry) return res.status(404).json({ error: "Not found" });
         res.json(entry);
@@ -66,7 +66,7 @@ export const getQuestionFormById = async  (req: Request, res: Response) => {
 export const updateQuestionForm = async  (req: Request, res: Response)  => {
     try {
         const id = Number(req.params.id);
-        const updated = await updateMetadataById(id, { metadata: req.body });
+        const updated = await updateQuestionMetaById(id, { metadata: req.body });
         res.json(updated);
     } catch (err) {
         console.error("Error updating metadata:", err);
