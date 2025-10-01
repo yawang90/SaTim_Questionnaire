@@ -40,11 +40,11 @@ export default function QuestionsTablePage() {
                 const value = params.value as string;
                 switch (value) {
                     case "ACTIVE":
-                        return <Chip label="In Bearbeitung" color="warning" size="small" />;
+                        return <Chip label="In Bearbeitung" color="info" size="small" />;
                     case "DELETED":
-                        return <Chip label="Gelöscht" color="error" size="small" />;
+                        return <Chip label="Gelöscht" color="secondary" size="small" />;
                     case "FINISHED":
-                        return <Chip label="Abgeschlossen" color="success" size="small" />;
+                        return <Chip label="Abgeschlossen" color="primary" size="small" />;
                     default:
                         return <Chip label={value || "Unbekannt"} size="small" />;
                 }

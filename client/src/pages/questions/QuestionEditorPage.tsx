@@ -90,6 +90,7 @@ export default function EditorPage() {
         navigate(`/answers/${id}`)
     }
     const containerRef = useRef<HTMLDivElement>(null);
+    const token = localStorage.getItem("token");
 
     useEffect(() => {
         window.MathJax?.typesetPromise?.([containerRef.current!]);
@@ -181,7 +182,7 @@ export default function EditorPage() {
                                     uploadUrl: API_URL + '/api/editor/imageUpload',
                                     headers: {
                                         'X-CSRF-TOKEN': 'CSRF-Token',
-                                        Authorization: 'Bearer <JSON Web Token>'
+                                        "Authorization": `Bearer ${token}`
                                     }
                                 },
                                 image: {
