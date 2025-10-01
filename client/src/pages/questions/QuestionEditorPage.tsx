@@ -59,6 +59,7 @@ import AlgebraComponent from "../../components/AnswerTypes/AlgebraComponent.tsx"
 import GeogebraComponent from "../../components/AnswerTypes/GeogebraComponent.tsx";
 import TextComponent from "../../components/AnswerTypes/TextComponent.tsx";
 import {MathJaxContext} from "better-react-mathjax";
+import QuestionLayout from '../../layouts/QuestionLayout.tsx';
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 declare global {
@@ -86,7 +87,7 @@ export default function EditorPage() {
         },
     };
     const saveQuestion = () => {
-        navigate('/answers')
+        navigate(`/answers/${id}`)
     }
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +121,8 @@ export default function EditorPage() {
 
     return (
         <MainLayout>
-            <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
+            <QuestionLayout allowedSteps={[true, true, false, false]}>
+                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                 <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                     <Typography variant="h4" component="h1" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                         Aufgabe erstellen
@@ -279,6 +281,7 @@ export default function EditorPage() {
                     </Dialog>
                 </Paper>
             </Box>
+            </QuestionLayout>
         </MainLayout>
     );
 }

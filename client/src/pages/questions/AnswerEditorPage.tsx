@@ -23,7 +23,7 @@ import {
 import {ExpandMore, Save } from '@mui/icons-material';
 import MathField from "../../components/MathField.tsx";
 import "mathlive";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
 import { Delete } from '@mui/icons-material';
 import Choice from "../../components/ChoicePlugin/Choice.tsx";
@@ -31,6 +31,7 @@ import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
 import {CKEditor} from "@ckeditor/ckeditor5-react";
 import {Alignment, Bold, ClassicEditor, Essentials, Font, GeneralHtmlSupport, Heading, HtmlEmbed, Italic, List, Paragraph, Table, TableCellProperties, TableProperties, TableToolbar
 } from "ckeditor5";
+import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 interface Answer {
     multipleChoice: string;
     freeText: string;
@@ -48,6 +49,7 @@ interface Condition {
 }
 
 export default function AnswerEditorPage() {
+    const { id } = useParams<{ id: string }>();
     const [editorData, setEditorData] = useState<string>(`
     <h2>Beispielaufgabe</h2>
     <p>Welche der folgenden Aussagen sind korrekt?</p>
@@ -163,7 +165,8 @@ export default function AnswerEditorPage() {
 
     return (
         <MainLayout>
-            <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
+            <QuestionLayout allowedSteps={[true, true, true, false]}>
+                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                 <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                     <Typography variant="h4" component="h1" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                         Antworten definieren
@@ -430,7 +433,7 @@ export default function AnswerEditorPage() {
                         <Button
                             variant="contained"
                             startIcon={<Save/>}
-                            onClick={() => navigate('/preview')}
+                            onClick={() => navigate(`/preview/${id}`)}
                             sx={{bgcolor: '#000', color: '#fff', '&:hover': {bgcolor: '#333'}}}>
                             Auswertung speichern
                         </Button>
@@ -462,6 +465,7 @@ export default function AnswerEditorPage() {
                     )}
                 </Paper>
             </Box>
+            </QuestionLayout>
         </MainLayout>
     );
 };

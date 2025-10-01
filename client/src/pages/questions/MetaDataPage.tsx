@@ -15,6 +15,7 @@ import {Save as SaveIcon} from "@mui/icons-material";
 import {useNavigate, useParams} from "react-router-dom";
 import {initialFormSchema} from "./FormSchema.tsx";
 import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
+import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";
 const groupId = "999";
@@ -98,58 +99,59 @@ export default function MetaDataPage() {
 
     return (
         <MainLayout>
-            <Box
-                sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
-                <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
-                    <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
-                        Aufgabe anlegen
-                    </Typography>
+            <QuestionLayout>
+                <Box sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
+                    <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
+                        <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
+                            Aufgabe anlegen
+                        </Typography>
 
-                    <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-                        {formSchema.map((field) => {
-                            if (field.type === "text" || field.type === "textarea") {
-                                return (
-                                    <Box key={field.key}>
-                                        <Typography variant="h6" sx={{ mb: 1 }}>
-                                            {field.label}
-                                        </Typography>
-                                        <TextField fullWidth multiline={field.type === "textarea"} value={field.value || ""} onChange={(e) => handleTextChange(field.key, e.target.value)} placeholder={field.placeholder}/>
-                                    </Box>);}
+                        <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+                            {formSchema.map((field) => {
+                                if (field.type === "text" || field.type === "textarea") {
+                                    return (
+                                        <Box key={field.key}>
+                                            <Typography variant="h6" sx={{ mb: 1 }}>
+                                                {field.label}
+                                            </Typography>
+                                            <TextField fullWidth multiline={field.type === "textarea"} value={field.value || ""} onChange={(e) => handleTextChange(field.key, e.target.value)} placeholder={field.placeholder}/>
+                                        </Box>);}
 
-                            if (field.type === "checkbox") {
-                                return (
-                                    <Box key={field.key}>
-                                        <Typography variant="h6" sx={{ mb: 1 }}>
-                                            {field.label}
-                                        </Typography>
-                                        <FormGroup row>
-                                            {field.options?.map((option) => (
-                                                <FormControlLabel
-                                                    key={option}
-                                                    control={<Checkbox
+                                if (field.type === "checkbox") {
+                                    return (
+                                        <Box key={field.key}>
+                                            <Typography variant="h6" sx={{ mb: 1 }}>
+                                                {field.label}
+                                            </Typography>
+                                            <FormGroup row>
+                                                {field.options?.map((option) => (
+                                                    <FormControlLabel
+                                                        key={option}
+                                                        control={<Checkbox
                                                             checked={field.optionsValue?.[option] || false}
                                                             onChange={(e) =>
                                                                 handleCheckboxChange(field.key, option, e.target.checked)}/>}
-                                                    label={option}/>))}
-                                        </FormGroup>
-                                    </Box>
-                                );
-                            }
+                                                        label={option}/>))}
+                                            </FormGroup>
+                                        </Box>
+                                    );
+                                }
 
-                            return null;
-                        })}
+                                return null;
+                            })}
 
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <Button variant="outlined" fullWidth onClick={() => navigate("/questions")}>
-                                Abbrechen
-                            </Button>
-                            <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
-                                Speichern
-                            </Button>
-                        </Box>
-                    </CardContent>
-                </Paper>
-            </Box>
+                            <Box sx={{ display: "flex", gap: 2 }}>
+                                <Button variant="outlined" fullWidth onClick={() => navigate("/questions")}>
+                                    Abbrechen
+                                </Button>
+                                <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
+                                    Speichern
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Paper>
+                </Box>
+            </QuestionLayout>
         </MainLayout>
     );
 }

@@ -59,7 +59,6 @@ export default function QuestionsTablePage() {
             setLoading(true);
             try {
                 const data: QuestionRow[] = await loadAllQuestions(groupId);
-                console.log(data)
                 setRows(data);
             } catch (error) {
                 console.error("Aufgaben konnten nicht geladen werden: ", error);
@@ -114,6 +113,7 @@ export default function QuestionsTablePage() {
                         initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
                         showToolbar
                         loading={loading}
+                        onRowClick={(params) => navigate(`/meta/${params.id}`)}
                         slotProps={{
                             toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 200 } },
                         }}
