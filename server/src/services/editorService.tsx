@@ -35,8 +35,9 @@ export const saveImage = (file: Express.Multer.File): string => {
 export const createQuestionMeta = async (data: SaveMetadataInput): Promise<question> => {
     return prisma.question.create({
         data: {
-            metadata: data,
-            status: question_status.ACTIVE,
+            ...data,
+            metadata: data.metadata,
+            status: question_status.ACTIVE
         },
     });};
 /**

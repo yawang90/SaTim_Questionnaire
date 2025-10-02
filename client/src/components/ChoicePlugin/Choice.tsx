@@ -1,5 +1,6 @@
-import {Plugin, toWidget, Widget, toWidgetEditable} from 'ckeditor5';
+import { Plugin, toWidget, toWidgetEditable, Widget, type ModelText } from 'ckeditor5';
 import InsertChoiceBoxCommand from './InsertChoiceCommand';
+import { v4 as uuidv4 } from "uuid";
 
 export default class Choice extends Plugin {
     public static get requires() {
@@ -19,8 +20,7 @@ export default class Choice extends Plugin {
             allowWhere: '$text',
             isObject: true,
             isInline: true,
-            allowChildren: ['checkboxText'],
-            allowAttributes: ['checked']
+            allowAttributes: ['checked', 'id', 'label']
         });
 
         schema.register('checkboxText', {
@@ -38,17 +38,27 @@ export default class Choice extends Plugin {
         conversion.for('editingDowncast').elementToElement({
             model: 'checkbox',
             view: (_modelElement, { writer }) => {
+                const id = uuidv4();
+                this.editor.model.change(writer => {
+                    writer.setAttribute('id', id!, _modelElement);
+                    writer.setAttribute('label', 'Antwort Option', _modelElement);
+
+                });
+
                 const label = writer.createContainerElement('label', {
                     class: 'ck-checkbox-label',
+                    id,
                     style: 'display:inline-flex; align-items:center; gap:0.3em; margin-right:0.5em; cursor:pointer;'
                 });
 
-                const input = writer.createEmptyElement('input', {
-                    type: 'checkbox',
-                    class: 'ck-checkbox-input'
-                });
-
+                const input = writer.createEmptyElement('input', { type: 'checkbox', class: 'ck-checkbox-input' });
                 writer.insert(writer.createPositionAt(label, 0), input);
+
+                const span = writer.createEditableElement('span', {
+                    class: 'ck-checkbox-text',
+                    style: 'min-width: 1em; outline: none;'
+                });
+                writer.insert(writer.createPositionAt(label, 1), span);
 
                 return toWidget(label, writer, {
                     label: 'checkbox widget',
@@ -57,33 +67,53 @@ export default class Choice extends Plugin {
             }
         });
 
-        conversion.for('dataDowncast').elementToElement({
-            model: 'checkbox',
-            view: (_modelElement, { writer }) => {
-                return writer.createContainerElement('label', {
-                    class: 'checkbox-container',
-                    style: 'display:inline-flex; align-items:center; gap:0.3em;'
-                });
-            }
-        });
-
         conversion.for('editingDowncast').elementToElement({
             model: 'checkboxText',
             view: (_modelElement, { writer }) => {
-                const span = writer.createEditableElement('span', {
-                    class: 'ck-checkbox-text',
-                    style: 'min-width: 1em; outline: none;'
+                return toWidgetEditable(
+                    writer.createEditableElement('span', {
+                        class: 'ck-checkbox-text',
+                        style: 'min-width: 1em; outline: none;'
+                    }),
+                    writer
+                );
+            }
+        });
+
+        conversion.for('dataDowncast').elementToElement({
+            model: 'checkbox',
+            view: (modelElement, { writer }) => {
+                const id = modelElement.getAttribute('id');
+                const labelText = modelElement.getAttribute('label') || 'Antwort Option';
+                const checked = modelElement.getAttribute('checked');
+
+                const label = writer.createContainerElement('label', {
+                    class: 'checkbox-container',
+                    id,
+                    style: 'display:inline-flex; align-items:center; gap:0.3em; cursor:pointer;'
                 });
-                return toWidgetEditable(span, writer);
+
+                const rawInput = writer.createRawElement(
+                    'input',
+                    { type: 'checkbox', class: 'checkbox-input', ...(checked ? { checked: 'checked' } : {}) }
+                );
+
+                const span = writer.createContainerElement('span', { class: 'checkbox-text' });
+                if (typeof labelText === "string") {
+                    writer.insert(writer.createPositionAt(span, 0), writer.createText(labelText));
+                }
+
+                writer.insert(writer.createPositionAt(label, 0), rawInput);
+                writer.insert(writer.createPositionAt(label, 1), span);
+
+                return label;
             }
         });
 
         conversion.for('dataDowncast').elementToElement({
             model: 'checkboxText',
             view: (_modelElement, { writer }) => {
-                return writer.createContainerElement('span', {
-                    class: 'checkbox-text'
-                });
+                return writer.createContainerElement('span', { class: 'checkbox-text' });
             }
         });
 

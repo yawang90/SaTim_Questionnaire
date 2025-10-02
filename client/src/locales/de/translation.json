@@ -36,7 +36,8 @@
   },
   "editor": {
     "text": "Freitext Antwort",
-    "choice": "Checkbox/Choice",
+    "choice": "Multiple Choice",
+    "single": "Single Choice",
     "table": "Tabellen Antwort",
     "number": "Numerische Antwort",
     "algebra": "Algebraische Gleichung",
