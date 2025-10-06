@@ -2,7 +2,7 @@ import React from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {v4 as uuidv4} from 'uuid';
-import {Box, Button, Paper, Typography} from '@mui/material';
+import {Box, Button, Menu, MenuItem, Paper, Typography} from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
 import {FreeText, MCChoice, MCContainer, NumericInput} from "../../components/TipTapPlugins.tsx";
@@ -13,12 +13,22 @@ import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import EditorToolbar from "../../components/TipTapToolbar.tsx";
+import TextAlign from '@tiptap/extension-text-align'
+import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style'
+import AddIcon from '@mui/icons-material/Add'
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
-        extensions: [StarterKit, Link, Table.configure({ resizable: true }), TableRow, TableCell, TableHeader, Image, MCContainer, MCChoice, FreeText, NumericInput],
+        extensions: [StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true},}),
+            TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
+            Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
+            MCContainer, MCChoice, FreeText, NumericInput],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     })
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
+    const handleClose = () => setAnchorEl(null);
 
     const addMCContainer = () => {
         if (!editor) return
@@ -37,8 +47,7 @@ export default function QuestionEditorPage() {
     const addFreeText = () => {
         if (!editor) return
         editor.chain().focus().insertContent({
-            type: 'freeText',
-            content: [{ type: 'text', text: 'Freitext Antwort...' }],
+            type: 'freeText'
         }).run()
     }
 
@@ -72,12 +81,19 @@ export default function QuestionEditorPage() {
                             <EditorToolbar editor={editor} />
                             <EditorContent editor={editor} />
                         </Box>
-
-                        <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                            <Button variant="outlined" onClick={addMCContainer}>Add Multiple Choice</Button>
-                            <Button variant="outlined" onClick={addFreeText}>Add Free Text</Button>
-                            <Button variant="outlined" onClick={addNumeric}>Add Numeric Input</Button>
-                            <Button variant="contained" onClick={handleSave}>Save Question</Button>
+                        <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                            <Button variant="contained" onClick={handleClick} startIcon={<AddIcon />}>
+                                Antwort Typen hinzufügen
+                            </Button>
+                            <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+                                <MenuItem onClick={addMCContainer}>Multiple Choice Block</MenuItem>
+                                <MenuItem onClick={addFreeText}>Freitext</MenuItem>
+                                <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
+                            </Menu>
+                        </Box>
+                        <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                            <Button variant="outlined" onClick={() => { }}>Zurück</Button>
+                            <Button variant="contained" onClick={handleSave}>Speichern</Button>
                         </Box>
 
                     </Paper>

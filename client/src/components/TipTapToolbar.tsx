@@ -1,65 +1,162 @@
 import React from 'react';
-import {Editor} from '@tiptap/react';
-import {IconButton, Paper, Tooltip} from '@mui/material';
+import { Editor } from '@tiptap/react';
+import { IconButton, Paper, Tooltip, MenuItem, Select } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import StrikethroughSIcon from '@mui/icons-material/StrikethroughS';
-import TitleIcon from '@mui/icons-material/Title';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
+import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
+import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 import LooksOneIcon from '@mui/icons-material/LooksOne';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ImageIcon from '@mui/icons-material/Image';
 import TableRowsIcon from '@mui/icons-material/TableRows';
+
+const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
+const fontSizes = ['12px', '14px', '16px', '18px', '24px', '32px'];
 
 interface EditorToolbarProps {
     editor: Editor | null;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+
+    React.useEffect(() => {
+        if (!editor) return;
+        editor.on('selectionUpdate', forceUpdate);
+        editor.on('transaction', forceUpdate);
+        return () => {
+            editor.off('selectionUpdate', forceUpdate);
+            editor.off('transaction', forceUpdate);
+        };
+    }, [editor]);
+
     if (!editor) return null;
 
     return (
-        <Paper elevation={1} sx={{display: 'flex', gap: 1, p: 1, mb: 2, flexWrap: 'wrap', backgroundColor: 'background.paper',}}>
-            <Tooltip title="Bold">
-                <IconButton onClick={() => editor.chain().focus().toggleBold().run()} color={editor.isActive('bold') ? 'primary' : 'default'}>
+        <Paper
+            elevation={1}
+            sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 1,
+                p: 1,
+                mb: 2,
+                backgroundColor: 'background.paper',
+                borderRadius: 0,
+            }}>
+            {/* Font Family */}
+            <Select
+                size="small"
+                value={editor.getAttributes('textStyle').fontFamily || ''}
+                onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
+                displayEmpty
+                sx={{ minWidth: 140 }}>
+                <MenuItem value="">Schriftart</MenuItem>
+                {fontFamilies.map((font) => (
+                    <MenuItem key={font} value={font} sx={{ fontFamily: font }}>
+                        {font}
+                    </MenuItem>
+                ))}
+            </Select>
+
+            {/* Font Size */}
+            <Select
+                size="small"
+                value={editor.getAttributes('textStyle').fontSize || ''}
+                onChange={(e) => editor.chain().focus().setFontSize(e.target.value).run()}
+                displayEmpty
+                sx={{ minWidth: 120 }}
+            >
+                <MenuItem value="">Schriftgröße</MenuItem>
+                {fontSizes.map((size) => (
+                    <MenuItem key={size} value={size} sx={{ fontSize: size }}>
+                        {size}
+                    </MenuItem>
+                ))}
+            </Select>
+
+            {/* Bold */}
+            <Tooltip title="Fett">
+                <IconButton onClick={() => editor.chain().focus().toggleBold().run()} sx={{ color: editor.isActive('bold') ? 'primary.main' : 'text.secondary' }}>
                     <FormatBoldIcon />
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title="Italic">
-                <IconButton onClick={() => editor.chain().focus().toggleItalic().run()} color={editor.isActive('italic') ? 'primary' : 'default'}>
+            {/* Italic */}
+            <Tooltip title="Kursiv">
+                <IconButton onClick={() => editor.chain().focus().toggleItalic().run()} sx={{ color: editor.isActive('italic') ? 'primary.main' : 'text.secondary' }}>
                     <FormatItalicIcon />
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title="Strike">
-                <IconButton onClick={() => editor.chain().focus().toggleStrike().run()} color={editor.isActive('strike') ? 'primary' : 'default'}>
+            {/* Strike */}
+            <Tooltip title="Durchgestrichen">
+                <IconButton onClick={() => editor.chain().focus().toggleStrike().run()} sx={{ color: editor.isActive('strike') ? 'primary.main' : 'text.secondary' }}>
                     <StrikethroughSIcon />
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title="Paragraph">
-                <IconButton onClick={() => editor.chain().focus().setParagraph().run()} color={editor.isActive('paragraph') ? 'primary' : 'default'}>
-                    <TitleIcon />
-                </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Heading 2">
-                <IconButton onClick={() => editor.chain().focus().setHeading({ level: 2 }).run()} color={editor.isActive('heading', { level: 2 }) ? 'primary' : 'default'}>
+            {/* Headings */}
+            <Tooltip title="Überschrift 1">
+                <IconButton onClick={() => editor.chain().focus().setHeading({ level: 1 }).run()} sx={{ color: editor.isActive('heading', { level: 1 }) ? 'primary.main' : 'text.secondary' }}>
                     <LooksOneIcon />
                 </IconButton>
             </Tooltip>
+            <Tooltip title="Überschrift 2">
+                <IconButton onClick={() => editor.chain().focus().setHeading({ level: 2 }).run()} sx={{ color: editor.isActive('heading', { level: 2 }) ? 'primary.main' : 'text.secondary' }}>
+                    <LooksTwoIcon />
+                </IconButton>
+            </Tooltip>
 
-            <Tooltip title="Insert Image">
+            {/* Lists */}
+            <Tooltip title="Aufzählung">
+                <IconButton onClick={() => editor.chain().focus().toggleBulletList().run()} sx={{ color: editor.isActive('bulletList') ? 'primary.main' : 'text.secondary' }}>
+                    <FormatListBulletedIcon />
+                </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Nummerierte Liste">
+                <IconButton onClick={() => editor.chain().focus().toggleOrderedList().run()} sx={{ color: editor.isActive('orderedList') ? 'primary.main' : 'text.secondary' }}>
+                    <FormatListNumberedIcon />
+                </IconButton>
+            </Tooltip>
+
+            {/* Text Alignment */}
+            <Tooltip title="Links ausrichten">
+                <IconButton onClick={() => editor.chain().focus().setTextAlign('left').run()} sx={{ color: editor.isActive({ textAlign: 'left' }) ? 'primary.main' : 'text.secondary' }}>
+                    <FormatAlignLeftIcon />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Zentrieren">
+                <IconButton onClick={() => editor.chain().focus().setTextAlign('center').run()} sx={{ color: editor.isActive({ textAlign: 'center' }) ? 'primary.main' : 'text.secondary' }}>
+                    <FormatAlignCenterIcon />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Rechts ausrichten">
+                <IconButton onClick={() => editor.chain().focus().setTextAlign('right').run()} sx={{ color: editor.isActive({ textAlign: 'right' }) ? 'primary.main' : 'text.secondary' }}>
+                    <FormatAlignRightIcon />
+                </IconButton>
+            </Tooltip>
+
+            {/* Image */}
+            <Tooltip title="Bild einfügen">
                 <IconButton
-                    onClick={() => {
-                        const url = prompt('Enter image URL');
-                        if (url) editor.chain().focus().setImage({ src: url }).run();
-                    }}>
+                    onClick={() => {const url = prompt('Bild URL eingeben');if (url) editor.chain().focus().setImage({ src: url }).run();}}
+                    sx={{ color: 'text.secondary' }}>
                     <ImageIcon />
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title="Insert Table">
-                <IconButton onClick={() => editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()}>
+            {/* Table */}
+            <Tooltip title="Tabelle einfügen">
+                <IconButton
+                    onClick={() => editor.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run()}
+                    sx={{ color: 'text.secondary' }}>
                     <TableRowsIcon />
                 </IconButton>
             </Tooltip>
