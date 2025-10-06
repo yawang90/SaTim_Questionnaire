@@ -1,7 +1,7 @@
 import React from 'react'
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from '@tiptap/react'
 
-export const MCComponent: React.FC<ReactNodeViewProps> = () => {
+export const MCEditorComponent: React.FC<ReactNodeViewProps> = () => {
     return (
         <NodeViewWrapper
             className="mc-choice"

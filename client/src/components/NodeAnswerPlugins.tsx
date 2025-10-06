@@ -1,7 +1,7 @@
-import { Node, mergeAttributes } from '@tiptap/core'
+import {mergeAttributes, Node} from '@tiptap/core'
 import {ReactNodeViewRenderer} from "@tiptap/react";
-import {FreeTextEditorComponent} from "./FreeText/FreeTextEditorComponent.tsx";
-import {MCComponent} from "./MC/MCComponent.tsx";
+import {FreeTextAnswerComponent} from "./FreeText/FreeTextAnswerComponent.tsx";
+import {MCAnswerComponent} from "./MC/MCAnswerComponent.tsx";
 
 export const MCContainer = Node.create({
     name: 'mcContainer',
@@ -23,7 +23,7 @@ export const MCChoice = Node.create({
     parseHTML: () => [{ tag: 'div.mc-choice' }],
     renderHTML: ({ HTMLAttributes }) => ['div', { ...HTMLAttributes, class: 'mc-choice' }, 0],
     addNodeView() {
-        return ReactNodeViewRenderer(MCComponent)
+        return ReactNodeViewRenderer(MCAnswerComponent)
     },
 })
 
@@ -39,7 +39,7 @@ export const FreeText = Node.create({
     parseHTML: () => [{ tag: 'div.free-text' }],
     renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'free-text' }, HTMLAttributes), 0],
     addNodeView() {
-        return ReactNodeViewRenderer(FreeTextEditorComponent)
+        return ReactNodeViewRenderer(FreeTextAnswerComponent)
     },
 })
 
