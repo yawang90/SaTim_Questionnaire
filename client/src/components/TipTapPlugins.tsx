@@ -1,6 +1,6 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import {ReactNodeViewRenderer} from "@tiptap/react";
-import {FreeTextComponent} from "./FreeText/FreeTextComponent.tsx";
+import {FreeTextEditorComponent} from "./FreeText/FreeTextEditorComponent.tsx";
 import {MCComponent} from "./MC/MCComponent.tsx";
 
 export const MCContainer = Node.create({
@@ -31,10 +31,15 @@ export const FreeText = Node.create({
     name: 'freeText',
     group: 'block',
     content: 'inline*',
+    addAttributes() {
+        return {
+            id: { default: null },
+        }
+    },
     parseHTML: () => [{ tag: 'div.free-text' }],
     renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'free-text' }, HTMLAttributes), 0],
     addNodeView() {
-        return ReactNodeViewRenderer(FreeTextComponent)
+        return ReactNodeViewRenderer(FreeTextEditorComponent)
     },
 })
 

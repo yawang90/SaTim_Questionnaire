@@ -1,7 +1,7 @@
 import React from 'react'
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from '@tiptap/react'
 
-export const FreeTextComponent: React.FC<ReactNodeViewProps> = () => {
+export const FreeTextEditorComponent: React.FC<ReactNodeViewProps> = () => {
     return (
         <NodeViewWrapper className="free-text" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input type="text" placeholder="Freitext Antwort..." disabled style={{ flex: 1, padding: '4px 8px' }} />

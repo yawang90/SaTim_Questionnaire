@@ -33,6 +33,7 @@ model question {
   updatedAt DateTime        @updatedAt
   group_id  Int
   status    question_status
+  content   Json
 
   createdById Int
   updatedById Int

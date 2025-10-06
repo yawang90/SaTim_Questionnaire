@@ -47,7 +47,8 @@ export default function QuestionEditorPage() {
     const addFreeText = () => {
         if (!editor) return
         editor.chain().focus().insertContent({
-            type: 'freeText'
+            type: 'freeText',
+            attrs: { id: uuidv4() },
         }).run()
     }
 
