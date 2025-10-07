@@ -27,13 +27,14 @@ model group_access {
 }
 
 model question {
-  id        Int             @id @default(autoincrement())
-  metadata  Json
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  group_id  Int
-  status    question_status
-  content   Json
+  id          Int             @id @default(autoincrement())
+  metadata    Json
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  group_id    Int
+  status      question_status
+  contentJson Json?
+  contentHtml String?
 
   createdById Int
   updatedById Int

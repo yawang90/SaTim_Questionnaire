@@ -70,6 +70,25 @@ export async function updateQuestionForm(id: string, formData: Record<string, an
     return handleResponse(response);
 }
 
+/**
+ * Update question content only (JSON + HTML)
+ * @param id - Question ID
+ * @param contentJson - TipTap JSON content
+ * @param contentHtml - Rendered HTML content
+ */
+export async function updateQuestionContent(id: string, contentJson: object, contentHtml: string | null) {
+    const token = localStorage.getItem("token");
+    const payload = { contentJson, contentHtml };
+    const response = await authFetch(`${API_URL}/api/editor/question/${id}/content`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+}
 
 /**
  * Load all questions for a specific group

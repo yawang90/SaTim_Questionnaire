@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {v4 as uuidv4} from 'uuid';
@@ -17,6 +17,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import AddIcon from '@mui/icons-material/Add';
 import {Preview} from "../../components/Preview.tsx";
+import { loadQuestionForm, updateQuestionContent } from '../../services/QuestionsService.tsx';
+import {useParams} from "react-router-dom";
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
@@ -28,7 +30,7 @@ export default function QuestionEditorPage() {
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
-
+    const { id } = useParams();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const openMenu = Boolean(anchorEl);
     const handleClickMenu = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
@@ -68,10 +70,34 @@ export default function QuestionEditorPage() {
         }).run();
     };
 
-    const handleSave = () => {
-        console.log('Saved Question HTML:', editor?.getHTML());
-        alert('Question saved! Check console.');
+    const handleSave = async () => {
+        if (!editor || !id) return;
+        const contentJson = editor.getJSON();
+        const contentHtml = editor.getHTML();
+
+        try {
+            await updateQuestionContent(id, contentJson, contentHtml);
+            alert("Question saved successfully!");
+        } catch (err) {
+            console.error("Failed to save question:", err);
+            alert("Failed to save question. Check console.");
+        }
     };
+
+    useEffect(() => {
+        if (!id || !editor) return;
+        (async () => {
+            try {
+                const question = await loadQuestionForm(id);
+                question.groupId = 999;
+                if (editor && question.contentJson) {
+                    editor.commands.setContent(question.contentJson);
+                }
+            } catch (err) {
+                console.error("Failed to load question:", err);
+            }
+        })();
+    }, [id, editor]);
 
     return (
         <MainLayout>

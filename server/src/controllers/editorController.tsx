@@ -4,7 +4,7 @@ import {
     getQuestionsByGroupId,
     saveImage,
     createQuestionMeta,
-    updateQuestionMetaById
+    updateQuestionMetaById, updateQuestionContentById
 } from "../services/editorService.js";
 
 interface FieldInput {
@@ -16,6 +16,11 @@ interface FieldInput {
 interface QuestionFormInput {
     formData: FieldInput[];
     group_id: number;
+}
+
+interface QuestionContentInput {
+    contentJson: object;
+    contentHtml: string | null;
 }
 
 export const uploadImage = (req: Request, res: Response) => {
@@ -63,14 +68,46 @@ export const getQuestionFormById = async  (req: Request, res: Response) => {
     }
 };
 
-export const updateQuestionForm = async  (req: Request, res: Response)  => {
+export const updateQuestionForm = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        const updated = await updateQuestionMetaById(id, { metadata: req.body });
+        const userId = Number((req as any).user?.id);
+        if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+        const updated = await updateQuestionMetaById(id, {
+            metadata: req.body,
+            updatedById: userId,
+        });
+
         res.json(updated);
     } catch (err) {
-        console.error("Error updating metadata:", err);
-        res.status(500).json({ error: "Failed to update metadata" });
+        console.error('Error updating metadata:', err);
+        res.status(500).json({ error: 'Failed to update metadata' });
+    }
+};
+
+export const updateQuestionContent = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const { contentJson, contentHtml } = req.body as QuestionContentInput;
+        const userId = Number((req as any).user?.id);
+
+        if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+        if (!contentJson) {
+            return res.status(400).json({ error: 'Missing contentJson' });
+        }
+
+        const updated = await updateQuestionContentById(id, {
+            updatedById: userId,
+            contentJson,
+            contentHtml: contentHtml || null,
+        });
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Error updating question content:', err);
+        res.status(500).json({ error: 'Failed to update question content' });
     }
 };
 

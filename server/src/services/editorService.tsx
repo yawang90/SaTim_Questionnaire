@@ -3,11 +3,22 @@ import fs from "fs";
 import prisma from "../config/prismaClient.js";
 import {type question, question_status} from "@prisma/client";
 
-interface SaveMetadataInput {
+interface CreateQuestionInput {
     metadata: Record<string, any>;
     createdById: number;
     updatedById: number;
     group_id: number;
+}
+
+interface UpdateQuestionInput {
+    updatedById: number;
+    contentJson: object;
+    contentHtml: string | null;
+}
+
+interface UpdateMetadataInput {
+    metadata: Record<string, any>;
+    updatedById: number;
 }
 
 const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
@@ -32,14 +43,17 @@ export const saveImage = (file: Express.Multer.File): string => {
 /**
  * Create a new metadata entry
  */
-export const createQuestionMeta = async (data: SaveMetadataInput): Promise<question> => {
+export const createQuestionMeta = async (data: CreateQuestionInput): Promise<question> => {
     return prisma.question.create({
         data: {
-            ...data,
             metadata: data.metadata,
+            createdById: data.createdById,
+            updatedById: data.updatedById,
+            group_id: data.group_id,
             status: question_status.ACTIVE
         },
-    });};
+    });
+};
 /**
  * Find a metadata entry by ID
  */
@@ -50,16 +64,29 @@ export const findQuestionById = async (id: number): Promise<question | null> => 
 };
 
 /**
- * Update a metadata entry by ID
+ * Update question metadata
  */
-export const updateQuestionMetaById = async (id: number, data: Partial<{
-    metadata: any;
-    createdById: number;
-    updatedById: number;
-}>): Promise<question> => {
+export const updateQuestionMetaById = async (id: number, data: UpdateMetadataInput): Promise<question> => {
     return prisma.question.update({
-        where: {id},
-        data,
+        where: { id },
+        data: {
+            metadata: data.metadata,
+            updatedById: data.updatedById,
+        },
+    });
+};
+
+/**
+ * Update question content (JSON + HTML)
+ */
+export const updateQuestionContentById = async (id: number, data: UpdateQuestionInput): Promise<question> => {
+    return prisma.question.update({
+        where: { id },
+        data: {
+            contentJson: data.contentJson,
+            contentHtml: data.contentHtml,
+            updatedById: data.updatedById,
+        },
     });
 };
 
