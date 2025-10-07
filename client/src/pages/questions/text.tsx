@@ -1,288 +1,406 @@
-import React, {type JSX, useEffect, useRef, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
+import React, {useState} from 'react';
 import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
     Box,
     Button,
-    CardContent,
-    Dialog,
-    DialogTitle,
+    Checkbox,
+    FormControl,
+    FormControlLabel,
+    FormGroup,
+    FormLabel,
     IconButton,
-    List,
-    ListItemButton,
-    ListItemText,
+    MenuItem,
     Paper,
+    Radio,
+    RadioGroup,
+    Select,
+    TextField,
     Typography
 } from '@mui/material';
-import {Add, Clear, Save as SaveIcon, Visibility as VisibilityIcon,} from '@mui/icons-material';
-import {CKEditor} from '@ckeditor/ckeditor5-react';
-import {
-    Alignment,
-    Bold,
-    ClassicEditor,
-    Essentials,
-    Font,
-    GeneralHtmlSupport,
-    Heading,
-    HtmlEmbed,
-    Image,
-    ImageCaption,
-    ImageInsert,
-    ImageResize,
-    ImageStyle,
-    ImageToolbar,
-    Indent,
-    IndentBlock,
-    Italic,
-    LinkImage,
-    List as ListPlugin,
-    ListProperties,
-    Paragraph,
-    SimpleUploadAdapter,
-    SourceEditing,
-    SpecialCharacters,
-    SpecialCharactersEssentials,
-    Table,
-    TableCellProperties,
-    TableProperties,
-    TableToolbar
-} from 'ckeditor5';
-// @ts-ignore
-import 'ckeditor5/ckeditor5.css';
-import Choice from "../../components/ChoicePlugin/Choice.tsx";
-import ChoiceUI from "../../components/ChoicePlugin/ChoiceUI.tsx";
-import {useTranslation} from "react-i18next";
-import {useNavigate, useParams} from "react-router-dom";
-import ChoiceComponent from "../../components/AnswerTypes/ChoiceComponent.tsx";
+import {Delete, ExpandMore, Save} from '@mui/icons-material';
+import MathField from "../../components/MathField.tsx";
 import "mathlive";
-import NumericComponent from "../../components/AnswerTypes/NumericComponent.tsx";
-import AlgebraComponent from "../../components/AnswerTypes/AlgebraComponent.tsx";
-import GeogebraComponent from "../../components/AnswerTypes/GeogebraComponent.tsx";
-import TextComponent from "../../components/AnswerTypes/TextComponent.tsx";
-import {MathJaxContext} from "better-react-mathjax";
-import QuestionLayout from '../../layouts/QuestionLayout.tsx';
-// @ts-ignore
-const API_URL = import.meta.env.VITE_API_URL;
-declare global {
-    interface Window {
-        MathJax?: {
-            typesetPromise?: (elements?: HTMLElement[]) => Promise<void>;
-        };
-    }
+import {useNavigate, useParams} from "react-router-dom";
+import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
+import QuestionLayout from "../../layouts/QuestionLayout.tsx";
+
+interface Answer {
+    multipleChoice: string;
+    freeText: string;
+    numberInput: string;
+    checkboxes: string[];
+    graph: string;
 }
-const AnswerOptions = ['Single Choice', 'Multiple Choice', 'Freitext', 'Numerische Eingabe', 'Algebraische Gleichung', 'Geogebra Applet', 'Tabellarische Eingabe', 'Drag and Drop'];
 
-export default function EditorPage() {
-    const {t} = useTranslation();
+type Operator = "equals" | "greater" | "less" | "greaterOrEqual" | "lessOrEqual";
+type Connector = "and" | "or";
+
+interface Condition {
+    operator: Operator;
+    value: string;
+    connector?: Connector;
+}
+
+export default function AnswerEditorPage() {
+    const {id} = useParams<{ id: string }>();
+    const [answers, setAnswers] = useState<Answer>({
+        multipleChoice: '',
+        freeText: '',
+        numberInput: '',
+        checkboxes: [],
+        graph: ''
+    });
+    const [correctAnswers] = useState({
+        multipleChoice: 'option2',
+        freeText: 'react',
+        numberInput: '42',
+        checkboxes: ['option1', 'option3'],
+        graph: '1'
+    });
+    const [conditions, setConditions] = useState<Condition[]>([
+        {operator: "equals", value: ""}
+    ]);
+    const [latex, setLatex] = useState("\\frac{1}{2}");
+    const [numberSolution, setNumberSolution] = useState("");
     const navigate = useNavigate();
-    const { id } = useParams<{ id: string }>();
-    const [editorData, setEditorData] = useState<string>('<p>Editiere hier deine Aufgabe...</p>');
-    const [showPreview, setShowPreview] = useState(false);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [answerComponents, setAnswerComponents] = useState<JSX.Element[]>([]);
-    const mathJaxConfig = {
-        loader: { load: ["input/tex", "output/chtml"] },
-        tex: {
-            inlineMath: [["$", "$"], ["\\(", "\\)"]],
-            displayMath: [["$$", "$$"], ["\\[", "\\]"]],
-        },
+    const [showResults, setShowResults] = useState(false);
+
+    const handleMultipleChoiceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswers(prev => ({
+            ...prev,
+            multipleChoice: event.target.value
+        }));
     };
-    const saveQuestion = () => {
-        navigate(`/answers/${id}`)
-    }
-    const containerRef = useRef<HTMLDivElement>(null);
-    const token = localStorage.getItem("token");
 
-    useEffect(() => {
-        window.MathJax?.typesetPromise?.([containerRef.current!]);
-    }, [editorData]);
+    const handleFreeTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswers(prev => ({
+            ...prev,
+            freeText: event.target.value
+        }));
+    };
 
-    const handleOptionClick = (option: string) => {
-        setDialogOpen(false);
-        switch(option) {
-            case 'Single Choice':
-                setAnswerComponents(prev => [...prev, <ChoiceComponent key={prev.length} title="Single Choice Frage" />]);
-                break;
-            case 'Multiple Choice':
-                setAnswerComponents(prev => [...prev, <ChoiceComponent key={prev.length} title="Multiple Choice Frage"/>]);
-                break;
-            case 'Freitext':
-                setAnswerComponents(prev => [...prev, <TextComponent key={prev.length}/>]);
-                break;
-            case 'Numerische Eingabe':
-                setAnswerComponents(prev => [...prev, <NumericComponent/>]);
-                break;
-            case 'Algebraische Gleichung':
-                setAnswerComponents(prev => [...prev, <AlgebraComponent/>]);
-                break;
-            case 'Geogebra Applet':
-                setAnswerComponents(prev => [...prev, <GeogebraComponent/>]);
-                break;
+    const handleNumberInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswers(prev => ({
+            ...prev,
+            numberInput: event.target.value
+        }));
+    };
+
+    const handleCheckboxChange = (option: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAnswers(prev => ({
+            ...prev,
+            checkboxes: event.target.checked
+                ? [...prev.checkboxes, option]
+                : prev.checkboxes.filter(item => item !== option)
+        }));
+    };
+
+    const checkAnswers = () => {
+        setShowResults(true);
+    };
+
+    const resetQuiz = () => {
+        setAnswers({
+            multipleChoice: '',
+            freeText: '',
+            numberInput: '',
+            checkboxes: [],
+            graph: ''
+        });
+        setShowResults(false);
+    };
+
+    const isCorrect = (type: keyof Answer) => {
+        switch (type) {
+            case 'multipleChoice':
+                return answers.multipleChoice === correctAnswers.multipleChoice;
+            case 'freeText':
+                return answers.freeText.toLowerCase().trim() === correctAnswers.freeText.toLowerCase();
+            case 'numberInput':
+                return answers.numberInput === correctAnswers.numberInput;
+            case 'checkboxes':
+                return answers.checkboxes.sort().join(',') === correctAnswers.checkboxes.sort().join(',');
+            default:
+                return false;
         }
     };
 
+    const addCondition = () => {
+        setConditions((prev) => [
+            ...prev,
+            {connector: "and", operator: "equals", value: ""}
+        ]);
+    };
+
+    const handleOperatorChange = (index: number, newOp: Operator) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? {...c, operator: newOp} : c))
+        );
+    };
+
+    const handleValueChange = (index: number, newVal: string) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? {...c, value: newVal} : c))
+        );
+    };
+
+    const handleConnectorChange = (index: number, newConn: Connector) => {
+        setConditions((prev) =>
+            prev.map((c, i) => (i === index ? {...c, connector: newConn} : c))
+        );
+    };
+
+
     return (
         <MainLayout>
-            <QuestionLayout allowedSteps={[true, true, false, false]}>
-                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
+            <QuestionLayout allowedSteps={[true, true, true, false]}>
+                <Box sx={{
+                    minHeight: '100vh',
+                    backgroundColor: 'background.default',
+                    py: 3,
+                    px: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    mt: 6
+                }}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
-                        <Typography variant="h4" component="h1" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
-                            Aufgabe erstellen
+                        <Typography variant="h4" component="h1" gutterBottom
+                                    sx={{textAlign: 'center', fontWeight: 'bold'}}>
+                            Antworten definieren
                         </Typography>
 
-                        <CardContent sx={{p: 3, display: 'flex', flexDirection: 'column', gap: 3}}>
-                            <CKEditor
-                                editor={ClassicEditor}
-                                config={{
-                                    licenseKey: 'GPL',
-                                    plugins: [Essentials, Paragraph, Heading, Bold, Italic, ListPlugin, ListProperties, SourceEditing, Indent, IndentBlock, Font, SpecialCharacters, SpecialCharactersEssentials, Image, ImageInsert, Alignment, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI, ImageCaption, ImageResize, ImageStyle, ImageToolbar, LinkImage, SimpleUploadAdapter, GeneralHtmlSupport, HtmlEmbed],
-                                    toolbar: {
-                                        items: ['undo', 'redo', '|', 'heading', 'alignment', 'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', 'bold', 'italic', '|', 'numberedList', 'bulletedList', 'outdent', 'indent', '|', 'insertTable', 'specialCharacters', 'insertImage', 'sourceEditing',
-                                            '-',
-                                            {
-                                                label: t('editor.addAnswer'),
-                                                icon: 'plus',
-                                                tooltip: t('editor.answerTooltip'),
-                                                withText: true,
-                                                items: ['insertChoiceBox', '-']
-                                            }
-                                        ],
-                                        shouldNotGroupWhenFull: true
-                                    },
-                                    table: {
-                                        contentToolbar: [
-                                            'tableColumn', 'tableRow', 'mergeTableCells',
-                                            'tableProperties', 'tableCellProperties'
-                                        ],
-                                        tableProperties: {},
-                                        tableCellProperties: {}
-                                    },
-                                    list: {
-                                        properties: {
-                                            styles: true
-                                        }
-                                    },
-                                    // @ts-ignore
-                                    choice: {
-                                        label: t('editor.choice')
-                                    },
-                                    htmlSupport: {
-                                        allow: [
-                                            {
-                                                name: /.*/,
-                                                attributes: true,
-                                                classes: true,
-                                                styles: true
-                                            }
-                                        ]
-                                    },
-                                    htmlEmbed: {
-                                        showPreviews: true
-                                    },
-                                    simpleUpload: {
-                                        uploadUrl: API_URL + '/api/editor/imageUpload',
-                                        headers: {
-                                            'X-CSRF-TOKEN': 'CSRF-Token',
-                                            "Authorization": `Bearer ${token}`
-                                        }
-                                    },
-                                    image: {
-                                        toolbar: [
-                                            'imageStyle:inline',
-                                            'imageStyle:alignLeft',
-                                            'imageStyle:alignRight',
-                                            'imageStyle:alignCenter',
-                                            '|',
-                                            'toggleImageCaption',
-                                            'imageTextAlternative',
-                                            '|',
-                                            'linkImage'
-                                        ],
-                                        insert: {
-                                            type: 'inline'
-                                        }
-                                    },
-                                    initialData: '<p>Editiere hier deine Aufgabe...</p>'
-                                }}
+                        {/* Single Choice Section */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore/>}>
+                                <Typography variant="h6">
+                                    Single Choice Frage
+                                    {showResults && (
+                                        <Typography component="span"
+                                                    sx={{ml: 2, color: isCorrect('multipleChoice') ? 'green' : 'red'}}>
+                                            {isCorrect('multipleChoice') ? '✓ Richtig' : '✗ Falsch'}
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <FormControl component="fieldset">
+                                    <FormLabel component="legend">Frage 1?</FormLabel>
+                                    <RadioGroup value={answers.multipleChoice} onChange={handleMultipleChoiceChange}>
+                                        <FormControlLabel value="option1" control={<Radio/>} label="Antwort 1"/>
+                                        <FormControlLabel value="option2" control={<Radio/>} label="Antwort 2"/>
+                                        <FormControlLabel value="option3" control={<Radio/>} label="Antwort 3"/>
+                                        <FormControlLabel value="option4" control={<Radio/>} label="Antwort 4"/>
+                                    </RadioGroup>
+                                </FormControl>
+                            </AccordionDetails>
+                        </Accordion>
 
-                                onChange={(_, editor) => setEditorData(editor.getData())}
-                            />
-                            <Box sx={{borderBottom: '1px solid', borderColor: 'divider'}}></Box>
+                        {/* Free Text Section */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore/>}>
+                                <Typography variant="h6">
+                                    Freie Text Frage
+                                    {showResults && (
+                                        <Typography component="span"
+                                                    sx={{ml: 2, color: isCorrect('freeText') ? 'green' : 'red'}}>
+                                            {isCorrect('freeText') ? '✓ Richtig' : '✗ Falsch'}
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <FormControl fullWidth>
+                                    <FormLabel>Freien Text eingeben?</FormLabel>
+                                    <TextField
+                                        value={answers.freeText}
+                                        onChange={handleFreeTextChange}
+                                        variant="outlined"
+                                        placeholder="Gib deine Beschreibung hier ein"
+                                        sx={{mt: 1}}
+                                    />
+                                </FormControl>
+                            </AccordionDetails>
+                        </Accordion>
 
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {answerComponents.map((component, idx) => (
-                                    <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                        <IconButton aria-label="Entfernen" onClick={() => setAnswerComponents(prev => prev.filter((_, i) => i !== idx))}>
-                                            <Clear />
-                                        </IconButton>
-                                        <Box sx={{ flexGrow: 1 }}>
-                                            {component}
-                                        </Box>
-                                    </Box>
-                                ))}
-                            </Box>
+                        {/* Number Input Section */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore/>}>
+                                <Typography variant="h6">
+                                    Algebraische Gleichung oder Numerische Eingabe
+                                    {showResults && (
+                                        <Typography component="span"
+                                                    sx={{ml: 2, color: isCorrect('numberInput') ? 'green' : 'red'}}>
+                                            {isCorrect('numberInput') ? '✓ Richtig' : '✗ Falsch'}
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <FormControl fullWidth>
+                                    <FormLabel>Was ist die Lösung für xyz?</FormLabel>
+                                    <MathField value={latex} onChange={setLatex}
+                                               style={{fontSize: "1.2rem", border: "1px solid #ccc", padding: 8}}/>
 
-                            <Button variant="contained" startIcon={<Add/>} onClick={() => setDialogOpen(true)}>Antwort Typ hinzufügen</Button>
+                                    {conditions.map((cond, index) => (
+                                        <Box key={index} sx={{display: "flex", alignItems: "center", gap: 1, mt: 1}}>
+                                            {index > 0 && (
+                                                <Select<Connector>
+                                                    value={cond.connector ?? "and"}
+                                                    onChange={(e) =>
+                                                        handleConnectorChange(index, e.target.value as Connector)}
+                                                    size="small"
+                                                    sx={{minWidth: 80}}>
+                                                    <MenuItem value="and">und</MenuItem>
+                                                    <MenuItem value="or">oder</MenuItem>
+                                                </Select>
+                                            )}
 
-                            <Box sx={{display: 'flex', gap: 2}}>
-                                <Button onClick={() => setShowPreview(!showPreview)} variant="outlined" fullWidth
-                                        startIcon={<VisibilityIcon/>}>
-                                    {showPreview ? 'Vorschau verstecken' : 'Vorschau'}
-                                </Button>
-                                <Button variant="contained" fullWidth startIcon={<SaveIcon/>}
-                                        onClick={() => saveQuestion()}>
-                                    Frage speichern
-                                </Button>
-                            </Box>
-
-                            {showPreview && (
-                                <Box>
-                                    <Typography variant="h6" sx={{mb: 1}}>
-                                        Vorschau
-                                    </Typography>
-                                    <MathJaxContext config={mathJaxConfig}>
-                                        <div ref={containerRef}>
-                                            <CKEditor
-                                                editor={ClassicEditor}
-                                                data={editorData}
-                                                disabled={true}
-                                                config={{
-                                                    licenseKey: 'GPL',
-                                                    plugins: [Essentials, Paragraph, Heading, Bold, Italic, ListPlugin, Alignment, Font, Table, TableToolbar, TableCellProperties, TableProperties, Choice, ChoiceUI, GeneralHtmlSupport, HtmlEmbed],
-                                                    toolbar: [],
-                                                    htmlSupport: {
-                                                        allow: [
-                                                            {
-                                                                name: /.*/,
-                                                                attributes: true,
-                                                                classes: true,
-                                                                styles: true
-                                                            }
-                                                        ]
-                                                    },
-                                                    htmlEmbed: {
-                                                        showPreviews: true
-                                                    }
+                                            <Typography>Die Lösung soll</Typography>
+                                            <Select<Operator>
+                                                value={cond.operator}
+                                                onChange={(e) => handleOperatorChange(index, e.target.value as Operator)}
+                                                size="small"
+                                                sx={{minWidth: 140}}>
+                                                <MenuItem value="equals">= gleich</MenuItem>
+                                                <MenuItem value="greater">&gt; größer</MenuItem>
+                                                <MenuItem value="less">&lt; kleiner</MenuItem>
+                                                <MenuItem value="greaterOrEqual">≥ größer gleich</MenuItem>
+                                                <MenuItem value="lessOrEqual">≤ kleiner gleich</MenuItem>
+                                            </Select>
+                                            <Typography>(als)</Typography>
+                                            <MathField
+                                                value={cond.value}
+                                                onChange={(val) => handleValueChange(index, val)}
+                                                style={{
+                                                    fontSize: "1.2rem",
+                                                    border: "1px solid #ccc",
+                                                    padding: 8,
+                                                    width: 300,
                                                 }}
                                             />
-                                            <div className="ck-content" dangerouslySetInnerHTML={{ __html: editorData }} />
-                                        </div>
-                                    </MathJaxContext>
-                                </Box>
-                            )}
-                        </CardContent>
-                        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                            <DialogTitle>Antwort Typ auswählen</DialogTitle>
-                            <List>
-                                {AnswerOptions.map((option) => (
-                                    <ListItemButton key={option} onClick={() => handleOptionClick(option)}>
-                                        <ListItemText primary={option}/>
-                                    </ListItemButton>
-                                ))}
-                            </List>
-                        </Dialog>
+                                            <Typography>sein</Typography>
+                                            <IconButton
+                                                aria-label="Entfernen"
+                                                onClick={() =>
+                                                    setConditions((prev) => {
+                                                        const newConds = prev.filter((_, i) => i !== index);
+                                                        if (newConds.length > 0) {
+                                                            newConds[0] = {...newConds[0], connector: undefined};
+                                                        }
+                                                        return newConds;
+                                                    })}
+                                                disabled={conditions.length === 1}>
+                                                <Delete/>
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+
+
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={addCondition}
+                                        sx={{alignSelf: "flex-start", mt: 1}}>
+                                        Weitere Bedingung hinzufügen
+                                    </Button>
+                                </FormControl>
+                            </AccordionDetails>
+                        </Accordion>
+
+                        {/* Multiple Choice Section */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore/>}>
+                                <Typography variant="h6">
+                                    Multiple Choice Frage
+                                    {showResults && (
+                                        <Typography component="span"
+                                                    sx={{ml: 2, color: isCorrect('checkboxes') ? 'green' : 'red'}}>
+                                            {isCorrect('checkboxes') ? '✓ Richtig' : '✗ Falsch'}
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <FormControl component="fieldset">
+                                    <FormLabel component="legend">Welcher der folgenden Antworten sind
+                                        richtig?</FormLabel>
+                                    <FormGroup>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={answers.checkboxes.includes('option1')}
+                                                    onChange={handleCheckboxChange('option1')}
+                                                />
+                                            }
+                                            label="option1"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={answers.checkboxes.includes('option2')}
+                                                    onChange={handleCheckboxChange('option2')}
+                                                />
+                                            }
+                                            label="option2"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={answers.checkboxes.includes('option3')}
+                                                    onChange={handleCheckboxChange('option3')}
+                                                />
+                                            }
+                                            label="option3"
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={answers.checkboxes.includes('option4')}
+                                                    onChange={handleCheckboxChange('option4')}
+                                                />
+                                            }
+                                            label="option4"
+                                        />
+                                    </FormGroup>
+                                </FormControl>
+                            </AccordionDetails>
+                        </Accordion>
+
+                        {/* Geogebra Section */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore/>}>
+                                <Typography variant="h6">
+                                    Frage mit Graphen Eingabe
+                                    {showResults && (
+                                        <Typography component="span"
+                                                    sx={{ml: 2, color: isCorrect('checkboxes') ? 'green' : 'red'}}>
+                                            {isCorrect('checkboxes') ? '✓ Richtig' : '✗ Falsch'}
+                                        </Typography>
+                                    )}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <FormControl component="fieldset">
+                                    <FormLabel component="legend">Zeichne den Graphen ein?</FormLabel>
+                                    <GeoGebraApp
+                                        materialId="pfeKePU3"
+                                        onChange={(expr) => console.log("Formula changed:", expr)}
+                                    />
+                                </FormControl>
+                            </AccordionDetails>
+                        </Accordion>
+
+                        {/* Action Buttons */}
+                        <Box sx={{mt: 3, textAlign: 'center', gap: 2, display: 'flex', justifyContent: 'center'}}>
+                            <Button variant="outlined" onClick={() => {navigate(`/editor/${id}`)}}>Zurück</Button>
+                            <Button variant="contained" startIcon={<Save/>} onClick={() => navigate(`/preview/${id}`)} sx={{bgcolor: '#000', color: '#fff', '&:hover': {bgcolor: '#333'}}}>Speichern</Button>
+                        </Box>
                     </Paper>
                 </Box>
             </QuestionLayout>
         </MainLayout>
     );
-}
+};

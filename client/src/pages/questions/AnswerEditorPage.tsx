@@ -1,460 +1,242 @@
-import MainLayout from '../../layouts/MainLayout.tsx';
-import React, {useState} from 'react';
+import React, { useEffect, useState } from "react";
 import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
     Box,
     Button,
-    Checkbox,
+    Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
     FormControl,
     FormControlLabel,
     FormGroup,
-    FormLabel,
-    IconButton,
-    MenuItem,
     Paper,
-    Radio,
-    RadioGroup,
-    Select,
     TextField,
-    Typography
-} from '@mui/material';
-import {Delete, ExpandMore, Save} from '@mui/icons-material';
-import MathField from "../../components/MathField.tsx";
-import "mathlive";
-import {useNavigate, useParams} from "react-router-dom";
-import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";
+    Typography,
+} from "@mui/material";
+import { ExpandMore, Save } from "@mui/icons-material";
+import { useNavigate, useParams } from "react-router-dom";
+import MainLayout from "../../layouts/MainLayout.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
+import { loadQuestionForm } from "../../services/QuestionsService.tsx";
+import {Preview} from "../../components/Preview.tsx";
+import type {JSONContent} from "@tiptap/core";
 
-interface Answer {
-    multipleChoice: string;
-    freeText: string;
-    numberInput: string;
-    checkboxes: string[];
-    graph: string;
-}
-
-type Operator = "equals" | "greater" | "less" | "greaterOrEqual" | "lessOrEqual";
-type Connector = "and" | "or";
-
-interface Condition {
-    operator: Operator;
-    value: string;
-    connector?: Connector;
-}
+type Choice = { id: string; text: string };
+type Block =
+    | { kind: "mc"; key: string; choices: Choice[] }
+    | { kind: "freeText"; key: string }
+    | { kind: "numeric"; key: string };
 
 export default function AnswerEditorPage() {
-    const {id} = useParams<{ id: string }>();
-    const [editorData, setEditorData] = useState<string>(`
-    <h2>Beispielaufgabe</h2>
-    <p>Welche der folgenden Aussagen sind korrekt?</p>
-    <p>Bitte kreuzen Sie die richtige(n) Lösung(en) an.</p>
-`);
-    const [answers, setAnswers] = useState<Answer>({
-        multipleChoice: '',
-        freeText: '',
-        numberInput: '',
-        checkboxes: [],
-        graph: ''
-    });
-    const [correctAnswers] = useState({
-        multipleChoice: 'option2',
-        freeText: 'react',
-        numberInput: '42',
-        checkboxes: ['option1', 'option3'],
-        graph: '1'
-    });
-    const [conditions, setConditions] = useState<Condition[]>([
-        {operator: "equals", value: ""}
-    ]);
-    const [latex, setLatex] = useState("\\frac{1}{2}");
-    const [numberSolution, setNumberSolution] = useState("");
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [showResults, setShowResults] = useState(false);
-
-    const handleMultipleChoiceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnswers(prev => ({
-            ...prev,
-            multipleChoice: event.target.value
-        }));
+    const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
+    const [blocks, setBlocks] = useState<Block[]>([]);
+    const [answers, setAnswers] = useState<Record<string, any>>({});
+    const [loading, setLoading] = useState(false);
+    const [openPreview, setOpenPreview] = React.useState(false);
+    const handleOpenPreview = () => setOpenPreview(true);
+    const handleClosePreview = () => setOpenPreview(false);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success" as "success" | "error",
+    });
+    const extractText = (node: any): string => {
+        if (!node) return "";
+        if (Array.isArray(node)) return node.map(extractText).join("");
+        if (node.type === "text") return node.text ?? "";
+        if (node.content) return node.content.map(extractText).join("");
+        return "";
     };
 
-    const handleFreeTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnswers(prev => ({
-            ...prev,
-            freeText: event.target.value
-        }));
-    };
+    const parseContentToBlocks = (doc: any): Block[] => {
+        if (!doc || !doc.content) return [];
+        const result: Block[] = [];
+        doc.content.forEach((node: any, idx: number) => {
+            if (!node || !node.type) return;
+            if (node.type === "mcContainer") {
+                const choices: Choice[] =
+                    (node.content ?? [])
+                        .filter((c: any) => c.type === "mcChoice")
+                        .map((c: any, i: number) => {
+                            const id = c.attrs?.id ?? `mc-${idx}-choice-${i}`;
+                            const text = extractText(c);
+                            return { id, text: text || `Option ${i + 1}` };
+                        }) ?? [];
 
-    const handleNumberInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnswers(prev => ({
-            ...prev,
-            numberInput: event.target.value
-        }));
-    };
-
-    const handleCheckboxChange = (option: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnswers(prev => ({
-            ...prev,
-            checkboxes: event.target.checked
-                ? [...prev.checkboxes, option]
-                : prev.checkboxes.filter(item => item !== option)
-        }));
-    };
-
-    const checkAnswers = () => {
-        setShowResults(true);
-    };
-
-    const resetQuiz = () => {
-        setAnswers({
-            multipleChoice: '',
-            freeText: '',
-            numberInput: '',
-            checkboxes: [],
-            graph: ''
+                const key = node.attrs?.id ?? `mc-${idx}`;
+                if (choices.length > 0) {
+                    result.push({ kind: "mc", key, choices });
+                }
+            } else if (node.type === "freeText") {
+                const key = node.attrs?.id ?? `free-${idx}`;
+                result.push({ kind: "freeText", key });
+            } else if (node.type === "numericInput") {
+                const key = node.attrs?.id ?? `num-${idx}`;
+                result.push({ kind: "numeric", key });
+            }
         });
-        setShowResults(false);
+
+        return result;
     };
 
-    const isCorrect = (type: keyof Answer) => {
-        switch (type) {
-            case 'multipleChoice':
-                return answers.multipleChoice === correctAnswers.multipleChoice;
-            case 'freeText':
-                return answers.freeText.toLowerCase().trim() === correctAnswers.freeText.toLowerCase();
-            case 'numberInput':
-                return answers.numberInput === correctAnswers.numberInput;
-            case 'checkboxes':
-                return answers.checkboxes.sort().join(',') === correctAnswers.checkboxes.sort().join(',');
-            default:
-                return false;
-        }
+    const initAnswersForBlocks = (parsed: Block[]) => {
+        const initial: Record<string, any> = {};
+        parsed.forEach((b) => {
+            if (b.kind === "mc") initial[b.key] = [];
+            else initial[b.key] = "";
+        });
+        setAnswers(initial);
     };
 
-    const addCondition = () => {
-        setConditions((prev) => [
-            ...prev,
-            {connector: "and", operator: "equals", value: ""}
-        ]);
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+        (async () => {
+            try {
+                const question = await loadQuestionForm(id);
+                const contentJson =
+                    typeof question.contentJson === "string"
+                        ? JSON.parse(question.contentJson)
+                        : question.contentJson ?? { type: "doc", content: [] };
+                setQuestionContentJson(contentJson);
+                const parsed = parseContentToBlocks(contentJson);
+                setBlocks(parsed);
+                initAnswersForBlocks(parsed);
+            } catch (err) {
+                console.error("Failed to load question:", err);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [id]);
+
+    const toggleChoice = (blockKey: string, choiceId: string) => {
+        setAnswers((prev) => {
+            const cur: string[] = prev[blockKey] ?? [];
+            const next = cur.includes(choiceId) ? cur.filter((c) => c !== choiceId) : [...cur, choiceId];
+            return { ...prev, [blockKey]: next };
+        });
     };
 
-    const handleOperatorChange = (index: number, newOp: Operator) => {
-        setConditions((prev) =>
-            prev.map((c, i) => (i === index ? {...c, operator: newOp} : c))
-        );
+    const setFreeTextAnswer = (blockKey: string, value: string) => {
+        setAnswers((prev) => ({ ...prev, [blockKey]: value }));
     };
 
-    const handleValueChange = (index: number, newVal: string) => {
-        setConditions((prev) =>
-            prev.map((c, i) => (i === index ? {...c, value: newVal} : c))
-        );
+    const setNumericAnswer = (blockKey: string, value: string) => {
+        setAnswers((prev) => ({ ...prev, [blockKey]: value }));
     };
 
-    const handleConnectorChange = (index: number, newConn: Connector) => {
-        setConditions((prev) =>
-            prev.map((c, i) => (i === index ? {...c, connector: newConn} : c))
-        );
-    };
+    const handleSaveAnswers = async () => {
+        console.log("Saving answers for question", id, answers);
 
+        // await saveCorrectAnswers(id, answers);
+
+        // navigate away or show success
+        navigate(`/preview/${id}`);
+    };
 
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
-                <Box sx={{
-                    minHeight: '100vh',
-                    backgroundColor: 'background.default',
-                    py: 3,
-                    px: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    mt: 6
-                }}>
-                    <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
-                        <Typography variant="h4" component="h1" gutterBottom
-                                    sx={{textAlign: 'center', fontWeight: 'bold'}}>
+                <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
+                    <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
+                        <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
                             Antworten definieren
                         </Typography>
 
-                        {/* Single Choice Section */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore/>}>
-                                <Typography variant="h6">
-                                    Single Choice Frage
-                                    {showResults && (
-                                        <Typography component="span"
-                                                    sx={{ml: 2, color: isCorrect('multipleChoice') ? 'green' : 'red'}}>
-                                            {isCorrect('multipleChoice') ? '✓ Richtig' : '✗ Falsch'}
+                        {loading && <Typography>Loading…</Typography>}
+
+                        {!loading && blocks.length === 0 && (
+                            <Typography sx={{ my: 2 }}>Keine Antwort-Blöcke im Frage-Inhalt gefunden.</Typography>
+                        )}
+
+                        {!loading &&
+                            blocks.map((b, idx) => (
+                                <Accordion key={b.key} sx={{ mb: 1 }}>
+                                    <AccordionSummary expandIcon={<ExpandMore />}>
+                                        <Typography variant="subtitle1">
+                                            {b.kind === "mc" ? `Multiple Choice ${idx + 1}` : b.kind === "freeText" ? `Freitext ${idx + 1}` : `Numerische Eingabe ${idx + 1}`}
                                         </Typography>
-                                    )}
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <FormControl component="fieldset">
-                                    <FormLabel component="legend">Frage 1?</FormLabel>
-                                    <RadioGroup value={answers.multipleChoice} onChange={handleMultipleChoiceChange}>
-                                        <FormControlLabel value="option1" control={<Radio/>} label="Antwort 1"/>
-                                        <FormControlLabel value="option2" control={<Radio/>} label="Antwort 2"/>
-                                        <FormControlLabel value="option3" control={<Radio/>} label="Antwort 3"/>
-                                        <FormControlLabel value="option4" control={<Radio/>} label="Antwort 4"/>
-                                    </RadioGroup>
-                                </FormControl>
-                            </AccordionDetails>
-                        </Accordion>
+                                    </AccordionSummary>
 
-                        {/* Free Text Section */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore/>}>
-                                <Typography variant="h6">
-                                    Freie Text Frage
-                                    {showResults && (
-                                        <Typography component="span"
-                                                    sx={{ml: 2, color: isCorrect('freeText') ? 'green' : 'red'}}>
-                                            {isCorrect('freeText') ? '✓ Richtig' : '✗ Falsch'}
-                                        </Typography>
-                                    )}
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <FormControl fullWidth>
-                                    <FormLabel>Freien Text eingeben?</FormLabel>
-                                    <TextField
-                                        value={answers.freeText}
-                                        onChange={handleFreeTextChange}
-                                        variant="outlined"
-                                        placeholder="Gib deine Beschreibung hier ein"
-                                        sx={{mt: 1}}
-                                    />
-                                </FormControl>
-                            </AccordionDetails>
-                        </Accordion>
+                                    <AccordionDetails>
+                                        {b.kind === "mc" && (
+                                            <FormControl component="fieldset" fullWidth>
+                                                <FormGroup>
+                                                    {(b as any).choices.map((choice: Choice) => (
+                                                        <FormControlLabel
+                                                            key={choice.id}
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={(answers[b.key] ?? []).includes(choice.id)}
+                                                                    onChange={() => toggleChoice(b.key, choice.id)}
+                                                                />
+                                                            }
+                                                            label={choice.text || "Option"}
+                                                        />
+                                                    ))}
+                                                </FormGroup>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Markiere die korrekten Antwort(en).
+                                                </Typography>
+                                            </FormControl>
+                                        )}
 
-                        {/* Number Input Section */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore/>}>
-                                <Typography variant="h6">
-                                    Algebraische Gleichung oder Numerische Eingabe
-                                    {showResults && (
-                                        <Typography component="span"
-                                                    sx={{ml: 2, color: isCorrect('numberInput') ? 'green' : 'red'}}>
-                                            {isCorrect('numberInput') ? '✓ Richtig' : '✗ Falsch'}
-                                        </Typography>
-                                    )}
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <FormControl fullWidth>
-                                    <FormLabel>Was ist die Lösung für xyz?</FormLabel>
-                                    <MathField value={latex} onChange={setLatex}
-                                               style={{fontSize: "1.2rem", border: "1px solid #ccc", padding: 8}}/>
-
-                                    {conditions.map((cond, index) => (
-                                        <Box key={index} sx={{display: "flex", alignItems: "center", gap: 1, mt: 1}}>
-                                            {index > 0 && (
-                                                <Select<Connector>
-                                                    value={cond.connector ?? "and"}
-                                                    onChange={(e) =>
-                                                        handleConnectorChange(index, e.target.value as Connector)}
-                                                    size="small"
-                                                    sx={{minWidth: 80}}>
-                                                    <MenuItem value="and">und</MenuItem>
-                                                    <MenuItem value="or">oder</MenuItem>
-                                                </Select>
-                                            )}
-
-                                            <Typography>Die Lösung soll</Typography>
-                                            <Select<Operator>
-                                                value={cond.operator}
-                                                onChange={(e) => handleOperatorChange(index, e.target.value as Operator)}
-                                                size="small"
-                                                sx={{minWidth: 140}}>
-                                                <MenuItem value="equals">= gleich</MenuItem>
-                                                <MenuItem value="greater">&gt; größer</MenuItem>
-                                                <MenuItem value="less">&lt; kleiner</MenuItem>
-                                                <MenuItem value="greaterOrEqual">≥ größer gleich</MenuItem>
-                                                <MenuItem value="lessOrEqual">≤ kleiner gleich</MenuItem>
-                                            </Select>
-                                            <Typography>(als)</Typography>
-                                            <MathField
-                                                value={cond.value}
-                                                onChange={(val) => handleValueChange(index, val)}
-                                                style={{
-                                                    fontSize: "1.2rem",
-                                                    border: "1px solid #ccc",
-                                                    padding: 8,
-                                                    width: 300,
-                                                }}
-                                            />
-                                            <Typography>sein</Typography>
-                                            <IconButton
-                                                aria-label="Entfernen"
-                                                onClick={() =>
-                                                    setConditions((prev) => {
-                                                        const newConds = prev.filter((_, i) => i !== index);
-                                                        if (newConds.length > 0) {
-                                                            newConds[0] = {...newConds[0], connector: undefined};
-                                                        }
-                                                        return newConds;
-                                                    })}
-                                                disabled={conditions.length === 1}>
-                                                <Delete/>
-                                            </IconButton>
-                                        </Box>
-                                    ))}
-
-
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={addCondition}
-                                        sx={{alignSelf: "flex-start", mt: 1}}>
-                                        Weitere Bedingung hinzufügen
-                                    </Button>
-                                </FormControl>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        {/* Multiple Choice Section */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore/>}>
-                                <Typography variant="h6">
-                                    Multiple Choice Frage
-                                    {showResults && (
-                                        <Typography component="span"
-                                                    sx={{ml: 2, color: isCorrect('checkboxes') ? 'green' : 'red'}}>
-                                            {isCorrect('checkboxes') ? '✓ Richtig' : '✗ Falsch'}
-                                        </Typography>
-                                    )}
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <FormControl component="fieldset">
-                                    <FormLabel component="legend">Welcher der folgenden Antworten sind
-                                        richtig?</FormLabel>
-                                    <FormGroup>
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={answers.checkboxes.includes('option1')}
-                                                    onChange={handleCheckboxChange('option1')}
+                                        {b.kind === "freeText" && (
+                                            <FormControl fullWidth>
+                                                <TextField
+                                                    label="Erwartete Antwort (Freitext)"
+                                                    value={answers[b.key] ?? ""}
+                                                    onChange={(e) => setFreeTextAnswer(b.key, e.target.value)}
+                                                    fullWidth
                                                 />
-                                            }
-                                            label="option1"
-                                        />
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={answers.checkboxes.includes('option2')}
-                                                    onChange={handleCheckboxChange('option2')}
-                                                />
-                                            }
-                                            label="option2"
-                                        />
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={answers.checkboxes.includes('option3')}
-                                                    onChange={handleCheckboxChange('option3')}
-                                                />
-                                            }
-                                            label="option3"
-                                        />
-                                        <FormControlLabel
-                                            control={
-                                                <Checkbox
-                                                    checked={answers.checkboxes.includes('option4')}
-                                                    onChange={handleCheckboxChange('option4')}
-                                                />
-                                            }
-                                            label="option4"
-                                        />
-                                    </FormGroup>
-                                </FormControl>
-                            </AccordionDetails>
-                        </Accordion>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Trage hier die erwartete/n richtige/n Textantwort(en) ein.
+                                                </Typography>
+                                            </FormControl>
+                                        )}
 
-                        {/* Geogebra Section */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore/>}>
-                                <Typography variant="h6">
-                                    Frage mit Graphen Eingabe
-                                    {showResults && (
-                                        <Typography component="span"
-                                                    sx={{ml: 2, color: isCorrect('checkboxes') ? 'green' : 'red'}}>
-                                            {isCorrect('checkboxes') ? '✓ Richtig' : '✗ Falsch'}
-                                        </Typography>
-                                    )}
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <FormControl component="fieldset">
-                                    <FormLabel component="legend">Zeichne den Graphen ein?</FormLabel>
-                                    <GeoGebraApp
-                                        materialId="pfeKePU3"
-                                        onChange={(expr) => console.log("Formula changed:", expr)}
-                                    />
-                                </FormControl>
-                            </AccordionDetails>
-                        </Accordion>
+                                        {b.kind === "numeric" && (
+                                            <FormControl fullWidth>
+                                                <TextField
+                                                    label="Erwartete numerische Antwort"
+                                                    value={answers[b.key] ?? ""}
+                                                    onChange={(e) => setNumericAnswer(b.key, e.target.value)}
+                                                    fullWidth
+                                                />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Numerische Lösung (z. B. "42" oder ein Ausdruck).
+                                                </Typography>
+                                            </FormControl>
+                                        )}
+                                    </AccordionDetails>
+                                </Accordion>
+                            ))}
 
-                        {/* Action Buttons */}
-                        <Box sx={{mt: 3, textAlign: 'center', gap: 2, display: 'flex', justifyContent: 'center'}}>
-                            <Button
-                                variant="outlined"
-                                onClick={checkAnswers} sx={{
-                                borderColor: '#000',
-                                color: '#000',
-                                '&:hover': {borderColor: '#333', bgcolor: '#f5f5f5'}
-                            }}>
-                                Antworten testen
+                        <Box sx={{ mt: 3, textAlign: "center", gap: 2, display: "flex", justifyContent: "center" }}>
+                            <Button variant="outlined" onClick={() => navigate(`/editor/${id}`)}>
+                                Zurück
                             </Button>
-                            <Button
-                                variant="outlined"
-                                onClick={resetQuiz}
-                                sx={{
-                                    borderColor: '#000',
-                                    color: '#000',
-                                    '&:hover': {borderColor: '#333', bgcolor: '#f5f5f5'}
-                                }}>
-                                Antworten zurücksetzen
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<Save/>}
-                                onClick={() => navigate(`/preview/${id}`)}
-                                sx={{bgcolor: '#000', color: '#fff', '&:hover': {bgcolor: '#333'}}}>
-                                Auswertung speichern
+                            <Button variant="outlined" onClick={handleOpenPreview}>Vorschau</Button>
+                            <Button variant="contained" startIcon={<Save />} onClick={handleSaveAnswers}>
+                                Speichern
                             </Button>
                         </Box>
 
-                        {/* Results Summary */}
-                        {showResults && (
-                            <Box sx={{mt: 3, p: 2, border: '1px solid #000', backgroundColor: '#f9f9f9'}}>
-                                <Typography variant="h6" gutterBottom>
-                                    Ergebnis:
-                                </Typography>
-                                <Typography>
-                                    Korrekte
-                                    Antworten: {Object.keys(correctAnswers).filter(key => isCorrect(key as keyof Answer)).length} / {Object.keys(correctAnswers).length}
-                                </Typography>
-                                <Box sx={{mt: 1}}>
-                                    <Typography variant="body2">Single Choice
-                                        Frage: {isCorrect('multipleChoice') ? '✓' : '✗'}</Typography>
-                                    <Typography variant="body2">Freie Text
-                                        Frage: {isCorrect('freeText') ? '✓' : '✗'}</Typography>
-                                    <Typography variant="body2">Algebra/Numerische
-                                        Frage: {isCorrect('numberInput') ? '✓' : '✗'}</Typography>
-                                    <Typography variant="body2">Multiple Choice
-                                        Frage: {isCorrect('checkboxes') ? '✓' : '✗'}</Typography>
-                                    <Typography variant="body2">Graphen
-                                        zeichnen: {isCorrect('checkboxes') ? '✓' : '✗'}</Typography>
-                                </Box>
-                            </Box>
-                        )}
+                        <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullWidth>
+                            <DialogTitle>Vorschau</DialogTitle>
+                            <DialogContent dividers>
+                                <Preview content={questionContentJson} />
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleClosePreview}>Schließen</Button>
+                            </DialogActions>
+                        </Dialog>
                     </Paper>
                 </Box>
             </QuestionLayout>
         </MainLayout>
     );
-};
+}

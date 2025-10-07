@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {v4 as uuidv4} from 'uuid';
@@ -18,7 +18,8 @@ import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import AddIcon from '@mui/icons-material/Add';
 import {Preview} from "../../components/Preview.tsx";
 import { loadQuestionForm, updateQuestionContent } from '../../services/QuestionsService.tsx';
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
+import {Save as SaveIcon} from "@mui/icons-material";
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
@@ -30,6 +31,7 @@ export default function QuestionEditorPage() {
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
+    const navigate = useNavigate();
     const { id } = useParams();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const openMenu = Boolean(anchorEl);
@@ -39,7 +41,11 @@ export default function QuestionEditorPage() {
     const [openPreview, setOpenPreview] = React.useState(false);
     const handleOpenPreview = () => setOpenPreview(true);
     const handleClosePreview = () => setOpenPreview(false);
-
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success" as "success" | "error",
+    });
     const addMCContainer = () => {
         if (!editor) return;
         editor.chain().focus().insertContent({
@@ -77,10 +83,14 @@ export default function QuestionEditorPage() {
 
         try {
             await updateQuestionContent(id, contentJson, contentHtml);
-            alert("Question saved successfully!");
+            navigate(`/answers/${id}`)
         } catch (err) {
             console.error("Failed to save question:", err);
-            alert("Failed to save question. Check console.");
+            setSnackbar({
+                open: true,
+                message: "Fehler beim Speichern der Aufgabe.",
+                severity: "error",
+            });
         }
     };
 
@@ -124,12 +134,11 @@ export default function QuestionEditorPage() {
                         </Box>
 
                         <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            <Button variant="outlined" onClick={() => { }}>Zurück</Button>
+                            <Button variant="outlined" onClick={() => {navigate(`/meta/${id}`)}}>Zurück</Button>
                             <Button variant="outlined" onClick={handleOpenPreview}>Vorschau</Button>
-                            <Button variant="contained" onClick={handleSave}>Speichern</Button>
+                            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave}>Speichern</Button>
                         </Box>
 
-                        {/* Preview Dialog */}
                         <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullWidth>
                             <DialogTitle>Vorschau</DialogTitle>
                             <DialogContent dividers>
