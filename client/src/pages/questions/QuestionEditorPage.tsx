@@ -46,18 +46,47 @@ export default function QuestionEditorPage() {
         message: "",
         severity: "success" as "success" | "error",
     });
+
     const addMCContainer = () => {
         if (!editor) return;
         editor.chain().focus().insertContent({
             type: 'mcContainer',
+            attrs: { id: uuidv4() },
             content: [
                 {
                     type: 'mcChoice',
                     attrs: { id: uuidv4() },
                     content: [{ type: 'text', text: 'Option 1' }],
                 },
+                {
+                    type: 'mcChoice',
+                    attrs: { id: uuidv4() },
+                    content: [{ type: 'text', text: 'Option 2' }],
+                },
             ],
         }).run();
+    };
+
+    const addMCChoice = () => {
+        if (!editor) return;
+
+        const { state } = editor;
+        const $from = state.selection.$from;
+        const node = $from.node($from.depth);
+
+        if (node?.type?.name === 'mcContainer') {
+            editor
+                .chain()
+                .focus()
+                .insertContentAt(state.selection.to, {
+                    type: 'mcChoice',
+                    attrs: { id: uuidv4() },
+                    content: [{ type: 'text', text: 'Neue Option' }],
+                })
+                .run();
+        } else {
+            console.warn("Cursor is not inside an MC container");
+        }
     };
 
     const addFreeText = () => {
@@ -128,6 +157,7 @@ export default function QuestionEditorPage() {
                             </Button>
                             <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
                                 <MenuItem onClick={addMCContainer}>Multiple Choice Block</MenuItem>
+                                <MenuItem onClick={addMCChoice}>Antwortoption hinzufügen</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
                             </Menu>
