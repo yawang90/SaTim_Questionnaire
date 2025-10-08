@@ -13,7 +13,7 @@ const router = express.Router();
 const upload = multer({ dest: "temp/" });
 router.use(authenticateToken);
 
-router.post("/imageUpload", upload.single("upload"), uploadImage);
+router.post('/imageUpload', upload.single('file'), uploadImage);
 router.put("/question/:id", updateQuestionForm);
 router.post("/question", createQuestionsForm);
 router.get("/question/:id", getQuestionFormById);

@@ -1,10 +1,10 @@
 import type {Request, Response} from 'express';
 import {
-    findQuestionById,
-    getQuestionsByGroupId,
-    saveImage,
     createQuestionMeta,
-    updateQuestionMetaById, updateQuestionContentById
+    findQuestionById,
+    getQuestionsByGroupId, saveImage,
+    updateQuestionContentById,
+    updateQuestionMetaById
 } from "../services/editorService.js";
 
 interface FieldInput {
@@ -23,12 +23,11 @@ interface QuestionContentInput {
     contentHtml: string | null;
 }
 
-export const uploadImage = (req: Request, res: Response) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-    }
+export const uploadImage = async (req: Request, res: Response) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
     try {
-        const imageUrl = saveImage(req.file);
+        const imageUrl = await saveImage(req.file);
         res.status(201).json({ url: imageUrl });
     } catch (err) {
         console.error("Image upload error:", err);

@@ -1,7 +1,7 @@
-import path from "path";
-import fs from "fs";
+import fs from "fs/promises";
 import prisma from "../config/prismaClient.js";
 import {type question, question_status} from "@prisma/client";
+import {supabase} from "../supabaseClient.js";
 
 interface CreateQuestionInput {
     metadata: Record<string, any>;
@@ -21,25 +21,26 @@ interface UpdateMetadataInput {
     updatedById: number;
 }
 
-const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
+export const saveImage = async (file: Express.Multer.File): Promise<string> => {
+    const safeName = file.originalname.replace(/\s+/g, "_");
+    const fileName = `${Date.now()}_${safeName}`;
+    const filePath = `uploads/${fileName}`;
 
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, {recursive: true});
-}
+    const fileBuffer = await fs.readFile(file.path);
 
-/**
- * Save uploaded image and return its public URL
- */
-export const saveImage = (file: Express.Multer.File): string => {
-    const filename = `${Date.now()}-${file.originalname}`;
-    const filePath = path.join(UPLOAD_DIR, filename);
+    const { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, fileBuffer, {
+            contentType: file.mimetype,
+        });
 
-    fs.renameSync(file.path, filePath);
+    await fs.unlink(file.path);
 
-    const baseUrl = process.env.API_URL || "http://localhost:5000";
-    return `${baseUrl}/uploads/${filename}`;
+    if (error) throw new Error("Failed to upload image: " + error.message);
+
+    const { data } = supabase.storage.from("images").getPublicUrl(filePath);
+    return data.publicUrl;
 };
-
 /**
  * Create a new metadata entry
  */
