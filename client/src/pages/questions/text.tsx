@@ -21,7 +21,7 @@ import {
     Typography
 } from '@mui/material';
 import {Delete, ExpandMore, Save} from '@mui/icons-material';
-import MathField from "../../components/MathField.tsx";
+import MathField from "../../components/Editor/MathField.tsx";
 import "mathlive";
 import {useNavigate, useParams} from "react-router-dom";
 import GeoGebraApp from "../../components/GeoGebra/GeoGebraApp.tsx";

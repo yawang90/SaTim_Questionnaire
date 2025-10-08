@@ -2,22 +2,33 @@ import React, {useEffect, useState} from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {v4 as uuidv4} from 'uuid';
-import {Box, Button, Menu, MenuItem, Paper, Typography, Dialog, DialogTitle, DialogContent, DialogActions} from '@mui/material';
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Menu,
+    MenuItem,
+    Paper,
+    Typography
+} from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {FreeText, MCChoice, MCContainer, NumericInput} from "../../components/NodeEditorPlugins.tsx";
+import {FreeText, MCChoice, MCContainer, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
-import EditorToolbar from "../../components/TipTapToolbar.tsx";
+import EditorToolbar from "../../components/Editor/EditorToolbar.tsx";
 import TextAlign from '@tiptap/extension-text-align';
 import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import AddIcon from '@mui/icons-material/Add';
-import {Preview} from "../../components/Preview.tsx";
-import { loadQuestionForm, updateQuestionContent } from '../../services/QuestionsService.tsx';
+import {Preview} from "../../components/Editor/Preview.tsx";
+import {loadQuestionForm, updateQuestionContent} from '../../services/QuestionsService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
 
@@ -37,7 +48,6 @@ export default function QuestionEditorPage() {
     const openMenu = Boolean(anchorEl);
     const handleClickMenu = (event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget);
     const handleCloseMenu = () => setAnchorEl(null);
-
     const [openPreview, setOpenPreview] = React.useState(false);
     const handleOpenPreview = () => setOpenPreview(true);
     const handleClosePreview = () => setOpenPreview(false);
@@ -65,28 +75,6 @@ export default function QuestionEditorPage() {
                 },
             ],
         }).run();
-    };
-
-    const addMCChoice = () => {
-        if (!editor) return;
-
-        const { state } = editor;
-        const $from = state.selection.$from;
-        const node = $from.node($from.depth);
-
-        if (node?.type?.name === 'mcContainer') {
-            editor
-                .chain()
-                .focus()
-                .insertContentAt(state.selection.to, {
-                    type: 'mcChoice',
-                    attrs: { id: uuidv4() },
-                    content: [{ type: 'text', text: 'Neue Option' }],
-                })
-                .run();
-        } else {
-            console.warn("Cursor is not inside an MC container");
-        }
     };
 
     const addFreeText = () => {
@@ -157,7 +145,6 @@ export default function QuestionEditorPage() {
                             </Button>
                             <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
                                 <MenuItem onClick={addMCContainer}>Multiple Choice Block</MenuItem>
-                                <MenuItem onClick={addMCChoice}>Antwortoption hinzufügen</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
                             </Menu>

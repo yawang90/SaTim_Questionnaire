@@ -18,7 +18,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 import { loadQuestionForm } from "../../services/QuestionsService.tsx";
-import {Preview} from "../../components/Preview.tsx";
+import {Preview} from "../../components/Editor/Preview.tsx";
 import type {JSONContent} from "@tiptap/core";
 
 type Choice = { id: string; text: string };

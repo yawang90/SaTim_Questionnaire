@@ -106,3 +106,23 @@ export async function loadAllQuestions(groupId: string) {
 
     return handleResponse(response);
 }
+
+/**
+ * Upload an image (used by TipTap image dialog)
+ * @param file - image file (jpg/png/webp etc.)
+ * @returns {Promise<{url: string}>} public URL of uploaded image
+ */
+export async function uploadImage(file: File): Promise<{ url: string }> {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await authFetch(`${API_URL}/api/upload`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+        body: formData,
+    });
+    return handleResponse(response);
+}
