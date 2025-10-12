@@ -31,6 +31,7 @@ import {Preview} from "../../components/Editor/Preview.tsx";
 import {loadQuestionForm, updateQuestionContent} from '../../services/QuestionsService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
+import {GeoGebra} from "../../components/Editor/NodeEditorPlugins.tsx";
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
@@ -38,7 +39,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCContainer, MCChoice, FreeText, NumericInput
+            MCContainer, MCChoice, FreeText, NumericInput, GeoGebra
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -90,6 +91,14 @@ export default function QuestionEditorPage() {
         editor.chain().focus().insertContent({
             type: 'numericInput',
             content: [{ type: 'text', text: 'Numerische Antwort...' }],
+        }).run();
+    };
+
+    const addGeoGebra = () => {
+        if (!editor) return;
+        editor.chain().focus().insertContent({
+            type: 'geoGebra',
+            attrs: { id: uuidv4(), materialId: '' },
         }).run();
     };
 
@@ -147,6 +156,7 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addMCContainer}>Multiple Choice Block</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
+                                <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
                             </Menu>
                         </Box>
 
@@ -156,7 +166,7 @@ export default function QuestionEditorPage() {
                             <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave}>Speichern</Button>
                         </Box>
 
-                        <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullWidth>
+                        <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullScreen>
                             <DialogTitle>Vorschau</DialogTitle>
                             <DialogContent dividers>
                                 <Preview content={editor?.getJSON() || ''} />

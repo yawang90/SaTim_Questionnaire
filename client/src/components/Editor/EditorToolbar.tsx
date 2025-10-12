@@ -110,11 +110,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
 
     return (
         <>
-            {/* Toolbar */}
-            <Paper
-                elevation={1}
-                sx={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, p: 1, mb: 2, backgroundColor: 'background.paper', borderRadius: 0,}}>
-                {/* Font Family */}
+            <Paper elevation={1} sx={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, p: 1, mb: 2, backgroundColor: 'background.paper', borderRadius: 0,}}>
                 <Select size="small" value={editor.getAttributes('textStyle').fontFamily || ''} onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()} displayEmpty sx={{ minWidth: 140 }}>
                     <MenuItem value="">Schriftart</MenuItem>
                     {fontFamilies.map((font) => (
@@ -124,7 +120,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     ))}
                 </Select>
 
-                {/* Font Size */}
                 <Select size="small" value={editor.getAttributes('textStyle').fontSize || ''} onChange={(e) => editor.chain().focus().setFontSize(e.target.value).run()} displayEmpty sx={{ minWidth: 120 }}>
                     <MenuItem value="">Schriftgröße</MenuItem>
                     {fontSizes.map((size) => (
@@ -134,7 +129,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     ))}
                 </Select>
 
-                {/* Bold */}
                 <Tooltip title="Fett">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -143,7 +137,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Italic */}
                 <Tooltip title="Kursiv">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -152,7 +145,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Strike */}
                 <Tooltip title="Durchgestrichen">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -161,7 +153,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Headings */}
                 <Tooltip title="Überschrift 1">
                     <IconButton
                         onClick={() => editor.chain().focus().setHeading({ level: 1 }).run()}
@@ -177,7 +168,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Lists */}
                 <Tooltip title="Aufzählung">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -185,6 +175,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         <FormatListBulletedIcon />
                     </IconButton>
                 </Tooltip>
+
                 <Tooltip title="Nummerierte Liste">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -193,7 +184,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Alignment */}
                 <Tooltip title="Links ausrichten">
                     <IconButton
                         onClick={() => editor.chain().focus().setTextAlign('left').run()}
@@ -208,6 +198,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         <FormatAlignCenterIcon />
                     </IconButton>
                 </Tooltip>
+
                 <Tooltip title="Rechts ausrichten">
                     <IconButton
                         onClick={() => editor.chain().focus().setTextAlign('right').run()}
@@ -216,14 +207,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </IconButton>
                 </Tooltip>
 
-                {/* Image Button */}
                 <Tooltip title="Bild einfügen">
                     <IconButton sx={{ color: 'text.secondary' }} onClick={() => setOpen(true)}>
                         <ImageIcon />
                     </IconButton>
                 </Tooltip>
 
-                {/* Table */}
                 <Tooltip title="Tabelle einfügen">
                     <IconButton sx={{ color: 'text.secondary' }} onClick={() => setTableDialogOpen(true)}>
                         <TableChartIcon/>
@@ -231,7 +220,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                 </Tooltip>
             </Paper>
 
-            {/* Image Dialog */}
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
                 <DialogTitle>Bild einfügen</DialogTitle>
                 <DialogContent>
@@ -267,21 +255,19 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         label="Zeilen"
                         value={tableRows}
                         onChange={(e) => setTableRows(Number(e.target.value))}
-                        slotProps={{ input: { inputProps: { min: 1 } } }}
-                    />
+                        slotProps={{ input: { inputProps: { min: 1 } } }}/>
                     <TextField
                         type="number"
                         label="Spalten"
                         value={tableCols}
-                        onChange={(e) => setTableCols(Number(e.target.value))}
-                    />
+                        onChange={(e) => setTableCols(Number(e.target.value))}/>
+
                     <TextField
                         type="number"
                         label="Zellenbreite (px)"
                         value={cellWidth}
                         onChange={(e) => setCellWidth(Number(e.target.value))}
-                        slotProps={{ input: { inputProps: { min: 10 } } }}
-                    />
+                        slotProps={{ input: { inputProps: { min: 10 } } }}/>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setTableDialogOpen(false)}>Abbrechen</Button>
@@ -290,7 +276,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
-
         </>
     );
 };

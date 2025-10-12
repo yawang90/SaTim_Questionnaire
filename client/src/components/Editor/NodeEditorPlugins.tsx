@@ -3,6 +3,7 @@ import {ReactNodeViewRenderer} from "@tiptap/react";
 import {FreeTextEditorComponent} from "../FreeText/FreeTextEditorComponent.tsx";
 import {MCEditorComponent} from "../MC/MCEditorComponent.tsx";
 import {MCContainerComponent} from "../MC/MCContainerComponent.tsx";
+import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 
 export const MCContainer = Node.create({
     name: 'mcContainer',
@@ -66,3 +67,30 @@ export const NumericInput = Node.create({
     parseHTML: () => [{ tag: 'div.numeric-input' }],
     renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'numeric-input' }, HTMLAttributes), 0],
 })
+
+export const GeoGebra = Node.create({
+    name: 'geoGebra',
+    group: 'block',
+    atom: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            materialId: { default: '' },
+            width: { default: '800' },
+            height: { default: '600' },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-type="geoGebra"]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'geoGebra' })];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(GeoGebraEditorComponent);
+    },
+});
