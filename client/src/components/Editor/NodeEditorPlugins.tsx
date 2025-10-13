@@ -1,48 +1,42 @@
-import { Node, mergeAttributes } from '@tiptap/core'
+import {mergeAttributes, Node} from '@tiptap/core'
 import {ReactNodeViewRenderer} from "@tiptap/react";
 import {FreeTextEditorComponent} from "../FreeText/FreeTextEditorComponent.tsx";
-import {MCEditorComponent} from "../MC/MCEditorComponent.tsx";
-import {MCContainerComponent} from "../MC/MCContainerComponent.tsx";
+import {MCChoiceEditorComponent} from "../MC/MCChoiceEditorComponent.tsx";
 import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
-
-export const MCContainer = Node.create({
-    name: 'mcContainer',
-    group: 'block',
-    content: 'mcChoice+',
-    parseHTML: () => [{ tag: 'div.mc-container' }],
-    renderHTML: ({ HTMLAttributes }) => [
-        'div',
-        mergeAttributes({ class: 'mc-container' }, HTMLAttributes),
-        0,
-    ],
-    addNodeView() {
-        return ReactNodeViewRenderer(MCContainerComponent);
-    },
-});
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
-    group: 'inline',
-    inline: true,
-    content: 'inline*',
-    selectable: true,
-    draggable: false,
+    group: 'block',
+    content: 'block+',
+    atom: false,
+
     addAttributes() {
         return {
             id: { default: null },
-        };
+            groupId: { default: null },
+            checked: { default: false },
+        }
     },
-    parseHTML: () => [{ tag: 'span.mc-choice' }],
-    renderHTML: ({ HTMLAttributes }) => [
-        'span',
-        { ...HTMLAttributes, class: 'mc-choice' },
-        0,
-    ],
-    addNodeView() {
-        return ReactNodeViewRenderer(MCEditorComponent);
-    },
-});
 
+    parseHTML() {
+        return [{ tag: 'div[data-type="mcChoice"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'div',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'mcChoice',
+                class: 'mc-choice',
+            }),
+            0,
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(MCChoiceEditorComponent)
+    },
+})
 
 export const FreeText = Node.create({
     name: 'freeText',

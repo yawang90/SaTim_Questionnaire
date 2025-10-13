@@ -1,7 +1,7 @@
 import React from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import {FreeText, GeoGebra, MCChoice, MCContainer, NumericInput} from './NodeAnswerPlugins.tsx';
+import {FreeText, GeoGebra, MCChoice, NumericInput} from './NodeAnswerPlugins.tsx';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -23,7 +23,7 @@ export const Preview: React.FC<PreviewProps> = ({ content }) => {
             StarterKit,
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading','paragraph','bulletList','orderedList'] }),
             Link, Table.configure({ resizable: true }), TableRow, TableCell, TableHeader, Image,
-            MCContainer, MCChoice, GeoGebra, FreeText, NumericInput,
+            GeoGebra, FreeText, NumericInput, MCChoice
         ],
         content: content || { type: 'doc', content: [] },
     });

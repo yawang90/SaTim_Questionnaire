@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {FreeText, MCChoice, MCContainer, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
+import {FreeText, GeoGebra, MCChoice, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -31,7 +31,6 @@ import {Preview} from "../../components/Editor/Preview.tsx";
 import {loadQuestionForm, updateQuestionContent} from '../../services/QuestionsService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
-import {GeoGebra} from "../../components/Editor/NodeEditorPlugins.tsx";
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
@@ -39,7 +38,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCContainer, MCChoice, FreeText, NumericInput, GeoGebra
+            MCChoice, FreeText, NumericInput, GeoGebra, MCChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -58,25 +57,49 @@ export default function QuestionEditorPage() {
         severity: "success" as "success" | "error",
     });
 
-    const addMCContainer = () => {
+    const addMCChoiceBlock = () => {
         if (!editor) return;
+
         editor.chain().focus().insertContent({
-            type: 'mcContainer',
-            attrs: { id: uuidv4() },
+            type: 'mcChoice',
+            attrs: {
+                id: uuidv4(),
+                groupId: '',
+                checked: false,
+            },
             content: [
                 {
-                    type: 'mcChoice',
-                    attrs: { id: uuidv4() },
-                    content: [{ type: 'text', text: 'Option 1' }],
-                },
-                {
-                    type: 'mcChoice',
-                    attrs: { id: uuidv4() },
-                    content: [{ type: 'text', text: 'Option 2' }],
-                },
-            ],
+                    type: 'paragraph',
+                    content: [
+                        { type: 'text', text: 'Option 1' }
+                    ]
+                }
+            ]
         }).run();
     };
+
+    const addMCChoiceInline = () => {
+        if (!editor) return;
+
+        editor.chain().focus().insertContent({
+            type: 'mcChoice',
+            attrs: {
+                id: uuidv4(),
+                groupId: '',
+                checked: false,
+            },
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [
+                        { type: 'text', text: 'Option 1' }
+                    ]
+                }
+            ]
+        }).run();
+    };
+
+
 
     const addFreeText = () => {
         if (!editor) return;
@@ -153,7 +176,8 @@ export default function QuestionEditorPage() {
                                 Antwort Typen hinzufügen
                             </Button>
                             <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
-                                <MenuItem onClick={addMCContainer}>Multiple Choice Block</MenuItem>
+                                <MenuItem onClick={addMCChoiceBlock}>Multiple Choice Block</MenuItem>
+                                <MenuItem onClick={addMCChoiceInline}>Multiple Choice Inline</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
                                 <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
