@@ -11,12 +11,7 @@ export const MCChoiceEditorComponent: React.FC<NodeViewProps> = ({ node, updateA
     return (
         <NodeViewWrapper
             className="mc-choice-wrapper"
-            style={{
-                display: 'inline-block',
-                margin: '0.25rem',
-                verticalAlign: 'top',
-            }}
-        >
+            style={{display: 'inline-block', margin: '0.25rem', verticalAlign: 'top',}}>
             <div
                 className="mc-choice-editor"
                 style={{border: '1px solid black', borderRadius: '0.5rem', padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', minHeight: '2.5rem',}}
@@ -25,10 +20,7 @@ export const MCChoiceEditorComponent: React.FC<NodeViewProps> = ({ node, updateA
                     <input type="checkbox" disabled className="w-5 h-5 cursor-not-allowed" />
                 </div>
 
-                <NodeViewContent
-                    className="mc-choice-content"
-                    style={{display: 'inline-block', minWidth: '5rem', minHeight: '1.5em', whiteSpace: 'pre-wrap',}}
-                />
+                <NodeViewContent className="mc-choice-content" style={{display: 'inline-block', minWidth: '5rem', minHeight: '1.5em', whiteSpace: 'pre-wrap',}}/>
 
                 <div style={{ flexShrink: 0 }}>
                     <select value={groupId || ''} onChange={(e) => updateAttributes({ groupId: e.target.value })} className="border rounded px-2 py-1 text-sm">

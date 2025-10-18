@@ -20,7 +20,7 @@ export const FreeTextInlineEditorComponent: React.FC<NodeViewProps> = () => {
             <TextField
                 variant="outlined"
                 size="small"
-                placeholder="Antwort..."
+                placeholder="Freitext"
                 style={{ width: '6rem', minWidth: '3rem' }}
             />
             <NodeViewContent />

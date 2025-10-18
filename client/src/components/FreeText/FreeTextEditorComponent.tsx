@@ -1,10 +1,6 @@
 import React from 'react'
-import {
-    NodeViewWrapper,
-    NodeViewContent,
-    type NodeViewProps,
-} from '@tiptap/react'
-import { Box, TextField, Typography } from '@mui/material'
+import {NodeViewContent, type NodeViewProps, NodeViewWrapper,} from '@tiptap/react'
+import {Box, TextField} from '@mui/material'
 
 export const FreeTextEditorComponent: React.FC<NodeViewProps> = () => {
     return (
@@ -12,11 +8,6 @@ export const FreeTextEditorComponent: React.FC<NodeViewProps> = () => {
             as="div"
             className="free-text"
             style={{border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: '12px 0',}}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                    Freitext Block
-                </Typography>
-            </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <TextField
