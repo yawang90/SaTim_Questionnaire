@@ -3,6 +3,7 @@ import {ReactNodeViewRenderer} from "@tiptap/react";
 import {FreeTextEditorComponent} from "../FreeText/FreeTextEditorComponent.tsx";
 import {MCChoiceEditorComponent} from "../MC/MCChoiceEditorComponent.tsx";
 import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
+import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -88,3 +89,36 @@ export const GeoGebra = Node.create({
         return ReactNodeViewRenderer(GeoGebraEditorComponent);
     },
 });
+
+export const FreeTextInline = Node.create({
+    name: 'freeTextInline',
+    group: 'inline',
+    inline: true,
+    atom: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            placeholder: { default: 'Freitext Antwort' },
+        }
+    },
+
+    parseHTML() {
+        return [{ tag: 'span[data-type="freeTextInline"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'freeTextInline',
+                class: 'free-text-inline',
+            }),
+            HTMLAttributes.placeholder || '',
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(FreeTextInlineEditorComponent)
+    },
+})

@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react'
 import { NodeViewWrapper } from '@tiptap/react'
 import type { Node as ProseMirrorNode } from 'prosemirror-model'
+import { TextField } from '@mui/material'
 
 interface FreeTextProps {
     node: ProseMirrorNode
 }
 
-export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({ node }) => {
+export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({}) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     const autoResize = () => {
@@ -20,23 +21,8 @@ export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({ node }) => {
     }, [])
 
     return (
-        <NodeViewWrapper className="free-text" style={{ width: '100%' }}>
-            <textarea
-                ref={textareaRef}
-                data-id={node.attrs.id}
-                placeholder="Antwort hier eingeben..."
-                rows={3}
-                style={{
-                    width: '100%',
-                    padding: '4px 8px',
-                    resize: 'none',
-                    overflow: 'hidden',
-                    boxSizing: 'border-box',
-                    fontFamily: 'inherit',
-                    fontSize: 'inherit',
-                }}
-                onInput={autoResize}
-            />
+        <NodeViewWrapper className="free-text" style={{ width: '100%', margin: '8px 0' }}>
+            <TextField inputRef={textareaRef} placeholder="Antwort hier eingeben..." multiline minRows={3} fullWidth variant="outlined" onInput={autoResize}/>
         </NodeViewWrapper>
     )
 }

@@ -11,13 +11,7 @@ export const FreeTextEditorComponent: React.FC<NodeViewProps> = () => {
         <NodeViewWrapper
             as="div"
             className="free-text"
-            style={{
-                border: '1px solid #ccc',
-                borderRadius: 8,
-                padding: 12,
-                margin: '12px 0',
-            }}
-        >
+            style={{border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: '12px 0',}}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="subtitle1" fontWeight="bold">
                     Freitext Block
@@ -31,17 +25,7 @@ export const FreeTextEditorComponent: React.FC<NodeViewProps> = () => {
                     fullWidth
                     placeholder="Freitext Antwort Block"
                     disabled
-                    sx={{
-                        '& .MuiInputBase-root': {
-                            backgroundColor: '#f5f5f5',
-                            color: '#777',
-                            borderRadius: 1,
-                        },
-                        '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#ccc',
-                        },
-                    }}
-                />
+                    sx={{'& .MuiInputBase-root': {backgroundColor: '#f5f5f5', color: '#777', borderRadius: 1,}, '& .MuiOutlinedInput-notchedOutline': {borderColor: '#ccc',},}}/>
                 <NodeViewContent />
             </Box>
         </NodeViewWrapper>

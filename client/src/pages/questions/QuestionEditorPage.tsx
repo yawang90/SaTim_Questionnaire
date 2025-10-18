@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {FreeText, GeoGebra, MCChoice, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
+import {FreeText, FreeTextInline, GeoGebra, MCChoice, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -38,7 +38,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, NumericInput, GeoGebra, MCChoice
+            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, MCChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -78,34 +78,19 @@ export default function QuestionEditorPage() {
         }).run();
     };
 
-    const addMCChoiceInline = () => {
-        if (!editor) return;
-
-        editor.chain().focus().insertContent({
-            type: 'mcChoice',
-            attrs: {
-                id: uuidv4(),
-                groupId: '',
-                checked: false,
-            },
-            content: [
-                {
-                    type: 'paragraph',
-                    content: [
-                        { type: 'text', text: 'Option 1' }
-                    ]
-                }
-            ]
-        }).run();
-    };
-
-
-
     const addFreeText = () => {
         if (!editor) return;
         editor.chain().focus().insertContent({
             type: 'freeText',
             attrs: { id: uuidv4() },
+        }).run();
+    };
+
+    const addFreeTextInline = () => {
+        if (!editor) return;
+        editor.chain().focus().insertContent({
+            type: 'freeTextInline',
+            attrs: { id: uuidv4(), placeholder: 'Antwort...' },
         }).run();
     };
 
@@ -176,9 +161,9 @@ export default function QuestionEditorPage() {
                                 Antwort Typen hinzufügen
                             </Button>
                             <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
-                                <MenuItem onClick={addMCChoiceBlock}>Multiple Choice Block</MenuItem>
-                                <MenuItem onClick={addMCChoiceInline}>Multiple Choice Inline</MenuItem>
-                                <MenuItem onClick={addFreeText}>Freitext</MenuItem>
+                                <MenuItem onClick={addMCChoiceBlock}>Multiple Choice Option</MenuItem>
+                                <MenuItem onClick={addFreeText}>Freitext Block</MenuItem>
+                                <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
                                 <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
                             </Menu>

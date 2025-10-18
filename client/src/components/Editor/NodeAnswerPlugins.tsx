@@ -3,6 +3,41 @@ import {ReactNodeViewRenderer} from "@tiptap/react";
 import {FreeTextAnswerComponent} from "../FreeText/FreeTextAnswerComponent.tsx";
 import {MCChoiceAnswerComponent} from "../MC/MCChoiceAnswerComponent.tsx";
 import {GeoGebraAnswerNodeView} from "../GeoGebra/GeoGebraAnswerNodeView.tsx";
+import {FreeTextInlineAnswerComponent} from "../FreeText/FreeTextInlineAnswerComponent.tsx";
+
+export const FreeTextInline = Node.create({
+    name: 'freeTextInline',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            placeholder: { default: 'Antwort...' },
+        }
+    },
+
+    parseHTML() {
+        return [{ tag: 'span[data-type="freeTextInline"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'freeTextInline',
+                class: 'free-text-inline',
+            }),
+            HTMLAttributes.placeholder || '',
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(FreeTextInlineAnswerComponent)
+    },
+})
 
 export const FreeText = Node.create({
     name: 'freeText',
