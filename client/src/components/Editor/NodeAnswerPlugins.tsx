@@ -1,8 +1,8 @@
 import {mergeAttributes, Node} from '@tiptap/core'
 import {ReactNodeViewRenderer} from "@tiptap/react";
 import {FreeTextAnswerComponent} from "../FreeText/FreeTextAnswerComponent.tsx";
-import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 import {MCChoiceAnswerComponent} from "../MC/MCChoiceAnswerComponent.tsx";
+import {GeoGebraAnswerNodeView} from "../GeoGebra/GeoGebraAnswerNodeView.tsx";
 
 export const FreeText = Node.create({
     name: 'freeText',
@@ -52,7 +52,7 @@ export const GeoGebra = Node.create({
     },
 
     addNodeView() {
-        return ReactNodeViewRenderer(GeoGebraEditorComponent);
+        return ReactNodeViewRenderer(GeoGebraAnswerNodeView);
     },
 });
 

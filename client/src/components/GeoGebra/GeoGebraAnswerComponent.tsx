@@ -20,19 +20,41 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
             height: Number(height),
             appletOnLoad: (applet: any) => {
                 console.log('GeoGebra applet loaded');
+
                 const allObjects = applet.getAllObjectNames();
-                allObjects.forEach((name: string) => {
-                    if (applet.getObjectType(name) === 'point') {
-                        console.log(`Existing point ${name}: (${applet.getXcoord(name)}, ${applet.getYcoord(name)})`);
+                const initialPoints = new Set(
+                    allObjects.filter((name: string) => applet.getObjectType(name) === 'point')
+                );
+
+                console.log('Initial (protected) points:', Array.from(initialPoints));
+
+                const userPoints: string[] = [];
+
+                const enforceMaxUserPoints = () => {
+                    if (userPoints.length > 2) {
+                        const extra = userPoints.splice(0, userPoints.length - 2);
+                        extra.forEach((p) => {
+                            try {
+                                applet.deleteObject(p);
+                                console.log(`Deleted extra user-created point: ${p}`);
+                            } catch (err) {
+                                console.warn(`Failed to delete point ${p}:`, err);
+                            }
+                        });
                     }
-                });
+                };
 
                 applet.registerAddListener((objName: string) => {
                     try {
-                        if (applet.getObjectType(objName) === 'point') {
-                            console.log(`New point ${objName}: (${applet.getXcoord(objName)}, ${applet.getYcoord(objName)})`);
+                        const type = applet.getObjectType(objName);
+                        if (type === 'point' && !initialPoints.has(objName)) {
+                            console.log(`User created new point ${objName}: (${applet.getXcoord(objName)}, ${applet.getYcoord(objName)})`);
+                            userPoints.push(objName);
+                            enforceMaxUserPoints();
                         }
-                    } catch {}
+                    } catch (err) {
+                        console.error('Error processing new object:', err);
+                    }
                 });
             },
         };
@@ -43,8 +65,11 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
 
     return (
         <div
-            ref={containerRef}
-            style={{ width, height, display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '16px 0' }}
-        />
+            style={{width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '16px 0',}}>
+            <div
+                ref={containerRef}
+                style={{width: Number(width), height: Number(height), display: 'flex', justifyContent: 'center', alignItems: 'center',}}
+            />
+        </div>
     );
 };
