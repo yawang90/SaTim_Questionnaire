@@ -4,8 +4,6 @@ import {FreeTextEditorComponent} from "../FreeText/FreeTextEditorComponent.tsx";
 import {MCChoiceEditorComponent} from "../MC/MCChoiceEditorComponent.tsx";
 import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorComponent.tsx";
-import { LaTeXInlineComponent } from '../LaTeX/LaTeXInlineComponent.tsx';
-import {LaTeXBlockComponent} from "../LaTeX/LaTeXBlockComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -125,40 +123,4 @@ export const FreeTextInline = Node.create({
     },
 })
 
-export const LaTeXInline = Node.create({
-    name: 'latexInline',
-    group: 'inline',
-    inline: true,
-    atom: true,
-    addAttributes() {
-        return {
-            id: { default: null },
-            latex: {
-                default: '',
-                parseHTML: (element) => element.getAttribute('data-latex') || '',
-                renderHTML: (attrs) => ({
-                    'data-latex': attrs.latex,
-                }),
-            },
-        };
-    },
-    parseHTML: () => [{ tag: 'span[data-type="latex-inline"]' }],
-    renderHTML: ({ HTMLAttributes }) => ['span', { ...HTMLAttributes, 'data-type': 'latex-inline' }, 0],
-    addNodeView() {
-        return ReactNodeViewRenderer(LaTeXInlineComponent);
-    },
-});
 
-export const LaTeXBlock = Node.create({
-    name: 'latexBlock',
-    group: 'block',
-    atom: true,
-    addAttributes() {
-        return { id: { default: null }, latex: { default: '' } };
-    },
-    parseHTML: () => [{ tag: 'div[data-type="latex-block"]' }],
-    renderHTML: ({ HTMLAttributes }) => ['div', { ...HTMLAttributes, 'data-type': 'latex-block' }, 0],
-    addNodeView() {
-        return ReactNodeViewRenderer(LaTeXBlockComponent);
-    },
-});

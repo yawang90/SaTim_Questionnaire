@@ -1,18 +1,18 @@
 import React, {useState} from 'react';
-import { Editor } from '@tiptap/react';
+import {Editor} from '@tiptap/react';
 import {
-    IconButton,
-    Paper,
-    Tooltip,
-    MenuItem,
-    Select,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    TextField,
     Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    MenuItem,
+    Paper,
+    Select,
+    TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -28,7 +28,6 @@ import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ImageIcon from '@mui/icons-material/Image';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import {uploadImage} from "../../services/QuestionsService.tsx";
-import FunctionsIcon from '@mui/icons-material/Functions';
 
 const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 const fontSizes = ['12px', '14px', '16px', '18px', '24px', '32px'];
@@ -51,9 +50,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     const [tableRows, setTableRows] = useState(2);
     const [tableCols, setTableCols] = useState(2);
     const [cellWidth, setCellWidth] = useState(100);
-    const [latexDialogOpen, setLatexDialogOpen] = useState(false);
-    const [latexInput, setLatexInput] = useState('');
-    const [inlineLatex, setInlineLatex] = useState(true);
 
     React.useEffect(() => {
         if (!editor) return;
@@ -109,21 +105,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
         }).run();
 
         setTableDialogOpen(false);
-    };
-
-    const handleInsertLatex = () => {
-        if (!latexInput) return;
-
-        const nodeType = inlineLatex ? 'latexInline' : 'latexBlock';
-        editor.chain().focus().insertContent({
-            type: nodeType,
-            attrs: {
-                latex: latexInput
-            },
-        }).run();
-
-        setLatexInput('');
-        setLatexDialogOpen(false);
     };
 
     return (
@@ -236,14 +217,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         <TableChartIcon/>
                     </IconButton>
                 </Tooltip>
-
-                <Tooltip title="LaTeX einfügen">
-                    <IconButton
-                        sx={{ color: 'text.secondary' }}
-                        onClick={() => setLatexDialogOpen(true)}>
-                        <FunctionsIcon />
-                    </IconButton>
-                </Tooltip>
             </Paper>
 
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
@@ -300,24 +273,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     <Button variant="contained" onClick={() => handleInsertTable(tableRows, tableCols, cellWidth)}>
                         Einfügen
                     </Button>
-                </DialogActions>
-            </Dialog>
-            <Dialog open={latexDialogOpen} onClose={() => setLatexDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>LaTeX einfügen</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <TextField label="LaTeX Code" placeholder="z.B. a^2 + b^2 = c^2" multiline minRows={2} value={latexInput} onChange={(e) => setLatexInput(e.target.value)}/>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <Button variant={inlineLatex ? 'contained' : 'outlined'} onClick={() => setInlineLatex(true)}>Inline
-                            </Button>
-                            <Button variant={!inlineLatex ? 'contained' : 'outlined'} onClick={() => setInlineLatex(false)}>Block
-                            </Button>
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setLatexDialogOpen(false)}>Abbrechen</Button>
-                    <Button variant="contained" onClick={handleInsertLatex}>Einfügen</Button>
                 </DialogActions>
             </Dialog>
         </>

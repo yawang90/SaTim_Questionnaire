@@ -19,8 +19,7 @@ import MainLayout from '../../layouts/MainLayout.tsx';
 import {
     FreeText,
     FreeTextInline,
-    GeoGebra, LaTeXBlock,
-    LaTeXInline,
+    GeoGebra,
     MCChoice,
     NumericInput
 } from "../../components/Editor/NodeEditorPlugins.tsx";
@@ -45,7 +44,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, MCChoice, LaTeXInline, LaTeXBlock
+            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
