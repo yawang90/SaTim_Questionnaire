@@ -7,16 +7,17 @@ import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorCom
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
-    group: 'inline',          // inline allows multiple next to each other
+    group: 'inline',
     inline: true,
-    atom: false,              // editable inside
-    content: 'block+',        // can contain paragraphs, images, etc.
+    atom: false,
+    content: 'block+',
 
     addAttributes() {
         return {
             id: { default: null },
             groupId: { default: null },
             checked: { default: false },
+            allGroups: { default: [] },
         };
     },
 

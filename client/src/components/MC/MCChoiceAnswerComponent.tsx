@@ -34,7 +34,7 @@ export const MCChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node, updateA
     return (
         <NodeViewWrapper
             className="mc-choice-wrapper"
-            style={{display: "inline-flex", flexDirection: "row", alignItems: "center", border: "1px solid black", borderRadius: "0.5rem", padding: "0.5rem 1rem", marginRight: "0.5rem", verticalAlign: "top", gap: "0.5rem",}}>
+            style={{display: "inline-flex", flexDirection: "row", alignItems: "center", padding: "0.5rem 1rem", marginRight: "0.5rem", verticalAlign: "top", gap: "0.5rem",}}>
 
             <input type="checkbox" name={`group-${groupId || "default"}`} checked={isChecked} onChange={() => setIsChecked(!isChecked)} style={{ marginBottom: "0.25rem", flexShrink: 0 }}/>
 
