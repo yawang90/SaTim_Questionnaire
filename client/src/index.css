@@ -23,7 +23,24 @@ input:-webkit-autofill {
 
 .tiptap th,
 .tiptap td {
-  border: 1px solid #999; /* color of your choice */
+  border: 1px solid #999;
   padding: 4px 8px;
   text-align: left;
+}
+
+.mc-choice-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mc-choice-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mc-choice-content img {
+  max-width: 100%;
+  height: auto;
 }

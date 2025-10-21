@@ -95,7 +95,6 @@ export const MCChoice = Node.create({
     name: 'mcChoice',
     group: 'inline',
     inline: true,
-    atom: true,
 
     addAttributes() {
         return {
@@ -117,7 +116,7 @@ export const MCChoice = Node.create({
                 'data-type': 'mcChoice',
                 class: 'mc-choice',
             }),
-            HTMLAttributes.label || 'Option',
+            0,
         ]
     },
 
