@@ -16,7 +16,14 @@ import {
 } from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
-import {FreeText, FreeTextInline, GeoGebra, MCChoice, NumericInput} from "../../components/Editor/NodeEditorPlugins.tsx";
+import {
+    FreeText,
+    FreeTextInline,
+    GeoGebra, LaTeXBlock,
+    LaTeXInline,
+    MCChoice,
+    NumericInput
+} from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -38,7 +45,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, MCChoice
+            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, MCChoice, LaTeXInline, LaTeXBlock
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
