@@ -92,35 +92,32 @@ export const GeoGebra = Node.create({
 });
 
 export const MCChoice = Node.create({
-    name: 'mcChoice',
-    group: 'inline',
+    name: "mcChoice",
+    group: "inline",
     inline: true,
-
+    atom: false,
+    content: "block+",
     addAttributes() {
         return {
             id: { default: null },
             groupId: { default: null },
-            label: { default: 'Option' },
             checked: { default: false },
-        }
+        };
     },
-
     parseHTML() {
-        return [{ tag: 'span[data-type="mcChoice"]' }]
+        return [{ tag: "div[data-type='mcChoice']" }];
     },
-
     renderHTML({ HTMLAttributes }) {
         return [
-            'span',
+            "div",
             mergeAttributes(HTMLAttributes, {
-                'data-type': 'mcChoice',
-                class: 'mc-choice',
+                "data-type": "mcChoice",
+                class: "mc-choice",
             }),
             0,
-        ]
+        ];
     },
-
     addNodeView() {
-        return ReactNodeViewRenderer(MCChoiceAnswerComponent)
+        return ReactNodeViewRenderer(MCChoiceAnswerComponent);
     },
-})
+});

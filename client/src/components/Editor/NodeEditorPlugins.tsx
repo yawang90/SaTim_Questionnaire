@@ -7,20 +7,21 @@ import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorCom
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
-    group: 'block',
-    content: 'block+',
-    atom: false,
+    group: 'inline',          // inline allows multiple next to each other
+    inline: true,
+    atom: false,              // editable inside
+    content: 'block+',        // can contain paragraphs, images, etc.
 
     addAttributes() {
         return {
             id: { default: null },
             groupId: { default: null },
             checked: { default: false },
-        }
+        };
     },
 
     parseHTML() {
-        return [{ tag: 'div[data-type="mcChoice"]' }]
+        return [{ tag: 'div[data-type="mcChoice"]' }];
     },
 
     renderHTML({ HTMLAttributes }) {
@@ -31,13 +32,13 @@ export const MCChoice = Node.create({
                 class: 'mc-choice',
             }),
             0,
-        ]
+        ];
     },
 
     addNodeView() {
-        return ReactNodeViewRenderer(MCChoiceEditorComponent)
+        return ReactNodeViewRenderer(MCChoiceEditorComponent);
     },
-})
+});
 
 export const FreeText = Node.create({
     name: 'freeText',
