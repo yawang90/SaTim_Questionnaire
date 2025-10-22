@@ -19,7 +19,7 @@ import MainLayout from '../../layouts/MainLayout.tsx';
 import {
     FreeText,
     FreeTextInline,
-    GeoGebra,
+    GeoGebra, LatexDisplay,
     MCChoice,
     NumericInput
 } from "../../components/Editor/NodeEditorPlugins.tsx";
@@ -37,6 +37,7 @@ import {Preview} from "../../components/Editor/Preview.tsx";
 import {loadQuestionForm, updateQuestionContent} from '../../services/QuestionsService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
+import { MathJaxContext } from 'better-react-mathjax';
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
@@ -44,7 +45,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra
+            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, LatexDisplay
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -161,8 +162,10 @@ export default function QuestionEditorPage() {
                             Aufgabe Erstellen
                         </Typography>
                         <Box sx={{border: '1px solid #ccc', borderRadius: 1, minHeight: 200, '& .ProseMirror': {outline: 'none'}}}>
-                            <EditorToolbar editor={editor} />
-                            <EditorContent editor={editor} />
+                            <MathJaxContext>
+                                <EditorToolbar editor={editor} />
+                                <EditorContent editor={editor} />
+                            </MathJaxContext>
                         </Box>
 
                         <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>

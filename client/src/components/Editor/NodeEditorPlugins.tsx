@@ -5,6 +5,7 @@ import {MCChoiceEditorComponent} from "../MC/MCChoiceEditorComponent.tsx";
 import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorComponent.tsx";
 import {NumericEditorComponent} from "../Numeric/NumericEditorComponent.tsx";
+import {LaTeXComponent} from "../LaTeX/LaTeXComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -151,5 +152,36 @@ export const NumericInput = Node.create({
     addNodeView() {
         return ReactNodeViewRenderer(NumericEditorComponent)
     },
-})
+});
 
+export const LatexDisplay = Node.create({
+    name: 'latex',
+
+    group: 'inline',
+    inline: true,
+    atom: true,
+
+    addAttributes() {
+        return {
+            latex: {
+                default: '',
+            },
+        };
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'span[data-latex]',
+            },
+        ];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['span', { ...HTMLAttributes, 'data-latex': HTMLAttributes.latex }, 0];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(LaTeXComponent);
+    },
+});
