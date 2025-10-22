@@ -23,9 +23,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <AppBar position="fixed" sx={{ width: '100%' }}>
                 <Toolbar sx={{width: '100%', maxWidth: '100%', px: 2, boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between'}}>
                     <Box>
-                        <Link component={RouterLink} to="/" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
-                            Home
-                        </Link>
+                        {/*<Link component={RouterLink} to="/" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">*/}
+                        {/*    Home*/}
+                        {/*</Link>*/}
 
                         <Link component={RouterLink} to="/dashboard" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
                             Erhebungen

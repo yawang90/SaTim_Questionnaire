@@ -173,7 +173,7 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addMCChoiceBlock}>Multiple Choice Option</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext Block</MenuItem>
                                 <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
-                                <MenuItem onClick={addNumeric}>Numerische Antwort</MenuItem>
+                                <MenuItem onClick={addNumeric}>Numerisch/Algebra</MenuItem>
                                 <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
                             </Menu>
                         </Box>
