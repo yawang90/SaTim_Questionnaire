@@ -4,6 +4,7 @@ import {FreeTextEditorComponent} from "../FreeText/FreeTextEditorComponent.tsx";
 import {MCChoiceEditorComponent} from "../MC/MCChoiceEditorComponent.tsx";
 import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorComponent.tsx";
+import {NumericEditorComponent} from "../Numeric/NumericEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -55,14 +56,6 @@ export const FreeText = Node.create({
     addNodeView() {
         return ReactNodeViewRenderer(FreeTextEditorComponent)
     },
-})
-
-export const NumericInput = Node.create({
-    name: 'numericInput',
-    group: 'block',
-    content: 'inline*',
-    parseHTML: () => [{ tag: 'div.numeric-input' }],
-    renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'numeric-input' }, HTMLAttributes), 0],
 })
 
 export const GeoGebra = Node.create({
@@ -125,4 +118,38 @@ export const FreeTextInline = Node.create({
     },
 })
 
+export const NumericInput = Node.create({
+    name: 'numericInput',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            mode: {
+                default: 'numeric',
+                parseHTML: element => element.getAttribute('data-mode') || 'numeric',
+                renderHTML: attributes => ({
+                    'data-mode': attributes.mode,
+                }),
+            },
+        }
+    },
+
+    parseHTML() {
+        return [{ tag: 'span[data-type="numeric-input"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, { 'data-type': 'numeric-input' }),
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(NumericEditorComponent)
+    },
+})
 

@@ -4,6 +4,7 @@ import {FreeTextAnswerComponent} from "../FreeText/FreeTextAnswerComponent.tsx";
 import {MCChoiceAnswerComponent} from "../MC/MCChoiceAnswerComponent.tsx";
 import {GeoGebraAnswerNodeView} from "../GeoGebra/GeoGebraAnswerNodeView.tsx";
 import {FreeTextInlineAnswerComponent} from "../FreeText/FreeTextInlineAnswerComponent.tsx";
+import {NumericAnswerComponent} from "../Numeric/NumericAnswerComponent.tsx";
 
 export const FreeTextInline = Node.create({
     name: 'freeTextInline',
@@ -54,15 +55,6 @@ export const FreeText = Node.create({
         return ReactNodeViewRenderer(FreeTextAnswerComponent)
     },
 })
-
-export const NumericInput = Node.create({
-    name: 'numericInput',
-    group: 'block',
-    content: 'inline*',
-    parseHTML: () => [{ tag: 'div.numeric-input' }],
-    renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'numeric-input' }, HTMLAttributes), 0],
-})
-
 
 export const GeoGebra = Node.create({
     name: 'geoGebra',
@@ -121,3 +113,45 @@ export const MCChoice = Node.create({
         return ReactNodeViewRenderer(MCChoiceAnswerComponent);
     },
 });
+
+export const NumericInput = Node.create({
+    name: 'numericInput',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            mode: {
+                default: 'numeric',
+                parseHTML: element => element.getAttribute('data-mode') || 'numeric',
+                renderHTML: attributes => ({
+                    'data-mode': attributes.mode,
+                }),
+            },
+            value: {
+                default: '',
+                parseHTML: element => element.getAttribute('data-value') || '',
+                renderHTML: attributes => ({
+                    'data-value': attributes.value,
+                }),
+            },
+        }
+    },
+
+    parseHTML() {
+        return [{ tag: 'span[data-type="numeric-input"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, { 'data-type': 'numeric-input' }),
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(NumericAnswerComponent)
+    },
+})

@@ -104,7 +104,10 @@ export default function QuestionEditorPage() {
         if (!editor) return;
         editor.chain().focus().insertContent({
             type: 'numericInput',
-            content: [{ type: 'text', text: 'Numerische Antwort...' }],
+            attrs: {
+                id: uuidv4(),
+                mode: 'numeric',
+            },
         }).run();
     };
 
