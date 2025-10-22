@@ -141,7 +141,7 @@ export default function MetaDataPage() {
                             })}
 
                             <Box sx={{ display: "flex", gap: 2 }}>
-                                <Button variant="outlined" fullWidth onClick={() => navigate("/questions")}>
+                                <Button variant="outlined" fullWidth onClick={() => navigate("/table")}>
                                     Abbrechen
                                 </Button>
                                 <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={handleSave}>

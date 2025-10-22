@@ -20,7 +20,7 @@ type QuestionRow = {
 
 export default function QuestionsTablePage() {
     const navigate = useNavigate();
-    const [filterSerie, setFilterSerie] = useState<string>("");
+    const [filterStatus, setFilterStatus] = useState<string>("");
     const [searchText, setSearchText] = useState<string>("");
     const [rows, setRows] = useState<QuestionRow[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -70,9 +70,27 @@ export default function QuestionsTablePage() {
     }, []);
 
     const filteredRows = transformedRows.filter((row) => {
-        const name = row.ersteller ?? "";
-        return (!filterSerie || row.serie === filterSerie) && name.toLowerCase().includes(searchText.toLowerCase());
+        const searchId = parseInt(searchText, 10);
+        const matchesId = searchText ? row.id === searchId : true;
+
+        let statusCode = "";
+        switch (filterStatus) {
+            case "In Bearbeitung":
+                statusCode = "ACTIVE";
+                break;
+            case "Gelöscht":
+                statusCode = "DELETED";
+                break;
+            case "Abgeschlossen":
+                statusCode = "FINISHED";
+                break;
+            default:
+                statusCode = "";
+        }
+        const matchesStatus = !filterStatus || row.status === statusCode;
+        return matchesId && matchesStatus;
     });
+
 
     return (
         <MainLayout>
@@ -89,18 +107,19 @@ export default function QuestionsTablePage() {
 
                 <Box display="flex" gap={2} mb={2} flexWrap="wrap">
                     <TextField
-                        label="Suche nach Ersteller"
+                        label="Suche nach ID"
                         variant="outlined"
                         size="small"
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                     />
                     <FormControl size="small" sx={{ minWidth: 150 }}>
-                        <InputLabel>Serie</InputLabel>
-                        <Select value={filterSerie} label="Serie" onChange={(e) => setFilterSerie(e.target.value)}>
+                        <InputLabel>Status</InputLabel>
+                        <Select value={filterStatus} label="Serie" onChange={(e) => setFilterStatus(e.target.value)}>
                             <MenuItem value="">Alle</MenuItem>
-                            <MenuItem value="Serie 1">Serie 1</MenuItem>
-                            <MenuItem value="Serie 2">Serie 2</MenuItem>
+                            <MenuItem value="In Bearbeitung">In Bearbeitung</MenuItem>
+                            <MenuItem value="Gelöscht">Gelöscht</MenuItem>
+                            <MenuItem value="Abgeschlossen">Abgeschlossen</MenuItem>
                         </Select>
                     </FormControl>
                 </Box>

@@ -19,15 +19,7 @@ export default function QuestionPreviewPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, true]}>
-                <Box sx={{
-                    minHeight: '100vh',
-                    backgroundColor: 'background.default',
-                    py: 3,
-                    px: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    mt: 6
-                }}>
+                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                         <Typography variant="h4" component="h1" gutterBottom
                                     sx={{textAlign: 'center', fontWeight: 'bold'}}>
@@ -53,7 +45,7 @@ export default function QuestionPreviewPage() {
                                 color: '#000',
                                 '&:hover': {borderColor: '#333', bgcolor: '#f5f5f5'}
                             }}> Antworten zurücksetzen </Button>
-                            <Button variant="contained" startIcon={<Save/>} onClick={() => navigate('/questions')} sx={{
+                            <Button variant="contained" startIcon={<Save/>} onClick={() => navigate('/table')} sx={{
                                 bgcolor: '#000',
                                 color: '#fff',
                                 '&:hover': {bgcolor: '#333'}
