@@ -126,3 +126,22 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
     });
     return handleResponse(response);
 }
+
+/**
+ * Update the correct answers for a question
+ * @param id - Question ID
+ * @param answers - Object or array containing correct answers
+ */
+export async function updateQuestionAnswers(id: string, answers: Record<string, any>) {
+    const token = localStorage.getItem("token");
+    const payload = { answers };
+    const response = await authFetch(`${API_URL}/api/editor/question/${id}/answers`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+}

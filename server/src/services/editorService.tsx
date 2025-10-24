@@ -108,3 +108,15 @@ export const getQuestionsByGroupId = async (groupId: number) => {
         },
     });
 }
+
+
+/**
+ * Update the correct answers JSON for a question
+ */
+export async function updateQuestionAnswersById(id: number, data: { updatedById: number; answersJson: any }) {
+    return prisma.question.update({
+        where: { id },
+        data: {correctAnswers: data.answersJson, updatedById: data.updatedById,},
+    });
+}
+

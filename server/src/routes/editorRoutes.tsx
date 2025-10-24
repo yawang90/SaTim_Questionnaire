@@ -3,7 +3,7 @@ import {
     createQuestionsForm, loadAllQuestions,
     getQuestionFormById,
     updateQuestionForm,
-    uploadImage, updateQuestionContent
+    uploadImage, updateQuestionContent, updateQuestionAnswers
 } from "../controllers/editorController.js";
 import multer from "multer";
 import {authenticateToken} from "../auth/authenticate.js";
@@ -19,5 +19,6 @@ router.post("/question", createQuestionsForm);
 router.get("/question/:id", getQuestionFormById);
 router.get("/questions", loadAllQuestions);
 router.patch('/question/:id/content', updateQuestionContent);
+router.patch('/question/:id/answers', updateQuestionAnswers);
 
 export default router;

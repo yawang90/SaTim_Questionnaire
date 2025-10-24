@@ -2,7 +2,7 @@ import type {Request, Response} from 'express';
 import {
     createQuestionMeta,
     findQuestionById,
-    getQuestionsByGroupId, saveImage,
+    getQuestionsByGroupId, saveImage, updateQuestionAnswersById,
     updateQuestionContentById,
     updateQuestionMetaById
 } from "../services/editorService.js";
@@ -122,5 +122,26 @@ export const loadAllQuestions = async (req: Request, res: Response) => {
     } catch (err) {
         console.error("Error loading questions:", err);
         res.status(500).json({ error: "Failed to load questions" });
+    }
+};
+
+export const updateQuestionAnswers = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const { answers } = req.body;
+        const userId = Number((req as any).user?.id);
+
+        if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+        if (!answers) return res.status(400).json({ error: 'Missing answers payload' });
+
+        const updated = await updateQuestionAnswersById(id, {
+            updatedById: userId,
+            answersJson: answers,
+        });
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Error updating question answers:', err);
+        res.status(500).json({ error: 'Failed to update question answers' });
     }
 };

@@ -1,47 +1,33 @@
 import React, { useEffect, useState } from "react";
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Box,
-    Button,
-    Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
-    FormControl,
-    FormControlLabel,
-    FormGroup,
-    Paper,
-    TextField,
-    Typography,
+import {Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormGroup, Paper, TextField, Typography,
 } from "@mui/material";
 import { ExpandMore, Save } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
-import MainLayout from "../../layouts/MainLayout.tsx";
-import QuestionLayout from "../../layouts/QuestionLayout.tsx";
-import { loadQuestionForm } from "../../services/QuestionsService.tsx";
-import {Preview} from "../../components/Editor/Preview.tsx";
-import type {JSONContent} from "@tiptap/core";
+import MainLayout from "../../layouts/MainLayout";
+import QuestionLayout from "../../layouts/QuestionLayout";
+import {loadQuestionForm, updateQuestionAnswers} from "../../services/QuestionsService";
+import { Preview } from "../../components/Editor/Preview";
+import type { JSONContent } from "@tiptap/core";
+import { v4 as uuidv4 } from "uuid";
 
 type Choice = { id: string; text: string };
 type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
     | { kind: "freeText"; key: string }
-    | { kind: "numeric"; key: string };
+    | { kind: "freeTextInline"; key: string }
+    | { kind: "numeric"; key: string }
+    | { kind: "geoGebra"; key: string };
 
 export default function AnswerEditorPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+
     const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
-    const [openPreview, setOpenPreview] = React.useState(false);
-    const handleOpenPreview = () => setOpenPreview(true);
-    const handleClosePreview = () => setOpenPreview(false);
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: "",
-        severity: "success" as "success" | "error",
-    });
+    const [openPreview, setOpenPreview] = useState(false);
+
     const extractText = (node: any): string => {
         if (!node) return "";
         if (Array.isArray(node)) return node.map(extractText).join("");
@@ -52,30 +38,58 @@ export default function AnswerEditorPage() {
 
     const parseContentToBlocks = (doc: any): Block[] => {
         if (!doc || !doc.content) return [];
-        const result: Block[] = [];
-        doc.content.forEach((node: any, idx: number) => {
-            if (!node || !node.type) return;
-            if (node.type === "mcContainer") {
-                const choices: Choice[] =
-                    (node.content ?? [])
-                        .filter((c: any) => c.type === "mcChoice")
-                        .map((c: any, i: number) => {
-                            const id = c.attrs?.id ?? `mc-${idx}-choice-${i}`;
-                            const text = extractText(c);
-                            return { id, text: text || `Option ${i + 1}` };
-                        }) ?? [];
 
-                const key = node.attrs?.id ?? `mc-${idx}`;
-                if (choices.length > 0) {
-                    result.push({ kind: "mc", key, choices });
+        const mcGroups: Record<string, Choice[]> = {};
+        const result: Block[] = [];
+
+        const walk = (nodes: any[]) => {
+            for (const node of nodes) {
+                if (!node || !node.type) continue;
+
+                switch (node.type) {
+                    case "mcChoice": {
+                        const groupId = node.attrs?.groupId ?? uuidv4();
+                        const id = node.attrs?.id ?? uuidv4();
+                        const text = extractText(node) || "Option";
+                        if (!mcGroups[groupId]) mcGroups[groupId] = [];
+                        mcGroups[groupId].push({ id, text });
+                        break;
+                    }
+
+                    case "freeText": {
+                        const key = node.attrs?.id ?? uuidv4();
+                        result.push({ kind: "freeText", key });
+                        break;
+                    }
+
+                    case "freeTextInline": {
+                        const key = node.attrs?.id ?? uuidv4();
+                        result.push({ kind: "freeTextInline", key });
+                        break;
+                    }
+
+                    case "numericInput": {
+                        const key = node.attrs?.id ?? uuidv4();
+                        result.push({ kind: "numeric", key });
+                        break;
+                    }
+
+                    case "geoGebra": {
+                        const key = node.attrs?.id ?? uuidv4();
+                        result.push({ kind: "geoGebra", key });
+                        break;
+                    }
+
+                    default:
+                        if (node.content) walk(node.content);
                 }
-            } else if (node.type === "freeText") {
-                const key = node.attrs?.id ?? `free-${idx}`;
-                result.push({ kind: "freeText", key });
-            } else if (node.type === "numericInput") {
-                const key = node.attrs?.id ?? `num-${idx}`;
-                result.push({ kind: "numeric", key });
             }
+        };
+
+        walk(doc.content);
+
+        Object.entries(mcGroups).forEach(([groupId, choices]) => {
+            result.push({ kind: "mc", key: groupId, choices });
         });
 
         return result;
@@ -100,6 +114,7 @@ export default function AnswerEditorPage() {
                     typeof question.contentJson === "string"
                         ? JSON.parse(question.contentJson)
                         : question.contentJson ?? { type: "doc", content: [] };
+
                 setQuestionContentJson(contentJson);
                 const parsed = parseContentToBlocks(contentJson);
                 setBlocks(parsed);
@@ -115,41 +130,46 @@ export default function AnswerEditorPage() {
     const toggleChoice = (blockKey: string, choiceId: string) => {
         setAnswers((prev) => {
             const cur: string[] = prev[blockKey] ?? [];
-            const next = cur.includes(choiceId) ? cur.filter((c) => c !== choiceId) : [...cur, choiceId];
+            const next = cur.includes(choiceId)
+                ? cur.filter((c) => c !== choiceId)
+                : [...cur, choiceId];
             return { ...prev, [blockKey]: next };
         });
     };
 
-    const setFreeTextAnswer = (blockKey: string, value: string) => {
+    const handleAnswerChange = (blockKey: string, value: string) =>
         setAnswers((prev) => ({ ...prev, [blockKey]: value }));
-    };
-
-    const setNumericAnswer = (blockKey: string, value: string) => {
-        setAnswers((prev) => ({ ...prev, [blockKey]: value }));
-    };
 
     const handleSaveAnswers = async () => {
-        console.log("Saving answers for question", id, answers);
-
-        // await saveCorrectAnswers(id, answers);
-
-        // navigate away or show success
-        navigate(`/preview/${id}`);
+        if (!id) return;
+        setLoading(true);
+        console.log(answers)
+        try {
+            await updateQuestionAnswers(id, answers);
+            navigate(`/preview/${id}`);
+        } catch (err) {
+            console.error("Failed to save answers:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
-                <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
+                <Box
+                    sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
                     <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
-                        <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
+                        <Typography variant="h4" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
                             Antworten definieren
                         </Typography>
 
                         {loading && <Typography>Loading…</Typography>}
 
                         {!loading && blocks.length === 0 && (
-                            <Typography sx={{ my: 2 }}>Keine Antwort-Blöcke im Frage-Inhalt gefunden.</Typography>
+                            <Typography sx={{ my: 2 }}>
+                                Keine Antwort-Blöcke im Frage-Inhalt gefunden.
+                            </Typography>
                         )}
 
                         {!loading &&
@@ -157,7 +177,15 @@ export default function AnswerEditorPage() {
                                 <Accordion key={b.key} sx={{ mb: 1 }}>
                                     <AccordionSummary expandIcon={<ExpandMore />}>
                                         <Typography variant="subtitle1">
-                                            {b.kind === "mc" ? `Multiple Choice ${idx + 1}` : b.kind === "freeText" ? `Freitext ${idx + 1}` : `Numerische Eingabe ${idx + 1}`}
+                                            {b.kind === "mc"
+                                                ? `Multiple Choice ${idx + 1}`
+                                                : b.kind === "freeText"
+                                                    ? `Freitext ${idx + 1}`
+                                                    : b.kind === "freeTextInline"
+                                                        ? `Freitext Inline ${idx + 1}`
+                                                        : b.kind === "numeric"
+                                                            ? `Numerische Eingabe ${idx + 1}`
+                                                            : `GeoGebra ${idx + 1}`}
                                         </Typography>
                                     </AccordionSummary>
 
@@ -178,23 +206,16 @@ export default function AnswerEditorPage() {
                                                         />
                                                     ))}
                                                 </FormGroup>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Markiere die korrekten Antwort(en).
-                                                </Typography>
                                             </FormControl>
                                         )}
 
-                                        {b.kind === "freeText" && (
+                                        {(b.kind === "freeText" || b.kind === "freeTextInline") && (
                                             <FormControl fullWidth>
                                                 <TextField
-                                                    label="Erwartete Antwort (Freitext)"
+                                                    label="Erwartete Textantwort"
                                                     value={answers[b.key] ?? ""}
-                                                    onChange={(e) => setFreeTextAnswer(b.key, e.target.value)}
-                                                    fullWidth
+                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
                                                 />
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Trage hier die erwartete/n richtige/n Textantwort(en) ein.
-                                                </Typography>
                                             </FormControl>
                                         )}
 
@@ -203,11 +224,20 @@ export default function AnswerEditorPage() {
                                                 <TextField
                                                     label="Erwartete numerische Antwort"
                                                     value={answers[b.key] ?? ""}
-                                                    onChange={(e) => setNumericAnswer(b.key, e.target.value)}
-                                                    fullWidth
+                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
+                                                />
+                                            </FormControl>
+                                        )}
+
+                                        {b.kind === "geoGebra" && (
+                                            <FormControl fullWidth>
+                                                <TextField
+                                                    label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)"
+                                                    value={answers[b.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
                                                 />
                                                 <Typography variant="caption" color="text.secondary">
-                                                    Numerische Lösung (z. B. "42" oder ein Ausdruck).
+                                                    (Hier kannst du z. B. JSON für erwartete GeoGebra-Objektwerte speichern.)
                                                 </Typography>
                                             </FormControl>
                                         )}
@@ -219,19 +249,21 @@ export default function AnswerEditorPage() {
                             <Button variant="outlined" onClick={() => navigate(`/editor/${id}`)}>
                                 Zurück
                             </Button>
-                            <Button variant="outlined" onClick={handleOpenPreview}>Vorschau</Button>
-                            <Button variant="contained" startIcon={<Save />} onClick={handleSaveAnswers}>
-                                Speichern
+                            <Button variant="outlined" onClick={() => setOpenPreview(true)}>
+                                Vorschau
+                            </Button>
+                            <Button variant="contained" startIcon={<Save />} onClick={handleSaveAnswers} disabled={loading}>
+                                {loading ? "Speichern…" : "Speichern"}
                             </Button>
                         </Box>
 
-                        <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullWidth>
+                        <Dialog open={openPreview} onClose={() => setOpenPreview(false)} maxWidth="md" fullWidth>
                             <DialogTitle>Vorschau</DialogTitle>
                             <DialogContent dividers>
                                 <Preview content={questionContentJson} />
                             </DialogContent>
                             <DialogActions>
-                                <Button onClick={handleClosePreview}>Schließen</Button>
+                                <Button onClick={() => setOpenPreview(false)}>Schließen</Button>
                             </DialogActions>
                         </Dialog>
                     </Paper>
