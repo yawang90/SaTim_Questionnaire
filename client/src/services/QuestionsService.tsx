@@ -1,6 +1,6 @@
 import {authFetch} from "./AuthFetchHelper.tsx";
 
-// @ts-ignore
+// @ts-expect-error
 const API_URL = import.meta.env.VITE_API_URL;
 
 /**
@@ -136,6 +136,25 @@ export async function updateQuestionAnswers(id: string, answers: Record<string, 
     const token = localStorage.getItem("token");
     const payload = { answers };
     const response = await authFetch(`${API_URL}/api/editor/question/${id}/answers`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+}
+
+/**
+ * Update the status of a question (e.g., "in bearbeitung", "abgeschlossen", "gelöscht")
+ * @param id - Question ID
+ * @param status - New status
+ */
+export async function updateQuestionStatus(id: string, status: string) {
+    const token = localStorage.getItem("token");
+    const payload = { status };
+    const response = await authFetch(`${API_URL}/api/editor/question/${id}/status`, {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",

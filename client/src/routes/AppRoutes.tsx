@@ -4,7 +4,7 @@ import NotFoundPage from "../pages/NotFoundPage.tsx";
 import LandingPage from '../pages/LandingPage.tsx';
 import AnswerEditorPage from "../pages/questions/AnswerEditorPage.tsx";
 import EditorPage from "../pages/questions/QuestionEditorPage.tsx";
-import QuestionPreviewPage from "../pages/questions/QuestionPreviewPage.tsx";
+import AnswerPreviewPage from "../pages/questions/AnswerPreviewPage.tsx";
 import QuestionsTablePage from "../pages/QuestionsTablePage.tsx";
 import SurveyPage from "../pages/SurveyPage.tsx";
 import ProfilePage from "../pages/ProfilePage.tsx";
@@ -20,7 +20,7 @@ function AppRoutes() {
                 <Route path="/meta/:id?" element={<MetaDataPage />} />
                 <Route path="/editor/:id" element={<EditorPage />} />
                 <Route path="/answers/:id" element={<AnswerEditorPage />} />
-                <Route path="/preview/:id" element={<QuestionPreviewPage />} />
+                <Route path="/preview/:id" element={<AnswerPreviewPage />} />
 
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/survey" element={<SurveyPage />} />
