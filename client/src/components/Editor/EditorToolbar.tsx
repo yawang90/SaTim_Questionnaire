@@ -27,7 +27,7 @@ import LooksOneIcon from '@mui/icons-material/LooksOne';
 import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ImageIcon from '@mui/icons-material/Image';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import {uploadImage} from "../../services/QuestionsService.tsx";
+import {uploadImage} from "../../services/EditorService.tsx";
 import FunctionsIcon from '@mui/icons-material/Functions';
 
 const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];

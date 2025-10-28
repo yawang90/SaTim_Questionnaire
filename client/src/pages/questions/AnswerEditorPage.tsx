@@ -5,7 +5,7 @@ import { ExpandMore, Save } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import QuestionLayout from "../../layouts/QuestionLayout";
-import {loadQuestionForm, updateQuestionAnswers} from "../../services/QuestionsService";
+import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
 import { Preview } from "../../components/Editor/Preview";
 import type { JSONContent } from "@tiptap/core";
 import { v4 as uuidv4 } from "uuid";

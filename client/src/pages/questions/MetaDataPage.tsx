@@ -14,7 +14,7 @@ import {
 import {Save as SaveIcon} from "@mui/icons-material";
 import {useNavigate, useParams} from "react-router-dom";
 import {initialFormSchema} from "./FormSchema.tsx";
-import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/QuestionsService.tsx";
+import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox";

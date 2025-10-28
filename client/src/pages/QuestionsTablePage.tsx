@@ -4,7 +4,7 @@ import MainLayout from "../layouts/MainLayout.tsx";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { loadAllQuestions } from "../services/QuestionsService.tsx";
+import { loadAllQuestions } from "../services/EditorService.tsx";
 
 const groupId = "999";
 

@@ -34,7 +34,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import AddIcon from '@mui/icons-material/Add';
 import {Preview} from "../../components/Editor/Preview.tsx";
-import {loadQuestionForm, updateQuestionContent} from '../../services/QuestionsService.tsx';
+import {loadQuestionForm, updateQuestionContent} from '../../services/EditorService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
 import { MathJaxContext } from 'better-react-mathjax';
