@@ -3,6 +3,7 @@ import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {v4 as uuidv4} from 'uuid';
 import {
+    Alert,
     Box,
     Button,
     Dialog,
@@ -11,7 +12,7 @@ import {
     DialogTitle,
     Menu,
     MenuItem,
-    Paper,
+    Paper, Snackbar,
     Typography
 } from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
@@ -122,9 +123,36 @@ export default function QuestionEditorPage() {
         const contentJson = editor.getJSON();
         const contentHtml = editor.getHTML();
 
+        const mcChoicesWithoutGroup: string[] = [];
+
+        const checkMCChoices = (nodes: any[]) => {
+            nodes.forEach((node) => {
+                if (node.type === 'mcChoice' && (!node.attrs.groupId || node.attrs.groupId.trim() === '')) {
+                    mcChoicesWithoutGroup.push(node.attrs.id || 'unknown');
+                }
+                if (node.content) checkMCChoices(node.content);
+            });
+        };
+
+        checkMCChoices(contentJson.content || []);
+
+        if (mcChoicesWithoutGroup.length > 0) {
+            setSnackbar({
+                open: true,
+                message: `Bitte weisen Sie jeder MC Option eine Gruppe zu!`,
+                severity: "error",
+            });
+            return;
+        }
+
         try {
             await updateQuestionContent(id, contentJson, contentHtml);
-            navigate(`/answers/${id}`)
+            navigate(`/answers/${id}`);
+            setSnackbar({
+                open: true,
+                message: "Aufgabe erfolgreich gespeichert!",
+                severity: "success",
+            });
         } catch (err) {
             console.error("Failed to save question:", err);
             setSnackbar({
@@ -196,6 +224,11 @@ export default function QuestionEditorPage() {
                     </Paper>
                 </Box>
             </QuestionLayout>
+            <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                <Alert onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </MainLayout>
     );
 }
