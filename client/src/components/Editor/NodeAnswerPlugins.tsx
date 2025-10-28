@@ -6,40 +6,6 @@ import {GeoGebraAnswerNodeView} from "../GeoGebra/GeoGebraAnswerNodeView.tsx";
 import {FreeTextInlineAnswerComponent} from "../FreeText/FreeTextInlineAnswerComponent.tsx";
 import {NumericAnswerComponent} from "../Numeric/NumericAnswerComponent.tsx";
 
-export const FreeTextInline = Node.create({
-    name: 'freeTextInline',
-    group: 'inline',
-    inline: true,
-    atom: true,
-    selectable: true,
-
-    addAttributes() {
-        return {
-            id: { default: null },
-            placeholder: { default: 'Antwort...' },
-        }
-    },
-
-    parseHTML() {
-        return [{ tag: 'span[data-type="freeTextInline"]' }]
-    },
-
-    renderHTML({ HTMLAttributes }) {
-        return [
-            'span',
-            mergeAttributes(HTMLAttributes, {
-                'data-type': 'freeTextInline',
-                class: 'free-text-inline',
-            }),
-            HTMLAttributes.placeholder || '',
-        ]
-    },
-
-    addNodeView() {
-        return ReactNodeViewRenderer(FreeTextInlineAnswerComponent)
-    },
-})
-
 export const FreeText = Node.create({
     name: 'freeText',
     group: 'block',
@@ -47,12 +13,41 @@ export const FreeText = Node.create({
     addAttributes() {
         return {
             id: { default: null },
+            value: { default: '', parseHTML: el => el.getAttribute('data-value') || '', renderHTML: attrs => ({ 'data-value': attrs.value }) },
         }
     },
     parseHTML: () => [{ tag: 'div.free-text' }],
     renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ class: 'free-text' }, HTMLAttributes), 0],
     addNodeView() {
         return ReactNodeViewRenderer(FreeTextAnswerComponent)
+    },
+})
+
+export const FreeTextInline = Node.create({
+    name: 'freeTextInline',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+    addAttributes() {
+        return {
+            id: { default: null },
+            value: { default: '', parseHTML: el => el.getAttribute('data-value') || '', renderHTML: attrs => ({ 'data-value': attrs.value }) },
+            placeholder: { default: 'Antwort...' },
+        }
+    },
+    parseHTML() {
+        return [{ tag: 'span[data-type="freeTextInline"]' }]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, { 'data-type': 'freeTextInline', class: 'free-text-inline' }),
+            HTMLAttributes.value || HTMLAttributes.placeholder || ''
+        ]
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(FreeTextInlineAnswerComponent)
     },
 })
 
@@ -93,7 +88,7 @@ export const MCChoice = Node.create({
         return {
             id: { default: null },
             groupId: { default: null },
-            checked: { default: false },
+            selected: { default: false },
         };
     },
     parseHTML() {
@@ -102,10 +97,7 @@ export const MCChoice = Node.create({
     renderHTML({ HTMLAttributes }) {
         return [
             "div",
-            mergeAttributes(HTMLAttributes, {
-                "data-type": "mcChoice",
-                class: "mc-choice",
-            }),
+            mergeAttributes(HTMLAttributes, { "data-type": "mcChoice", class: "mc-choice" }),
             0,
         ];
     },
@@ -113,6 +105,7 @@ export const MCChoice = Node.create({
         return ReactNodeViewRenderer(MCChoiceAnswerComponent);
     },
 });
+
 
 export const NumericInput = Node.create({
     name: 'numericInput',
@@ -123,6 +116,7 @@ export const NumericInput = Node.create({
 
     addAttributes() {
         return {
+            id: { default: null },
             mode: {
                 default: 'numeric',
                 parseHTML: element => element.getAttribute('data-mode') || 'numeric',

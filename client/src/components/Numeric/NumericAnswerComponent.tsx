@@ -8,7 +8,6 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
     const [value, setValue] = useState(node.attrs.value || '')
-
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'
@@ -21,14 +20,11 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
     const open = Boolean(anchorEl)
 
     return (
-        <NodeViewWrapper
-            as="span"
-            className="numeric-input"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 0', margin: '0 2px' }}
-        >
+        <NodeViewWrapper as="span" className="numeric-input" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 0', margin: '0 2px' }}>
             {mode === 'numeric' ? (
                 <TextField
                     value={value}
+                    id={node.attrs.id}
                     onChange={e => {
                         const cleaned = e.target.value.replace(/[^0-9.,-]/g, '')
                         setValue(cleaned)
@@ -44,11 +40,11 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
                 <TextField
                     value={value}
                     onChange={e => {
-                        // Fully free input for algebra mode: letters, numbers, symbols
-                        const newVal = e.target.value
+                       const newVal = e.target.value
                         setValue(newVal)
                         updateAttributes({ value: newVal })
                     }}
+                    id={node.attrs.id}
                     placeholder="x+y"
                     size="small"
                     variant="outlined"

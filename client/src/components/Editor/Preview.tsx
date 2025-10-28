@@ -16,9 +16,10 @@ import {MathJaxContext} from "better-react-mathjax";
 
 interface PreviewProps {
     content: JSONContent | null;
+    editorRef?: React.RefObject<ReturnType<typeof useEditor> | null>;
 }
 
-export const Preview: React.FC<PreviewProps> = ({ content }) => {
+export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEditorRef }) => {
     const previewEditor = useEditor({
         editable: false,
         extensions: [
@@ -41,6 +42,12 @@ export const Preview: React.FC<PreviewProps> = ({ content }) => {
         ],
         content: content || { type: 'doc', content: [] },
     });
+    React.useEffect(() => {
+        if (previewEditorRef) previewEditorRef.current = previewEditor;
+        return () => {
+            if (previewEditorRef) previewEditorRef.current = null;
+        };
+    }, [previewEditor, previewEditorRef]);
 
     return <MathJaxContext><EditorContent editor={previewEditor} /></MathJaxContext>;
 };

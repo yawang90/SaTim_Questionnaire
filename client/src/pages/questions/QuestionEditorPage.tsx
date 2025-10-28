@@ -105,10 +105,7 @@ export default function QuestionEditorPage() {
         if (!editor) return;
         editor.chain().focus().insertContent({
             type: 'numericInput',
-            attrs: {
-                id: uuidv4(),
-                mode: 'numeric',
-            },
+            attrs: {id: uuidv4(), mode: 'numeric',},
         }).run();
     };
 

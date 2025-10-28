@@ -7,7 +7,7 @@ interface FreeTextProps {
     node: ProseMirrorNode
 }
 
-export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({}) => {
+export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({node}) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     const autoResize = () => {
@@ -22,7 +22,7 @@ export const FreeTextAnswerComponent: React.FC<FreeTextProps> = ({}) => {
 
     return (
         <NodeViewWrapper className="free-text" style={{ width: '100%', margin: '8px 0' }}>
-            <TextField inputRef={textareaRef} placeholder="Antwort hier eingeben..." multiline minRows={3} fullWidth variant="outlined" onInput={autoResize}/>
+            <TextField inputRef={textareaRef} id={node.attrs.id} placeholder="Antwort hier eingeben..." multiline minRows={3} fullWidth variant="outlined" onInput={autoResize}/>
         </NodeViewWrapper>
     )
 }

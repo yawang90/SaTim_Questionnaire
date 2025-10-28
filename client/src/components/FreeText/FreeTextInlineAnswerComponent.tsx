@@ -7,12 +7,12 @@ interface FreeTextInlineProps {
     node: ProseMirrorNode
 }
 
-export const FreeTextInlineAnswerComponent: React.FC<FreeTextInlineProps> = ({}) => {
+export const FreeTextInlineAnswerComponent: React.FC<FreeTextInlineProps> = ({node}) => {
     const inputRef = useRef<HTMLInputElement>(null)
 
     return (
         <NodeViewWrapper as="span" className="free-text-inline" style={{ display: 'inline-flex', verticalAlign: 'middle', margin: '0 2px' }}>
-            <TextField inputRef={inputRef} placeholder="Antwort..." size="small" variant="outlined" style={{ width: '8rem', minWidth: '4rem' }}/>
+            <TextField inputRef={inputRef} id={node.attrs.id} placeholder="Antwort..." size="small" variant="outlined" style={{ width: '8rem', minWidth: '4rem' }}/>
         </NodeViewWrapper>
     )
 }

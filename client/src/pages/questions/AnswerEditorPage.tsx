@@ -8,15 +8,7 @@ import QuestionLayout from "../../layouts/QuestionLayout";
 import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
 import { Preview } from "../../components/Editor/Preview";
 import type { JSONContent } from "@tiptap/core";
-import { v4 as uuidv4 } from "uuid";
-
-type Choice = { id: string; text: string };
-type Block =
-    | { kind: "mc"; key: string; choices: Choice[] }
-    | { kind: "freeText"; key: string }
-    | { kind: "freeTextInline"; key: string }
-    | { kind: "numeric"; key: string }
-    | { kind: "geoGebra"; key: string };
+import {parseContentToBlocks, type Block, type Choice} from "./AnswerUtils.tsx";
 
 export default function AnswerEditorPage() {
     const { id } = useParams<{ id: string }>();
@@ -27,73 +19,6 @@ export default function AnswerEditorPage() {
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
     const [openPreview, setOpenPreview] = useState(false);
-
-    const extractText = (node: any): string => {
-        if (!node) return "";
-        if (Array.isArray(node)) return node.map(extractText).join("");
-        if (node.type === "text") return node.text ?? "";
-        if (node.content) return node.content.map(extractText).join("");
-        return "";
-    };
-
-    const parseContentToBlocks = (doc: any): Block[] => {
-        if (!doc || !doc.content) return [];
-
-        const mcGroups: Record<string, Choice[]> = {};
-        const result: Block[] = [];
-
-        const walk = (nodes: any[]) => {
-            for (const node of nodes) {
-                if (!node || !node.type) continue;
-
-                switch (node.type) {
-                    case "mcChoice": {
-                        const groupId = node.attrs?.groupId ?? uuidv4();
-                        const id = node.attrs?.id ?? uuidv4();
-                        const text = extractText(node) || "Option";
-                        if (!mcGroups[groupId]) mcGroups[groupId] = [];
-                        mcGroups[groupId].push({ id, text });
-                        break;
-                    }
-
-                    case "freeText": {
-                        const key = node.attrs?.id ?? uuidv4();
-                        result.push({ kind: "freeText", key });
-                        break;
-                    }
-
-                    case "freeTextInline": {
-                        const key = node.attrs?.id ?? uuidv4();
-                        result.push({ kind: "freeTextInline", key });
-                        break;
-                    }
-
-                    case "numericInput": {
-                        const key = node.attrs?.id ?? uuidv4();
-                        result.push({ kind: "numeric", key });
-                        break;
-                    }
-
-                    case "geoGebra": {
-                        const key = node.attrs?.id ?? uuidv4();
-                        result.push({ kind: "geoGebra", key });
-                        break;
-                    }
-
-                    default:
-                        if (node.content) walk(node.content);
-                }
-            }
-        };
-
-        walk(doc.content);
-
-        Object.entries(mcGroups).forEach(([groupId, choices]) => {
-            result.push({ kind: "mc", key: groupId, choices });
-        });
-
-        return result;
-    };
 
     const initAnswersForBlocks = (parsed: Block[]) => {
         const initial: Record<string, any> = {};
@@ -116,9 +41,9 @@ export default function AnswerEditorPage() {
                         : question.contentJson ?? { type: "doc", content: [] };
 
                 setQuestionContentJson(contentJson);
-                const parsed = parseContentToBlocks(contentJson);
-                setBlocks(parsed);
-                initAnswersForBlocks(parsed);
+                const parsedBlocks: Block[] = parseContentToBlocks(contentJson);
+                setBlocks(parsedBlocks);
+                initAnswersForBlocks(parsedBlocks);
             } catch (err) {
                 console.error("Failed to load question:", err);
             } finally {
@@ -173,33 +98,33 @@ export default function AnswerEditorPage() {
                         )}
 
                         {!loading &&
-                            blocks.map((b, idx) => (
-                                <Accordion key={b.key} sx={{ mb: 1 }}>
+                            blocks.map((answerType, idx) => (
+                                <Accordion key={answerType.key} sx={{ mb: 1 }}>
                                     <AccordionSummary expandIcon={<ExpandMore />}>
                                         <Typography variant="subtitle1">
-                                            {b.kind === "mc"
+                                            {answerType.kind === "mc"
                                                 ? `Multiple Choice ${idx + 1}`
-                                                : b.kind === "freeText"
+                                                : answerType.kind === "freeText"
                                                     ? `Freitext ${idx + 1}`
-                                                    : b.kind === "freeTextInline"
+                                                    : answerType.kind === "freeTextInline"
                                                         ? `Freitext Inline ${idx + 1}`
-                                                        : b.kind === "numeric"
+                                                        : answerType.kind === "numeric"
                                                             ? `Numerische Eingabe ${idx + 1}`
                                                             : `GeoGebra ${idx + 1}`}
                                         </Typography>
                                     </AccordionSummary>
 
                                     <AccordionDetails>
-                                        {b.kind === "mc" && (
+                                        {answerType.kind === "mc" && (
                                             <FormControl component="fieldset" fullWidth>
                                                 <FormGroup>
-                                                    {(b as any).choices.map((choice: Choice) => (
+                                                    {(answerType as any).choices.map((choice: Choice) => (
                                                         <FormControlLabel
                                                             key={choice.id}
                                                             control={
                                                                 <Checkbox
-                                                                    checked={(answers[b.key] ?? []).includes(choice.id)}
-                                                                    onChange={() => toggleChoice(b.key, choice.id)}
+                                                                    checked={(answers[answerType.key] ?? []).includes(choice.id)}
+                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}
                                                                 />
                                                             }
                                                             label={choice.text || "Option"}
@@ -209,32 +134,32 @@ export default function AnswerEditorPage() {
                                             </FormControl>
                                         )}
 
-                                        {(b.kind === "freeText" || b.kind === "freeTextInline") && (
+                                        {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
                                             <FormControl fullWidth>
                                                 <TextField
                                                     label="Erwartete Textantwort"
-                                                    value={answers[b.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
                                                 />
                                             </FormControl>
                                         )}
 
-                                        {b.kind === "numeric" && (
+                                        {answerType.kind === "numeric" && (
                                             <FormControl fullWidth>
                                                 <TextField
                                                     label="Erwartete numerische Antwort"
-                                                    value={answers[b.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
                                                 />
                                             </FormControl>
                                         )}
 
-                                        {b.kind === "geoGebra" && (
+                                        {answerType.kind === "geoGebra" && (
                                             <FormControl fullWidth>
                                                 <TextField
                                                     label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)"
-                                                    value={answers[b.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(b.key, e.target.value)}
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
                                                 />
                                                 <Typography variant="caption" color="text.secondary">
                                                     (Hier kannst du z. B. JSON für erwartete GeoGebra-Objektwerte speichern.)
