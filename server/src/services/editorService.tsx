@@ -120,3 +120,17 @@ export async function updateQuestionAnswersById(id: number, data: { updatedById:
     });
 }
 
+export const updateQuestionStatusById = async (
+    id: number,
+    { updatedById, status }: { updatedById: number; status: 'ACTIVE' | 'FINISHED' | 'DELETED' }
+) => {
+    return prisma.question.update({
+        where: { id },
+        data: {
+            status,
+            updatedById,
+            updatedAt: new Date(),
+        },
+    });
+};
+

@@ -7,7 +7,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Preview} from '../../components/Editor/Preview';
 import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
-import {type Block, parseContentToBlocks} from "./AnswerUtils.tsx";
+import {type Block, mapQuestionsStatus, parseContentToBlocks} from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
 
@@ -32,7 +32,7 @@ export default function AnswerPreviewPage() {
                         ? JSON.parse(question.contentJson)
                         : question.contentJson ?? { type: 'doc', content: [] };
                 setQuestionContent(content);
-                setQuizStatus(question.status || 'in bearbeitung');
+                setQuizStatus(mapQuestionsStatus(question.status));
 
                 const parsedBlocks: Block[] = parseContentToBlocks(content);
                 setBlocks(parsedBlocks);
@@ -60,7 +60,6 @@ export default function AnswerPreviewPage() {
 
     const handleResetAnswers = () => {
         if (!blocks) return;
-
         blocks.forEach(block => {
             switch (block.kind) {
                 case 'mc': {
@@ -96,7 +95,7 @@ export default function AnswerPreviewPage() {
         setLoading(true);
         try {
             await updateQuestionStatus(id, quizStatus);
-            alert('Status erfolgreich gespeichert!');
+            navigate('/table');
         } catch (err) {
             console.error('Failed to save status:', err);
         } finally {

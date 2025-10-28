@@ -10,6 +10,18 @@ export type Block =
     | { kind: "geoGebra"; key: string };
 
 
+export const mapQuestionsStatus = (status: string | null | undefined): 'in bearbeitung' | 'abgeschlossen' | 'gelöscht' => {
+    switch (status) {
+        case 'ACTIVE':
+            return 'in bearbeitung';
+        case 'FINISHED':
+            return 'abgeschlossen';
+        case 'DELETED':
+            return 'gelöscht';
+        default:
+            return 'in bearbeitung';
+    }
+};
 /**
  * Recursively extracts plain text from a TipTap JSON node.
  */

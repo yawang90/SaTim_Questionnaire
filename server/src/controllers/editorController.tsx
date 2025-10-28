@@ -4,7 +4,7 @@ import {
     findQuestionById,
     getQuestionsByGroupId, saveImage, updateQuestionAnswersById,
     updateQuestionContentById,
-    updateQuestionMetaById
+    updateQuestionMetaById, updateQuestionStatusById
 } from "../services/editorService.js";
 
 interface FieldInput {
@@ -143,5 +143,41 @@ export const updateQuestionAnswers = async (req: Request, res: Response) => {
     } catch (err) {
         console.error('Error updating question answers:', err);
         res.status(500).json({ error: 'Failed to update question answers' });
+    }
+};
+
+export const updateQuestionStatus = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const { status } = req.body;
+        const userId = Number((req as any).user?.id);
+
+        if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+        if (!status) return res.status(400).json({ error: 'Missing status' });
+
+        const statusEnum = mapFrontendStatusToEnum(status);
+
+        const updated = await updateQuestionStatusById(id, {
+            updatedById: userId,
+            status: statusEnum,
+        });
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Error updating question status:', err);
+        res.status(500).json({ error: 'Failed to update question status' });
+    }
+};
+
+const mapFrontendStatusToEnum = (status: string): 'ACTIVE' | 'FINISHED' | 'DELETED' => {
+    switch (status) {
+        case 'in bearbeitung':
+            return 'ACTIVE';
+        case 'abgeschlossen':
+            return 'FINISHED';
+        case 'gelöscht':
+            return 'DELETED';
+        default:
+            throw new Error('Invalid status');
     }
 };
