@@ -68,7 +68,6 @@ export default function AnswerEditorPage() {
     const handleSaveAnswers = async () => {
         if (!id) return;
         setLoading(true);
-        console.log(answers)
         try {
             await updateQuestionAnswers(id, answers);
             navigate(`/preview/${id}`);

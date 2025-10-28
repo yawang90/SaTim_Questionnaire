@@ -39,7 +39,6 @@ export default function SurveyPage() {
     const [activeStep, setActiveStep] = useState(0);
 
     const handleSave = () => {
-        console.log("Saving survey:", survey);
         navigate("/");
     };
 

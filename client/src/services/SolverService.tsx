@@ -11,7 +11,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 export async function evaluateAnswers(id: string, answers: object): Promise<{ score: number; total: number; feedback?: string }> {
     const token = localStorage.getItem("token");
     const payload = { answers };
-    console.log(answers)
     const response = await authFetch(`${API_URL}/api/solver/${id}/evaluate`, {
         method: "POST",
         headers: {

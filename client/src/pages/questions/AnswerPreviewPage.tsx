@@ -36,7 +36,6 @@ export default function AnswerPreviewPage() {
 
                 const parsedBlocks: Block[] = parseContentToBlocks(content);
                 setBlocks(parsedBlocks);
-                console.log(parsedBlocks)
             } catch (err) {
                 console.error('Failed to load question:', err);
             } finally {
@@ -60,8 +59,37 @@ export default function AnswerPreviewPage() {
     };
 
     const handleResetAnswers = () => {
+        if (!blocks) return;
 
+        blocks.forEach(block => {
+            switch (block.kind) {
+                case 'mc': {
+                    const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
+                        `div.mc-choice-wrapper input[name="group-${block.key}"]`
+                    );
+                    checkboxNodes.forEach(input => input.checked = false);
+                    break;
+                }
+                case 'freeText':
+                case 'freeTextInline':
+                case 'numeric': {
+                    const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                        `[data-node-view-wrapper] [id="${block.key}"]`
+                    );
+                    if (inputEl) inputEl.value = '';
+                    break;
+                }
+                case 'geoGebra': {
+                    const ggbEl = document.querySelector<HTMLElement>(
+                        `[data-node-view-wrapper] [id="${block.key}"]`
+                    );
+                  //  if (ggbEl) {}
+                    break;
+                }
+            }
+        });
     };
+
 
     const handleSaveStatus = async () => {
         if (!id) return;
