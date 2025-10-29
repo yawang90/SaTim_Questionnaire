@@ -8,15 +8,19 @@ datasource db {
 }
 
 model users {
-  id               Int            @id @default(autoincrement())
-  first_name       String
-  last_name        String
-  email            String         @unique
-  password         String
-  roles            String[]
-  group_access     group_access[]
-  createdQuestions question[]     @relation("CreatedQuestions")
-  updatedQuestions question[]     @relation("UpdatedQuestions")
+  id                     Int              @id @default(autoincrement())
+  first_name             String
+  last_name              String
+  email                  String           @unique
+  password               String
+  roles                  String[]
+  group_access           group_access[]
+  createdQuestions       question[]       @relation("CreatedQuestions")
+  updatedQuestions       question[]       @relation("UpdatedQuestions")
+  surveys                survey[]         @relation("CreatedSurveys")
+  updatedSurveys         survey[]         @relation("UpdatedSurveys")
+  surveyInstances        surveyInstance[] @relation("CreatedSurveyInstances")
+  updatedSurveyInstances surveyInstance[] @relation("UpdatedSurveyInstances")
 }
 
 model group_access {
@@ -48,4 +52,40 @@ enum question_status {
   ACTIVE
   FINISHED
   DELETED
+}
+
+model survey {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdById Int
+  updatedById Int
+  mode        survey_mode
+  instances   surveyInstance[]
+
+  createdBy users @relation("CreatedSurveys", fields: [createdById], references: [id])
+  updatedBy users @relation("UpdatedSurveys", fields: [updatedById], references: [id])
+}
+
+model surveyInstance {
+  id          Int      @id @default(autoincrement())
+  surveyId    Int
+  name        String
+  validFrom   DateTime
+  validTo     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById Int
+  updatedById Int
+
+  survey    survey @relation(fields: [surveyId], references: [id])
+  createdBy users  @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
+  updatedBy users  @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
+}
+
+enum survey_mode {
+  DESIGN
+  ADAPTIV
 }
