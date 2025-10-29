@@ -1,5 +1,5 @@
-import { NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
-import { MathJax } from 'better-react-mathjax';
+import {type NodeViewProps, NodeViewWrapper} from '@tiptap/react';
+import {MathJax} from 'better-react-mathjax';
 import React from "react";
 
 export const LaTeXComponent: React.FC<NodeViewProps> = ({ node }) => {
@@ -12,7 +12,6 @@ export const LaTeXComponent: React.FC<NodeViewProps> = ({ node }) => {
             <MathJax dynamic>
                 <span>{`\\(${latex}\\)`}</span>
             </MathJax>
-            <NodeViewContent />
         </NodeViewWrapper>
     );
 };

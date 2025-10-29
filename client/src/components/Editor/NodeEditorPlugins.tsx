@@ -179,7 +179,7 @@ export const LatexDisplay = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['span', { ...HTMLAttributes, 'data-latex': HTMLAttributes.latex }, 0];
+        return ['span', { ...HTMLAttributes, 'data-latex': HTMLAttributes.latex }];
     },
 
     addNodeView() {
