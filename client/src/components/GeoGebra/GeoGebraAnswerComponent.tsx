@@ -4,9 +4,10 @@ interface GeoGebraAnswerComponentProps {
     materialId: string;
     width?: string | number;
     height?: string | number;
+    maxPoints?: number;
 }
 
-export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600,}) => {
+export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600, maxPoints = 1}) => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -18,9 +19,9 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
             material_id: materialId,
             width: Number(width),
             height: Number(height),
+            maxPoints: maxPoints,
             appletOnLoad: (applet: any) => {
                 console.log('GeoGebra applet loaded');
-
                 const allObjects = applet.getAllObjectNames();
                 const initialPoints = new Set(
                     allObjects.filter((name: string) => applet.getObjectType(name) === 'point')
@@ -31,16 +32,17 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 const userPoints: string[] = [];
 
                 const enforceMaxUserPoints = () => {
-                    if (userPoints.length > 2) {
-                        const extra = userPoints.splice(0, userPoints.length - 2);
-                        extra.forEach((p) => {
+                    const allowed = Number(maxPoints) >= 0 ? Number(maxPoints) : 0;
+                    while (userPoints.length > allowed) {
+                        const pointToDelete = userPoints.shift(); // remove oldest extra point
+                        if (pointToDelete) {
                             try {
-                                applet.deleteObject(p);
-                                console.log(`Deleted extra user-created point: ${p}`);
+                                applet.deleteObject(pointToDelete);
+                                console.log(`Deleted extra user-created point: ${pointToDelete}`);
                             } catch (err) {
-                                console.warn(`Failed to delete point ${p}:`, err);
+                                console.warn(`Failed to delete point ${pointToDelete}:`, err);
                             }
-                        });
+                        }
                     }
                 };
 
@@ -61,7 +63,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
 
         const ggbApplet = new (window as any).GGBApplet(params, true);
         ggbApplet.inject(containerRef.current);
-    }, [materialId, width, height]);
+    }, [materialId, width, height, maxPoints]);
 
     return (
         <div

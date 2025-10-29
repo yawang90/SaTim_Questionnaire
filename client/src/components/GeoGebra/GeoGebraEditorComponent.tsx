@@ -1,21 +1,46 @@
 import React from 'react';
 import { NodeViewWrapper } from '@tiptap/react';
+import { TextField } from '@mui/material';
 
 export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
-    const { materialId, width, height } = node.attrs;
+    const { materialId, width, height, maxPoints } = node.attrs;
 
     return (
         <NodeViewWrapper
             className="geogebra-node"
-            style={{border: '1px solid #ddd', padding: '8px', borderRadius: '8px', textAlign: 'center', background: '#fafafa',}}>
+            style={{    border: '1px solid #ddd',
+                padding: '16px',
+                borderRadius: '8px',
+                textAlign: 'center',
+                background: '#fafafa',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px'}}>
             <p style={{ fontWeight: 'bold' }}>GeoGebra Applet</p>
 
-            <input
-                type="text"
-                placeholder="GeoGebra Material ID (z. B. mnb8hv7g)"
+            <TextField
+                fullWidth
+                label="GeoGebra Material ID"
+                placeholder="z. B. mnb8hv7g"
                 value={materialId}
+                size="small"
                 onChange={(e) => updateAttributes({ materialId: e.target.value })}
-                style={{ width: '80%', padding: '4px', marginBottom: '8px' }}
+                sx={{ maxWidth: 400 }}
+            />
+
+            <TextField
+                fullWidth
+                type="number"
+                label="Anzahl Antwortpunkte"
+                value={maxPoints}
+                size="small"
+                inputProps={{ min: 0 }}
+                onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    updateAttributes({ maxPoints: val >= 0 ? val : 1 });
+                }}
+                sx={{ maxWidth: 400 }}
             />
 
             {materialId && (
