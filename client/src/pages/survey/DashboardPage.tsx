@@ -1,11 +1,11 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {Box, Button, Card, CardActions, CardContent, CardHeader,
     Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton,
     RadioGroup, TextField, Typography, Radio } from "@mui/material";
 import { Add, BarChart, People, CalendarToday, MoreVert } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import {createSurvey} from "../../services/SurveyService.tsx";
+import {createSurvey, getSurveys} from "../../services/SurveyService.tsx";
 
 interface Survey {
     id: string;
@@ -53,7 +53,6 @@ const DashboardPage = () => {
         }
     };
 
-
     const getStatusColor = (status: Survey["status"]) => {
         switch (status) {
             case "Aktiv":
@@ -66,6 +65,26 @@ const DashboardPage = () => {
                 return "secondary";
         }
     };
+
+    useEffect(() => {
+        const fetchSurveys = async () => {
+            try {
+                const existingSurveys = await getSurveys();
+                setSurveys(existingSurveys.map(s => ({
+                    id: s.id.toString(),
+                    title: s.title,
+                    description: s.description || "",
+                    responses: 0,
+                    createdAt: s.createdAt,
+                    status: "Entwurf",
+                    mode: s.mode as "adaptiv" | "design",
+                })));
+            } catch (err) {
+                console.error("Failed to load surveys:", err);
+            }
+        };
+        fetchSurveys();
+    }, []);
 
     return (
         <MainLayout>

@@ -38,3 +38,21 @@ export async function createSurvey(data: CreateSurveyDTO): Promise<SurveyRespons
     return res.json();
 }
 
+export async function getSurveys(): Promise<SurveyResponse[]> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to fetch surveys: ${message}`);
+    }
+
+    return res.json();
+}
