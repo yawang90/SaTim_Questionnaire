@@ -1,5 +1,5 @@
 import {BrowserRouter, Route, Routes} from 'react-router-dom';
-import DashboardPage from "../pages/DashboardPage.tsx";
+import DashboardPage from "../pages/survey/DashboardPage.tsx";
 import NotFoundPage from "../pages/NotFoundPage.tsx";
 import LandingPage from '../pages/LandingPage.tsx';
 import AnswerEditorPage from "../pages/questions/AnswerEditorPage.tsx";

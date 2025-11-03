@@ -1,10 +1,11 @@
 import { useState } from "react";
-import MainLayout from "../layouts/MainLayout";
+import MainLayout from "../../layouts/MainLayout.tsx";
 import {Box, Button, Card, CardActions, CardContent, CardHeader,
     Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton,
     RadioGroup, TextField, Typography, Radio } from "@mui/material";
 import { Add, BarChart, People, CalendarToday, MoreVert } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import {createSurvey} from "../../services/SurveyService.tsx";
 
 interface Survey {
     id: string;
@@ -13,56 +14,45 @@ interface Survey {
     responses: number;
     createdAt: string;
     status: "Aktiv" | "Entwurf" | "Geschlossen";
-    fromDate?: string;
-    toDate?: string;
     mode?: "adaptiv" | "design";
 }
 
 const DashboardPage = () => {
     const navigate = useNavigate();
-    const [surveys, setSurveys] = useState<Survey[]>([
-        {
-            id: "1",
-            title: "Klasse 1A",
-            description: "Schule ABC",
-            responses: 247,
-            createdAt: "2024-01-15",
-            status: "Aktiv"
-        },
-        {
-            id: "2",
-            title: "Klasse 3C",
-            description: "Primarschule 1234",
-            responses: 89,
-            createdAt: "2024-01-10",
-            status: "Entwurf"
-        },
-        {
-            id: "3",
-            title: "Klasse 2D",
-            description: "Primarschule Pilzhut",
-            responses: 156,
-            createdAt: "2024-01-05",
-            status: "Geschlossen"
-        }
-    ]);
+    const [surveys, setSurveys] = useState<Survey[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "adaptiv" | "design"; }>({title: "", description: "", fromDate: "", toDate: "", mode: "adaptiv",});
+    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design"; }>({title: "", description: "", fromDate: "", toDate: "", mode: "design",});
 
-    const handleCreateSurvey = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleCreateSurvey = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const survey: Survey = {
-            id: Date.now().toString(),
-            title: newSurvey.title,
-            description: newSurvey.description,
-            responses: 0,
-            createdAt: new Date().toISOString().split("T")[0],
-            status: "Entwurf"
-        };
-        setSurveys([survey, ...surveys]);
-        setNewSurvey({ title: "", description: "", fromDate: "", toDate: "", mode: "adaptiv" });
-        setIsDialogOpen(false);
+
+        try {
+            const payload = {
+                title: newSurvey.title,
+                description: newSurvey.description,
+                mode: newSurvey.mode,
+            };
+
+            const created = await createSurvey(payload);
+
+            const survey: Survey = {
+                id: created.id.toString(),
+                title: created.title,
+                description: created.description || "",
+                responses: 0,
+                createdAt: created.createdAt,
+                status: "Entwurf",
+                mode: newSurvey.mode,
+            };
+
+            setSurveys([survey, ...surveys]);
+            setNewSurvey({ title: "", description: "", fromDate: "", toDate: "", mode: "design" });
+            setIsDialogOpen(false);
+        } catch (err: any) {
+            console.error("Failed to create survey:", err);
+        }
     };
+
 
     const getStatusColor = (status: Survey["status"]) => {
         switch (status) {
@@ -99,19 +89,13 @@ const DashboardPage = () => {
                             <TextField label="Beschreibung" fullWidth required multiline rows={4} margin="normal"
                                        value={newSurvey.description}
                                        onChange={(e) => setNewSurvey({...newSurvey, description: e.target.value})}/>
-                            <Box display="flex" gap={2} mt={2} mb={2}>
-                                <TextField label="Von" type="date" slotProps={{inputLabel: { shrink: true },}} fullWidth onChange={(e) => setNewSurvey({...newSurvey, fromDate: e.target.value})}/>
-                                <TextField label="Bis" type="date" slotProps={{inputLabel: { shrink: true },}} fullWidth onChange={(e) => setNewSurvey({...newSurvey, toDate: e.target.value})}/>
-                            </Box>
-
-                            {/* Mode radio buttons */}
                             <Typography variant="subtitle1" gutterBottom>
                                 Modus
                             </Typography>
-                            <RadioGroup row onChange={(e) => setNewSurvey({...newSurvey, mode: e.target.value as "adaptiv" | "design"})}>
-                                <FormControlLabel value="adaptiv" control={<Radio/>} label="Adaptiv"/>
-                                <FormControlLabel value="design" control={<Radio/>} label="Design Matrix"/>
+                            <RadioGroup row value={newSurvey.mode} onChange={(e) => setNewSurvey({ ...newSurvey, mode: e.target.value as "design" })}>
+                                <FormControlLabel value="design" control={<Radio />} label="Design Matrix" />
                             </RadioGroup>
+
                         </DialogContent>
                         <DialogActions>
                             <Button variant="outlined" onClick={() => setIsDialogOpen(false)}>

@@ -4,6 +4,7 @@ import userRoutes from "./routes/userRoutes.js";
 import editorRoutes from "./routes/editorRoutes.js";
 import path from "path";
 import cors from 'cors';
+import surveyRoutes from "./routes/surveyRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(cors({
 }));
 app.use('/api/users', userRoutes);
 app.use('/api/editor', editorRoutes);
+app.use('/api/survey', surveyRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 app.listen(port, () => {
