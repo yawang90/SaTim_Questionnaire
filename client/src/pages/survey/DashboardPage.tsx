@@ -25,12 +25,12 @@ const DashboardPage = () => {
 
     const handleCreateSurvey = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         try {
             const payload = {
                 title: newSurvey.title,
                 description: newSurvey.description,
                 mode: newSurvey.mode,
+                status: "IN_PROGRESS" as "ACTIVE" | "IN_PROGRESS" | "FINISHED", // ✅ cast to union type
             };
 
             const created = await createSurvey(payload);
@@ -41,7 +41,7 @@ const DashboardPage = () => {
                 description: created.description || "",
                 responses: 0,
                 createdAt: created.createdAt,
-                status: "Entwurf",
+                status: mapStatus(created.status ?? "IN_PROGRESS"),
                 mode: newSurvey.mode,
             };
 
@@ -63,6 +63,14 @@ const DashboardPage = () => {
                 return "secondary";
             default:
                 return "secondary";
+        }
+    };
+
+    const mapStatus = (status: "ACTIVE" | "IN_PROGRESS" | "FINISHED"): Survey["status"] => {
+        switch (status) {
+            case "ACTIVE": return "Aktiv";
+            case "IN_PROGRESS": return "Entwurf";
+            case "FINISHED": return "Geschlossen";
         }
     };
 

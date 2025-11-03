@@ -4,6 +4,7 @@ export interface CreateSurveyDTO {
     fromDate?: string;
     toDate?: string;
     mode: "adaptiv" | "design";
+    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
 }
 
 export interface SurveyResponse {
@@ -12,6 +13,7 @@ export interface SurveyResponse {
     description?: string;
     createdAt: string;
     updatedAt: string;
+    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
     mode: string;
 }
 // @ts-expect-error

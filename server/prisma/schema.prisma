@@ -54,6 +54,12 @@ enum question_status {
   DELETED
 }
 
+enum survey_status {
+  ACTIVE
+  IN_PROGRESS
+  FINISHED
+}
+
 model survey {
   id          Int              @id @default(autoincrement())
   title       String
@@ -62,6 +68,7 @@ model survey {
   updatedAt   DateTime         @updatedAt
   createdById Int
   updatedById Int
+  status      survey_status    @default(IN_PROGRESS)
   mode        survey_mode
   instances   surveyInstance[]
 

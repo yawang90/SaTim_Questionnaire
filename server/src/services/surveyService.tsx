@@ -1,5 +1,5 @@
 import prisma from "../config/prismaClient.js";
-import { type survey, survey_mode, type surveyInstance } from "@prisma/client";
+import {type survey, survey_mode, type survey_status, type surveyInstance} from "@prisma/client";
 
 /**
  * Interface for creating a new survey
@@ -10,6 +10,7 @@ interface CreateSurveyInput {
     mode: survey_mode;
     createdById: number;
     updatedById: number;
+    status?: survey_status;
     instances?: {
         name: string;
         validFrom: Date;
@@ -25,6 +26,7 @@ interface UpdateSurveyInput {
     description?: string;
     mode?: survey_mode;
     updatedById: number;
+    status?: survey_status;
 }
 
 
@@ -57,6 +59,7 @@ export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => 
     const createData: any = {
         title: data.title,
         mode: data.mode,
+        status: data.status ?? "IN_PROGRESS",
         createdById: data.createdById,
         updatedById: data.updatedById,
     };
@@ -119,6 +122,7 @@ export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Pro
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.mode !== undefined) updateData.mode = data.mode;
+    if (data.status !== undefined) updateData.status = data.status;
 
     return prisma.survey.update({
         where: { id },
