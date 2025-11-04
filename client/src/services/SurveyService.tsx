@@ -100,3 +100,26 @@ export async function getSurveyById(id: string): Promise<SurveyResponse & { crea
     return res.json();
 }
 
+export async function updateSurvey(id: string, data: {
+    title?: string;
+    description?: string;
+    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+}) {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const response = await fetch(`${API_BASE}/api/survey/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to update survey (status ${response.status})`);
+    }
+
+    return await response.json();
+}

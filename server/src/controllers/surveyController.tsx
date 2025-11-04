@@ -95,13 +95,13 @@ export const updateSurveyHandler = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const { title, description, mode } = req.body;
+        const { title, description, mode, status } = req.body;
 
-        // Build payload only with existing fields
         const updatePayload: any = { updatedById: userId };
         if (title) updatePayload.title = title;
         if (description !== undefined) updatePayload.description = description;
         if (mode) updatePayload.mode = mode === "adaptiv" ? "ADAPTIV" : "DESIGN";
+        if (status) updatePayload.status = status;
 
         const updatedSurvey = await updateSurveyById(id, updatePayload);
 

@@ -1,22 +1,24 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {useEffect, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
 import {
+    Alert,
     Box,
     Button,
-    Card,
-    CardContent,
-    CardHeader,
     Dialog,
-    DialogTitle,
-    DialogContent,
     DialogActions,
-    Typography,
+    DialogContent,
+    DialogTitle,
     Grid,
-    Chip,
     LinearProgress,
+    MenuItem,
+    Paper,
+    Snackbar,
+    TextField,
+    Typography,
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import { getSurveyById, updateSurveyFiles } from "../../services/SurveyService.tsx";
+import {getSurveyById, updateSurvey, updateSurveyFiles} from "../../services/SurveyService.tsx";
+import {Add} from "@mui/icons-material";
 
 interface UserRef {
     id: number;
@@ -48,6 +50,11 @@ const SurveyDetailPage = () => {
     const [file2, setFile2] = useState<File | null>(null);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+        open: false,
+        message: "",
+        severity: "success",
+    });
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -67,14 +74,10 @@ const SurveyDetailPage = () => {
                         ? { id: data.updatedBy.id, first_name: data.updatedBy.first_name, last_name: data.updatedBy.last_name }
                         : { id: 0, first_name: "Unbekannt", last_name: "" },
                     status: (data.status ?? "IN_PROGRESS") as "ACTIVE" | "IN_PROGRESS" | "FINISHED",
-                    mode:
-                        data.mode?.toUpperCase() === "ADAPTIV"
-                            ? "ADAPTIV"
-                            : "DESIGN",
+                    mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                     file1: null,
                     file2: null,
                 });
-                console.log(data)
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
             } finally {
@@ -100,14 +103,21 @@ const SurveyDetailPage = () => {
         }
     };
 
-    const mapStatus = (status: SurveyDetail["status"]) => {
-        switch (status) {
-            case "ACTIVE":
-                return "Aktiv";
-            case "IN_PROGRESS":
-                return "Entwurf";
-            case "FINISHED":
-                return "Geschlossen";
+    const handleSaveChanges = async () => {
+        if (!survey) return;
+        setSaving(true);
+        try {
+            await updateSurvey(survey.id.toString(), {
+                title: survey.title,
+                description: survey.description,
+                status: survey.status,
+            });
+            setSnackbar({ open: true, message: "Änderungen erfolgreich gespeichert.", severity: "success" });
+        } catch (err) {
+            console.error("Failed to update survey:", err);
+            setSnackbar({ open: true, message: "Fehler beim Speichern der Änderungen.", severity: "error" });
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -116,69 +126,80 @@ const SurveyDetailPage = () => {
 
     return (
         <MainLayout>
-            <Box sx={{minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
-                <Card>
-                    <CardHeader title={survey.title} />
-                    <CardContent>
-                        <Typography variant="body1" gutterBottom>
-                            {survey.description}
-                        </Typography>
+            <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
 
-                        <Grid container spacing={2} sx={{ mb: 2 }}>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                                <Typography variant="subtitle2">Erstellt von:</Typography>
-                                <Typography>
-                                    {survey.createdBy.first_name} {survey.createdBy.last_name} am{" "}
-                                    {new Date(survey.createdAt).toLocaleDateString()}
-                                </Typography>
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                                <Typography variant="subtitle2">
-                                    Zuletzt bearbeitet von:
-                                </Typography>
-                                <Typography>
-                                    {survey.updatedBy.first_name} {survey.updatedBy.last_name} am{" "}
-                                    {new Date(survey.updatedAt).toLocaleDateString()}
-                                </Typography>
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                                <Typography variant="subtitle2">Status:</Typography>
-                                <Chip
-                                    label={mapStatus(survey.status)}
-                                    color={
-                                        survey.status === "ACTIVE" ? "info" : survey.status === "IN_PROGRESS" ? "primary" : "secondary"}
-                                />
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                                <Typography variant="subtitle2">Modus:</Typography>
-                                <Chip label={survey.mode === "DESIGN" ? "Design Matrix" : "Adaptiv"}/>
-                            </Grid>
+                <Paper sx={{ p: 3 }}>
+                    <Typography variant="h5" sx={{ pb: 3 }}  gutterBottom>
+                        Erhebung bearbeiten
+                    </Typography>
+
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                label="Titel"
+                                fullWidth
+                                value={survey.title}
+                                onChange={(e) => setSurvey({ ...survey, title: e.target.value })}/>
                         </Grid>
 
-                        {survey.mode === "DESIGN" && (
-                            <Box mt={3}>
-                                <Typography variant="h6">Design Matrix Dateien</Typography>
-                                <Button variant="contained" sx={{ mt: 1 }} onClick={() => setUploadDialogOpen(true)}>
-                                    {survey.file1 && survey.file2
-                                        ? "Dateien bearbeiten"
-                                        : "Dateien hochladen"}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                select
+                                label="Status"
+                                fullWidth
+                                value={survey.status}
+                                onChange={(e) =>
+                                    setSurvey({ ...survey, status: e.target.value as "ACTIVE" | "IN_PROGRESS" | "FINISHED" })
+                                }>
+                                <MenuItem value="ACTIVE">Aktiv</MenuItem>
+                                <MenuItem value="IN_PROGRESS">Entwurf</MenuItem>
+                                <MenuItem value="FINISHED">Geschlossen</MenuItem>
+                            </TextField>
+                        </Grid>
+
+                        <Grid size={{ xs: 12 }}>
+                            <TextField label="Beschreibung" fullWidth multiline rows={4} value={survey.description} onChange={(e) => setSurvey({ ...survey, description: e.target.value })}/>
+                        </Grid>
+
+                        <Grid size={{ xs: 12 }}>
+                            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+                                <Button variant="outlined" onClick={() => navigate(-1)}>
+                                    Zurück
+                                </Button>
+                                <Button variant="contained" onClick={handleSaveChanges} disabled={saving}>
+                                    {saving ? "Speichern..." : "Änderungen speichern"}
                                 </Button>
                             </Box>
-                        )}
-                    </CardContent>
-                </Card>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {survey.mode === "DESIGN" && (
+                <Paper sx={{ p: 3 }}>
+                    <Typography sx={{ pb: 3 }} variant="h5" gutterBottom>Aufgaben Zuordnung (Booklet)</Typography>
+                    <Button variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
+                        Design-Matrix hochladen
+                    </Button>
+                </Paper> )}
+
+                <Paper sx={{ p: 3 }}>
+                    <Typography sx={{ pb: 3 }}  variant="h5" gutterBottom>Test Instanzen</Typography>
+                        <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => console.log("Creating instance...")}>
+                            Instanz erstellen
+                        </Button>
+                </Paper>
 
                 <Dialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} fullWidth maxWidth="sm">
                     <DialogTitle>Excel Dateien hochladen</DialogTitle>
                     <DialogContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={1}>
                             <Button variant={file1 ? "contained" : "outlined"} component="label">
-                                {file1 ? `Datei 1: ${file1.name}` : "Upload Datei 1"}
+                                {file1 ? `Datei 1: ${file1.name}` : "Upload: TestId - Testheft"}
                                 <input hidden type="file" accept=".xlsx, .xls" onChange={(e) => e.target.files && setFile1(e.target.files[0])}/>
                             </Button>
 
                             <Button variant={file2 ? "contained" : "outlined"} component="label">
-                                {file2 ? `Datei 2: ${file2.name}` : "Upload Datei 2"}
+                                {file2 ? `Datei 2: ${file2.name}` : "Upload: Designmatrix (Booklet - Testheft)"}
                                 <input hidden type="file" accept=".xlsx, .xls" onChange={(e) => e.target.files && setFile2(e.target.files[0])}/>
                             </Button>
 
@@ -196,6 +217,10 @@ const SurveyDetailPage = () => {
                         </Button>
                     </DialogActions>
                 </Dialog>
+
+                <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+                    <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+                </Snackbar>
             </Box>
         </MainLayout>
     );
