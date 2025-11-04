@@ -58,3 +58,45 @@ export async function getSurveys(): Promise<SurveyResponse[]> {
 
     return res.json();
 }
+
+export async function updateSurveyFiles(id: string, file1: File, file2: File) {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file1", file1);
+    formData.append("file2", file2);
+
+    const res = await fetch(`${API_BASE}/api/survey/${id}/files`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+    });
+
+    if (!res.ok) throw new Error("Failed to upload files");
+    return res.json();
+}
+
+export interface UserRef {
+    id: number;
+    first_name: string;
+    last_name: string;
+}
+
+export async function getSurveyById(id: string): Promise<SurveyResponse & { createdBy: UserRef; updatedBy: UserRef }> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/${id}`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to fetch survey by id: ${message}`);
+    }
+
+    return res.json();
+}
+

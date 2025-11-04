@@ -1,17 +1,33 @@
 import {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {Box, Button, Card, CardActions, CardContent, CardHeader,
-    Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton,
-    RadioGroup, TextField, Typography, Radio } from "@mui/material";
-import { Add, BarChart, People, CalendarToday, MoreVert } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import {
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CardHeader,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    Radio,
+    RadioGroup,
+    TextField,
+    Typography
+} from "@mui/material";
+import {Add, BarChart, CalendarToday, MoreVert} from "@mui/icons-material";
+import {useNavigate} from "react-router-dom";
 import {createSurvey, getSurveys} from "../../services/SurveyService.tsx";
 
 interface Survey {
     id: string;
     title: string;
     description: string;
-    responses: number;
     createdAt: string;
     status: "Aktiv" | "Entwurf" | "Geschlossen";
     mode?: "adaptiv" | "design";
@@ -39,7 +55,6 @@ const DashboardPage = () => {
                 id: created.id.toString(),
                 title: created.title,
                 description: created.description || "",
-                responses: 0,
                 createdAt: created.createdAt,
                 status: mapStatus(created.status ?? "IN_PROGRESS"),
                 mode: newSurvey.mode,
@@ -82,7 +97,6 @@ const DashboardPage = () => {
                     id: s.id.toString(),
                     title: s.title,
                     description: s.description || "",
-                    responses: 0,
                     createdAt: s.createdAt,
                     status: "Entwurf",
                     mode: s.mode as "adaptiv" | "design",
@@ -148,10 +162,6 @@ const DashboardPage = () => {
                                     </Typography>
                                     <Box display="flex" justifyContent="space-between" fontSize="0.875rem">
                                         <Box display="flex" alignItems="center" gap={0.5}>
-                                            <People fontSize="small"/>
-                                            {survey.responses} responses
-                                        </Box>
-                                        <Box display="flex" alignItems="center" gap={0.5}>
                                             <CalendarToday fontSize="small"/>
                                             {new Date(survey.createdAt).toLocaleDateString()}
                                         </Box>
@@ -159,7 +169,7 @@ const DashboardPage = () => {
                                 </CardContent>
                                 <CardActions>
                                     <Button size="small" variant="contained" fullWidth
-                                            onClick={() => navigate(`/survey`)}>
+                                            onClick={() => navigate(`/survey/${survey.id}`)}>
                                         Bearbeiten
                                     </Button>
                                     <Button size="small" variant="outlined" fullWidth>
