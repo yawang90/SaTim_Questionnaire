@@ -176,10 +176,8 @@ const DashboardPage = () => {
                                 <Card>
                                     <CardHeader
                                         title={survey.title}
-                                        subheader={
-                                            <Chip label={survey.status} color={getStatusColor(survey.status)} size="small"/>
-                                    }
-                                        action={<IconButton><MoreVert /></IconButton>}
+                                        subheader={<Chip label={survey.status} color={getStatusColor(survey.status)} size="small"/>}
+                                        // action={<IconButton><MoreVert /></IconButton>}
                                     />
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" fontSize="0.875rem">
@@ -190,11 +188,11 @@ const DashboardPage = () => {
                                         </Box>
                                     </CardContent>
                                     <CardActions>
-                                        <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/survey/${survey.id}`)}>
+                                        <Button size="small" variant="outlined" fullWidth onClick={() => navigate(`/survey/${survey.id}`)}>
                                             Bearbeiten
                                         </Button>
-                                        <Button size="small" variant="outlined" fullWidth>
-                                            Resultate
+                                        <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/survey/details/${survey.id}`)}>
+                                            Übersicht
                                         </Button>
                                     </CardActions>
                                 </Card>
