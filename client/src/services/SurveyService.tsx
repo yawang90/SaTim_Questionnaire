@@ -16,6 +16,7 @@ export interface SurveyResponse {
     status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
     mode: string;
 }
+
 // @ts-expect-error
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -148,3 +149,29 @@ export const uploadSurveyExcels = async (surveyId: string, file1: File, file2: F
     return await response.json();
 };
 
+export interface Booklet {
+    id: number;
+    bookletId: number;
+    questions: any[];
+    excelFileUrl: string;
+    createdAt: string;
+}
+
+export async function getSurveyBooklets(surveyId: string): Promise<Booklet[]> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/${surveyId}/booklets`, {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to fetch booklets: ${message}`);
+    }
+
+    return res.json();
+}

@@ -192,18 +192,59 @@ export const deleteSurveyInstanceById = async (id: number): Promise<surveyInstan
 };
 
 /**
- * Process uploaded survey Excel files
- * @param surveyId ID of the survey
- * @param slotQuestionFile Excel mapping slots -> question IDs
- * @param bookletSlotFile Excel mapping booklets -> slots
+ * Get all booklets for a survey
  */
-export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Express.Multer.File, bookletSlotFile: Express.Multer.File, createdById: number) => {
+export const getBookletsBySurveyId = async (surveyId: number) => {
+    return prisma.booklet.findMany({
+        where: { surveyId },
+        include: {
+            questions: true,
+        },
+        orderBy: { bookletId: "asc" },
+    });
+};
+
+/**
+ * Process uploaded survey Excel files
+ * Creates new booklets or updates existing ones
+ */
+export const processSurveyExcels = async (
+    surveyId: number,
+    slotQuestionFile: Express.Multer.File,
+    bookletSlotFile: Express.Multer.File,
+    createdById: number
+) => {
     const slotToQuestionMap = readSlotToQuestionExcel(slotQuestionFile);
     const bookletMap = readBookletToSlotExcel(bookletSlotFile, slotToQuestionMap);
 
+    await prisma.booklet.deleteMany({
+        where: { surveyId },
+    });
+
     for (const [bookletName, questionIds] of Object.entries(bookletMap)) {
-        const result = await createBooklets(bookletName, surveyId, questionIds, createdById);
-        console.log(result)
+        const bookletId = parseInt(bookletName.replace(/\D/g, "")) || 0;
+
+        const validQuestions = await prisma.question.findMany({
+            where: { id: { in: questionIds } },
+            select: { id: true },
+        });
+        const validQuestionIds = validQuestions.map(q => q.id);
+
+        if (validQuestionIds.length !== questionIds.length) {
+            throw new Error("Some question IDs do not exist");
+        }
+
+        await prisma.booklet.create({
+            data: {
+                bookletId,
+                surveyId,
+                questions: {
+                    connect: validQuestionIds.map(id => ({ id })),
+                },
+                excelFileUrl: "",
+                createdById,
+            },
+        });
     }
 
     return prisma.survey.update({
@@ -213,28 +254,6 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
         },
     });
 };
-
-async function createBooklets(bookletName: string, surveyId: number, questionIds: number[], createdById: number) {
-    const validQuestions = await prisma.question.findMany({
-        where: { id: { in: questionIds } },
-        select: { id: true },
-    });
-    const validQuestionIds = validQuestions.map(q => q.id);
-    if (validQuestionIds.length !== questionIds.length) {
-        throw new Error("Some question IDs do not exist");
-    }
-    return prisma.booklet.create({
-        data: {
-            bookletId: parseInt(bookletName.replace(/\D/g, "")) || 0,
-            surveyId,
-            questions: {
-                connect: questionIds.map(id => ({ id })),
-            },
-            excelFileUrl: "",
-            createdById: createdById,
-        },
-    });
-}
 
 function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
     const slotQuestionWorkbook = XLSX.read(slotQuestionFile.buffer, {type: "buffer"});

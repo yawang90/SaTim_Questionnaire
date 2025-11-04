@@ -8,7 +8,7 @@ import {
     createSurveyInstance,
     getSurveyInstances,
     updateSurveyInstanceById,
-    deleteSurveyInstanceById, processSurveyExcels,
+    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId,
 } from "../services/surveyService.js";
 
 /**
@@ -236,5 +236,18 @@ export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => 
     } catch (err) {
         console.error("Error uploading survey Excels:", err);
         res.status(500).json({ error: "Failed to upload Excel files", err });
+    }
+};
+
+export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
+    try {
+        const surveyId = Number(req.params.id);
+        if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
+
+        const booklets = await getBookletsBySurveyId(surveyId);
+        res.status(200).json(booklets);
+    } catch (err) {
+        console.error("Error fetching booklets:", err);
+        res.status(500).json({ error: "Failed to fetch booklets" });
     }
 };

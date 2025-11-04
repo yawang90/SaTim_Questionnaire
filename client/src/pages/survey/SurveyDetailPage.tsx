@@ -17,7 +17,13 @@ import {
     Typography,
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {getSurveyById, updateSurvey, uploadSurveyExcels} from "../../services/SurveyService.tsx";
+import {
+    type Booklet,
+    getSurveyBooklets,
+    getSurveyById,
+    updateSurvey,
+    uploadSurveyExcels
+} from "../../services/SurveyService.tsx";
 import {Add} from "@mui/icons-material";
 
 interface UserRef {
@@ -55,6 +61,8 @@ const SurveyDetailPage = () => {
         message: "",
         severity: "success",
     });
+    const [booklets, setBooklets] = useState<Booklet[]>([]);
+    const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -80,6 +88,7 @@ const SurveyDetailPage = () => {
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
+                setSnackbar({ open: true, message: "Erhebung konnte nicht geladen werden.", severity: "error" });
             } finally {
                 setLoading(false);
             }
@@ -103,6 +112,23 @@ const SurveyDetailPage = () => {
             setSaving(false);
         }
     };
+
+    useEffect(() => {
+        if (!survey) return;
+
+        const fetchBooklets = async () => {
+            try {
+                const data = await getSurveyBooklets(survey.id.toString());
+                setBooklets(data);
+            } catch (err) {
+                console.log(err);
+                setSnackbar({ open: true, message: "Booklets konnten nicht geladen werden.", severity: "error" });
+            }
+        };
+
+        fetchBooklets();
+    }, [survey]);
+
 
     const handleSaveChanges = async () => {
         if (!survey) return;
@@ -182,6 +208,36 @@ const SurveyDetailPage = () => {
                         Design-Matrix hochladen
                     </Button>
                 </Paper> )}
+
+                {survey.mode === "DESIGN" && booklets.length > 0 && (
+                    <Paper sx={{ p: 3 }}>
+                        <Typography sx={{ pb: 3 }} variant="h5">Booklets</Typography>
+                        <Typography sx={{ pb: 1 }}>Zuvor hochgeladene Booklets werden hier angezeigt. Bei erneutem hochladen der Design-Matrix, werden alte Booklets automatisch gelöscht.</Typography>
+                        <Button variant="outlined" onClick={() => setBookletDialogOpen(true)}>
+                            Booklets anzeigen ({booklets.length})
+                        </Button>
+
+                        <Dialog open={bookletDialogOpen} onClose={() => setBookletDialogOpen(false)} fullScreen maxWidth="sm">
+                            <DialogTitle>Booklets</DialogTitle>
+                            <DialogContent>
+                                {booklets.map((b) => (
+                                    <Box key={b.id} sx={{ mb: 2, p: 1, border: "1px solid #ccc", borderRadius: 1 }}>
+                                        <Typography variant="subtitle1">Booklet {b.bookletId}</Typography>
+                                        <Typography variant="body2">Fragen: {b.questions.map(q => `ID: ${q.id}`).join(", ")}</Typography>
+                                        <Typography variant="body2">Erstellt am: {new Date(b.createdAt).toLocaleDateString()}</Typography>
+                                        {b.excelFileUrl && (
+                                            <Button variant="text" href={b.excelFileUrl} target="_blank">Excel herunterladen</Button>
+                                        )}
+                                    </Box>
+                                ))}
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={() => setBookletDialogOpen(false)}>Schließen</Button>
+                            </DialogActions>
+                        </Dialog>
+                    </Paper>
+                )}
+
 
                 <Paper sx={{ p: 3 }}>
                     <Typography sx={{ pb: 3 }}  variant="h5" gutterBottom>Test Instanzen</Typography>
