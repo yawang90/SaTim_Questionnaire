@@ -203,7 +203,7 @@ export async function createSurveyInstance(surveyId: number, data: SurveyInstanc
     return res.json();
 }
 
-export async function getSurveyInstances(surveyId: string) {
+export async function getSurveyInstances(surveyId: number) {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
 
