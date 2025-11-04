@@ -8,13 +8,15 @@ import {
     createSurveyInstanceHandler,
     getSurveyInstancesHandler,
     updateSurveyInstanceHandler,
-    deleteSurveyInstanceHandler,
+    deleteSurveyInstanceHandler, uploadSurveyExcelsHandler,
 } from "../controllers/surveyController.js";
 import { authenticateToken } from "../auth/authenticate.js";
+import multer from "multer";
 
 const router = express.Router();
 
 router.use(authenticateToken);
+const upload = multer({ storage: multer.memoryStorage() });
 
 
 router.post("/", createSurveyHandler);
@@ -28,5 +30,14 @@ router.post("/instance", createSurveyInstanceHandler);
 router.get("/:surveyId/instances", getSurveyInstancesHandler);
 router.put("/instance/:id", updateSurveyInstanceHandler);
 router.delete("/instance/:id", deleteSurveyInstanceHandler);
+
+router.post(
+    "/:id/upload-excels",
+    upload.fields([
+        { name: "slotQuestionFile", maxCount: 1 },
+        { name: "bookletSlotFile", maxCount: 1 },
+    ]),
+    uploadSurveyExcelsHandler
+);
 
 export default router;

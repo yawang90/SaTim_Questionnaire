@@ -21,6 +21,7 @@ model users {
   updatedSurveys         survey[]         @relation("UpdatedSurveys")
   surveyInstances        surveyInstance[] @relation("CreatedSurveyInstances")
   updatedSurveyInstances surveyInstance[] @relation("UpdatedSurveyInstances")
+  booklets               booklet[]        @relation("CreatedBooklets")
 }
 
 model group_access {
@@ -46,6 +47,8 @@ model question {
 
   createdBy users @relation("CreatedQuestions", fields: [createdById], references: [id])
   updatedBy users @relation("UpdatedQuestions", fields: [updatedById], references: [id])
+
+  booklet booklet[] @relation("BookletQuestions")
 }
 
 enum question_status {
@@ -61,16 +64,18 @@ enum survey_status {
 }
 
 model survey {
-  id          Int              @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  createdById Int
-  updatedById Int
-  status      survey_status    @default(IN_PROGRESS)
-  mode        survey_mode
-  instances   surveyInstance[]
+  id                     Int              @id @default(autoincrement())
+  title                  String
+  description            String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  createdById            Int
+  updatedById            Int
+  status                 survey_status    @default(IN_PROGRESS)
+  mode                   survey_mode
+  instances              surveyInstance[]
+  booklet                booklet[]
+  bookletMappingExcelUrl String?
 
   createdBy users @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users @relation("UpdatedSurveys", fields: [updatedById], references: [id])
@@ -95,4 +100,20 @@ model surveyInstance {
 enum survey_mode {
   DESIGN
   ADAPTIV
+}
+
+model booklet {
+  id            Int        @id @default(autoincrement())
+  bookletId     Int
+  surveyId      Int
+  questions     question[] @relation("BookletQuestions")
+  excelFileUrl  String
+  assignedCount Int        @default(0)
+  createdAt     DateTime   @default(now())
+  createdById   Int
+
+  survey    survey @relation(fields: [surveyId], references: [id])
+  createdBy users  @relation("CreatedBooklets", fields: [createdById], references: [id])
+
+  @@index([surveyId])
 }

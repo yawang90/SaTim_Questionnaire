@@ -8,7 +8,7 @@ import {
     createSurveyInstance,
     getSurveyInstances,
     updateSurveyInstanceById,
-    deleteSurveyInstanceById,
+    deleteSurveyInstanceById, processSurveyExcels,
 } from "../services/surveyService.js";
 
 /**
@@ -206,5 +206,35 @@ export const deleteSurveyInstanceHandler = async (req: Request, res: Response) =
     } catch (err) {
         console.error("Error deleting survey instance:", err);
         res.status(500).json({ error: "Failed to delete survey instance" });
+    }
+};
+
+export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => {
+    try {
+        const surveyId = Number(req.params.id);
+        if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        const slotQuestionFile = files.slotQuestionFile?.[0];
+        const bookletSlotFile = files.bookletSlotFile?.[0];
+
+        if (!slotQuestionFile || !bookletSlotFile) {
+            return res.status(400).json({ error: "Both files are required" });
+        }
+
+        if (!slotQuestionFile || !bookletSlotFile) {
+            return res.status(400).json({ error: "Both files are required" });
+        }
+        const createdBy = Number((req as any).user?.id);
+        if (!createdBy) {
+            return res.status(401).json({ error: "Unauthorized: user not found in token" });
+        }
+        await processSurveyExcels(surveyId, slotQuestionFile, bookletSlotFile, createdBy);
+
+        res.status(200).json({ message: "Files uploaded and processed successfully" });
+    } catch (err) {
+        console.error("Error uploading survey Excels:", err);
+        res.status(500).json({ error: "Failed to upload Excel files", err });
     }
 };

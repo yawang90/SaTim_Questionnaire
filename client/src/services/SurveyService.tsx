@@ -123,3 +123,28 @@ export async function updateSurvey(id: string, data: {
 
     return await response.json();
 }
+
+
+export const uploadSurveyExcels = async (surveyId: string, file1: File, file2: File) => {
+    const formData = new FormData();
+    formData.append("slotQuestionFile", file1);
+    formData.append("bookletSlotFile", file2);
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const response = await fetch(`${API_BASE}/api/survey/${surveyId}/upload-excels`, {
+        method: "POST",
+        body: formData,
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    return await response.json();
+};
+

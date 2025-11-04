@@ -17,7 +17,7 @@ import {
     Typography,
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {getSurveyById, updateSurvey, updateSurveyFiles} from "../../services/SurveyService.tsx";
+import {getSurveyById, updateSurvey, uploadSurveyExcels} from "../../services/SurveyService.tsx";
 import {Add} from "@mui/icons-material";
 
 interface UserRef {
@@ -88,16 +88,17 @@ const SurveyDetailPage = () => {
     }, [id]);
 
     const handleSaveFiles = async () => {
-        if (!survey) return;
-        if (!file1 || !file2) return;
+        if (!survey || !file1 || !file2) return;
 
         setSaving(true);
         try {
-            await updateSurveyFiles(survey.id.toString(), file1, file2);
-            setSurvey({ ...survey, file1, file2 });
+            await uploadSurveyExcels(survey.id.toString(), file1, file2);
+            setSnackbar({ open: true, message: "Dateien erfolgreich hochgeladen.", severity: "success" });
             setUploadDialogOpen(false);
+            setSurvey({ ...survey, file1, file2 });
         } catch (err) {
-            console.error("Failed to save files:", err);
+            console.error("Failed to upload files:", err);
+            setSnackbar({ open: true, message: "Fehler beim Hochladen der Dateien.", severity: "error" });
         } finally {
             setSaving(false);
         }
