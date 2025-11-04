@@ -1,16 +1,19 @@
-import {CssBaseline, ThemeProvider} from "@mui/material";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import AppRoutes from "./routes/AppRoutes.tsx";
 import theme from "./styles/theme.ts";
-import {AuthProvider} from "./contexts/AuthContext.tsx";
+import { AuthProvider } from "./contexts/AuthContext.tsx";
 
 export default function App() {
-
-    return <div>
+    return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <AuthProvider>
-                <AppRoutes/>
-            </AuthProvider>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <AuthProvider>
+                    <AppRoutes />
+                </AuthProvider>
+            </LocalizationProvider>
         </ThemeProvider>
-    </div>;
+    );
 }

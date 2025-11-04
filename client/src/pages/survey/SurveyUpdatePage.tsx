@@ -19,12 +19,15 @@ import {
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
     type Booklet,
+    createSurveyInstance,
     getSurveyBooklets,
     getSurveyById,
     updateSurvey,
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
 import {Add} from "@mui/icons-material";
+import {Dayjs} from "dayjs";
+import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 
 interface UserRef {
     id: number;
@@ -46,6 +49,12 @@ interface SurveyDetail {
     file2?: File | null;
 }
 
+interface NewInstanceInput {
+    name: string;
+    validFrom: Dayjs | null;
+    validTo: Dayjs | null;
+}
+
 const SurveyUpdatePage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -63,6 +72,8 @@ const SurveyUpdatePage = () => {
     });
     const [booklets, setBooklets] = useState<Booklet[]>([]);
     const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
+    const [instanceDialogOpen, setInstanceDialogOpen] = useState(false);
+    const [newInstance, setNewInstance] = useState<NewInstanceInput>({ name: "", validFrom: null, validTo: null });
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -129,6 +140,32 @@ const SurveyUpdatePage = () => {
         fetchBooklets();
     }, [survey]);
 
+    const handleCreateInstance = async () => {
+        if (!survey || !newInstance.name || !newInstance.validFrom || !newInstance.validTo) {
+            setSnackbar({ open: true, message: "Bitte alle Felder ausfüllen.", severity: "error" });
+            return;
+        }
+        if (newInstance.validTo.isBefore(newInstance.validFrom)) {
+            setSnackbar({ open: true, message: "Das Enddatum muss nach dem Startdatum liegen.", severity: "error" });
+            return;
+        }
+        setSaving(true);
+        try {
+            await createSurveyInstance(survey.id, {
+                name: newInstance.name,
+                validFrom: newInstance.validFrom.toISOString(),
+                validTo: newInstance.validTo.toISOString(),
+            });
+            setSnackbar({ open: true, message: "Test Instanz erfolgreich erstellt.", severity: "success" });
+            setInstanceDialogOpen(false);
+            setNewInstance({ name: "", validFrom: null, validTo: null });
+        } catch (err) {
+            console.error("Failed to create instance:", err);
+            setSnackbar({ open: true, message: "Fehler beim Erstellen der Instanz.", severity: "error" });
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleSaveChanges = async () => {
         if (!survey) return;
@@ -241,9 +278,7 @@ const SurveyUpdatePage = () => {
 
                 <Paper sx={{ p: 3 }}>
                     <Typography sx={{ pb: 3 }}  variant="h5" gutterBottom>Test Instanzen</Typography>
-                        <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => console.log("Creating instance...")}>
-                            Instanz erstellen
-                        </Button>
+                    <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}> Instanz erstellen</Button>
                 </Paper>
 
                 <Dialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} fullWidth maxWidth="sm">
@@ -271,6 +306,40 @@ const SurveyUpdatePage = () => {
                         <Button onClick={() => setUploadDialogOpen(false)}>Abbrechen</Button>
                         <Button variant="contained" onClick={handleSaveFiles} disabled={!file1 || !file2 || saving}>
                             {saving ? "Speichern..." : "Speichern"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog open={instanceDialogOpen} onClose={() => setInstanceDialogOpen(false)} fullWidth maxWidth="sm">
+                    <DialogTitle>Neue Instanz erstellen</DialogTitle>
+                    <DialogContent>
+                        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+                            <TextField
+                                label="Name"
+                                fullWidth
+                                value={newInstance.name}
+                                onChange={(e) => setNewInstance({ ...newInstance, name: e.target.value })}
+                            />
+                            <DatePicker
+                                label="Gültig von"
+                                value={newInstance.validFrom}
+                                onChange={(date) => setNewInstance({ ...newInstance, validFrom: date })}
+                            />
+                            <DatePicker
+                                label="Gültig bis"
+                                value={newInstance.validTo}
+                                onChange={(date) => setNewInstance({ ...newInstance, validTo: date })}
+                            />
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setInstanceDialogOpen(false)}>Abbrechen</Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleCreateInstance}
+                            disabled={!newInstance.name || !newInstance.validFrom || !newInstance.validTo || saving}
+                        >
+                            {saving ? "Speichern..." : "Erstellen"}
                         </Button>
                     </DialogActions>
                 </Dialog>

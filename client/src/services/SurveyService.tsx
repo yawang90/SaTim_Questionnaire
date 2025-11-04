@@ -175,3 +175,48 @@ export async function getSurveyBooklets(surveyId: string): Promise<Booklet[]> {
 
     return res.json();
 }
+
+export interface SurveyInstanceDTO {
+    name: string;
+    validFrom: string;
+    validTo: string;
+}
+
+export async function createSurveyInstance(surveyId: number, data: SurveyInstanceDTO) {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/${surveyId}/instance`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to create survey instance: ${message}`);
+    }
+
+    return res.json();
+}
+
+export async function getSurveyInstances(surveyId: string) {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/${surveyId}/instances`, {
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to fetch survey instances: ${message}`);
+    }
+
+    return res.json();
+}

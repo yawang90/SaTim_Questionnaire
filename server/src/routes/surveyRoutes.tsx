@@ -25,8 +25,7 @@ router.get("/:id", getSurveyByIdHandler);
 router.put("/:id", updateSurveyHandler);
 router.delete("/:id", deleteSurveyHandler);
 
-
-router.post("/instance", createSurveyInstanceHandler);
+router.post("/:surveyId/instance", createSurveyInstanceHandler);
 router.get("/:surveyId/instances", getSurveyInstancesHandler);
 router.put("/instance/:id", updateSurveyInstanceHandler);
 router.delete("/instance/:id", deleteSurveyInstanceHandler);

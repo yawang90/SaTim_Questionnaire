@@ -131,16 +131,16 @@ export const deleteSurveyHandler = async (req: Request, res: Response) => {
  */
 export const createSurveyInstanceHandler = async (req: Request, res: Response) => {
     try {
-        const { surveyId, name, validFrom, validTo } = req.body;
+        const surveyId = Number(req.params.surveyId);
+        if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
-
-        if (!surveyId || !name || !validFrom || !validTo) {
-            return res.status(400).json({ error: "Missing required fields" });
+        const { name, validFrom, validTo } = req.body;
+        if (!name || !validFrom || !validTo) {
+            return res.status(400).json({ error: "Missing required fields: name, validFrom, validTo" });
         }
-
         const instance = await createSurveyInstance({
-            surveyId: Number(surveyId),
+            surveyId,
             name,
             validFrom: new Date(validFrom),
             validTo: new Date(validTo),
