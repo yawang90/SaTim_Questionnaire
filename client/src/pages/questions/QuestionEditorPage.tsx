@@ -22,7 +22,7 @@ import {
     FreeTextInline,
     GeoGebra, LatexDisplay,
     MCChoice,
-    NumericInput
+    NumericInput, SingleChoice
 } from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -46,7 +46,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, LatexDisplay
+            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -70,6 +70,27 @@ export default function QuestionEditorPage() {
 
         editor.chain().focus().insertContent({
             type: 'mcChoice',
+            attrs: {
+                id: uuidv4(),
+                groupId: '',
+                checked: false,
+            },
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [
+                        { type: 'text', text: 'Option 1' }
+                    ]
+                }
+            ]
+        }).run();
+    };
+
+    const addSingleChoiceBlock = () => {
+        if (!editor) return;
+
+        editor.chain().focus().insertContent({
+            type: 'singleChoice',
             attrs: {
                 id: uuidv4(),
                 groupId: '',
@@ -199,6 +220,7 @@ export default function QuestionEditorPage() {
                             </Button>
                             <Menu anchorEl={anchorEl} open={openMenu} onClose={handleCloseMenu}>
                                 <MenuItem onClick={addMCChoiceBlock}>Multiple Choice Option</MenuItem>
+                                <MenuItem onClick={addSingleChoiceBlock}>Single Choice Option</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext Block</MenuItem>
                                 <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerisch/Algebra</MenuItem>
