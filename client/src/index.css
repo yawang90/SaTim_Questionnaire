@@ -48,3 +48,6 @@ input:-webkit-autofill {
   max-width: 100%;
   height: auto;
 }
+math-field::part(menu-toggle) {
+  display: none;
+}
