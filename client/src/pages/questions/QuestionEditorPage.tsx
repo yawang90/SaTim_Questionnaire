@@ -145,6 +145,7 @@ export default function QuestionEditorPage() {
         const contentHtml = editor.getHTML();
 
         const mcChoicesWithoutGroup: string[] = [];
+        const singleChoicesWithoutGroup: string[] = [];
 
         const checkMCChoices = (nodes: any[]) => {
             nodes.forEach((node) => {
@@ -155,8 +156,16 @@ export default function QuestionEditorPage() {
             });
         };
 
+        const checkSCChoices = (nodes: any[]) => {
+            nodes.forEach((node) => {
+                if (node.type === 'singleChoice' && (!node.attrs.groupId || node.attrs.groupId.trim() === '')) {
+                    singleChoicesWithoutGroup.push(node.attrs.id || 'unknown');
+                }
+                if (node.content) checkSCChoices(node.content);
+            });
+        };
         checkMCChoices(contentJson.content || []);
-
+        checkSCChoices(contentJson.content || []);
         if (mcChoicesWithoutGroup.length > 0) {
             setSnackbar({
                 open: true,
@@ -166,6 +175,14 @@ export default function QuestionEditorPage() {
             return;
         }
 
+        if (singleChoicesWithoutGroup.length > 0) {
+            setSnackbar({
+                open: true,
+                message: `Bitte weisen Sie jeder Single Choice Option eine Gruppe zu!`,
+                severity: "error",
+            });
+            return;
+        }
         try {
             await updateQuestionContent(id, contentJson, contentHtml);
             navigate(`/answers/${id}`);
