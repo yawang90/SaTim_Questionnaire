@@ -88,21 +88,26 @@ export default function AnswerPreviewPage() {
     };
 
     const extractAnswersFromJson = (doc: JSONContent, blocks: Block[]): { key: string; value: any }[] => {
-        const answers: { key: string; value: any }[] = blocks.map(block => {
-            switch (block.kind) {
-                case 'sc':
-                case 'mc':
-                    return {
-                        key: block.key,
-                        value: block.choices.map(choice => ({ id: choice.id, selected: false })),
-                    };
-                case 'freeText':
-                case 'freeTextInline':
-                case 'numeric':
-                case 'geoGebra':
-                    return { key: block.key, value: '' };
-            }
-        });
+        const answers: { key: string; value: any }[] = blocks
+            .map(block => {
+                switch (block.kind) {
+                    case 'sc':
+                    case 'mc':
+                        return {
+                            key: block.key,
+                            value: block.choices.map(choice => ({ id: choice.id, selected: false })),
+                        };
+                    case 'freeText':
+                    case 'freeTextInline':
+                    case 'numeric':
+                    case 'geoGebra':
+                        return { key: block.key, value: '' };
+                    default:
+                        return undefined;
+                }
+            })
+            .filter((a): a is { key: string; value: any } => a !== undefined);
+
 
         interface TipTapNode {
             type: string;
