@@ -20,14 +20,31 @@ export default function AnswerEditorPage() {
     const [loading, setLoading] = useState(false);
     const [openPreview, setOpenPreview] = useState(false);
 
-    const initAnswersForBlocks = (parsed: Block[]) => {
+
+    const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
         parsed.forEach((b) => {
-            if (b.kind === "mc" || b.kind === "sc") initial[b.key] = [];
+            if (b.kind === "mc") initial[b.key] = [];
+            else if (b.kind === "sc") initial[b.key] = [];
             else initial[b.key] = "";
         });
+
+        if (persisted && typeof persisted === 'object') {
+            Object.entries(persisted).forEach(([k, v]) => {
+                if (initial.hasOwnProperty(k)) {
+                    if (Array.isArray(initial[k])) {
+                        if (Array.isArray(v)) initial[k] = v.slice();
+                        else if (v == null) initial[k] = [];
+                        else initial[k] = [v];
+                    } else {
+                        initial[k] = v ?? "";
+                    }
+                }
+            });
+        }
         setAnswers(initial);
     };
+
 
     useEffect(() => {
         if (!id) return;
@@ -43,7 +60,8 @@ export default function AnswerEditorPage() {
                 setQuestionContentJson(contentJson);
                 const parsedBlocks: Block[] = parseContentToBlocks(contentJson);
                 setBlocks(parsedBlocks);
-                initAnswersForBlocks(parsedBlocks);
+                const persisted = question.correctAnswers ?? {};
+                initAnswersForBlocks(parsedBlocks, persisted);
             } catch (err) {
                 console.error("Failed to load question:", err);
             } finally {
@@ -54,11 +72,16 @@ export default function AnswerEditorPage() {
 
     const toggleChoice = (blockKey: string, choiceId: string) => {
         setAnswers((prev) => {
-            const cur: string[] = prev[blockKey] ?? [];
-            const next = cur.includes(choiceId)
-                ? cur.filter((c) => c !== choiceId)
-                : [...cur, choiceId];
-            return { ...prev, [blockKey]: next };
+            const block = blocks.find(b => b.key === blockKey);
+            if (!block) return prev;
+
+            if (block.kind === 'sc') {
+                return { ...prev, [blockKey]: [choiceId] };
+            } else {
+                const cur: string[] = prev[blockKey] ?? [];
+                const next = cur.includes(choiceId) ? cur.filter((c) => c !== choiceId) : [...cur, choiceId];
+                return { ...prev, [blockKey]: next };
+            }
         });
     };
 
@@ -69,7 +92,24 @@ export default function AnswerEditorPage() {
         if (!id) return;
         setLoading(true);
         try {
-            await updateQuestionAnswers(id, answers);
+            const payload: Record<string, any> = {};
+            blocks.forEach(b => {
+                const val = answers[b.key];
+                if (b.kind === 'mc') {
+                    payload[b.key] = Array.isArray(val) ? val : [];
+                } else if (b.kind === 'sc') {
+                    if (Array.isArray(val)) {
+                        payload[b.key] = val.length > 0 ? val[0] : null;
+                    } else if (typeof val === 'string') {
+                        payload[b.key] = val || null;
+                    } else {
+                        payload[b.key] = null;
+                    }
+                } else {
+                    payload[b.key] = val ?? "";
+                }
+            });
+            await updateQuestionAnswers(id, payload);
             navigate(`/preview/${id}`);
         } catch (err) {
             console.error("Failed to save answers:", err);
@@ -137,15 +177,14 @@ export default function AnswerEditorPage() {
                                                 <FormGroup>
                                                     {(answerType as any).choices.map((choice: Choice) => (
                                                         <FormControlLabel
-                                                            key={choice.id} control={
-                                                                <Checkbox checked={(answers[answerType.key] ?? [])[0] === choice.id} onChange={() =>
-                                                                    setAnswers((prev) => ({
-                                                                        ...prev,
-                                                                        [answerType.key]: [choice.id]}))} icon={<span style={{ borderRadius: '50%', border: '1px solid gray', width: 16, height: 16 }} />} checkedIcon={<span style={{ borderRadius: '50%', backgroundColor: '#1976d2', width: 16, height: 16 }} />}/>}
+                                                            key={choice.id}
+                                                            control={
+                                                                <Checkbox checked={(answers[answerType.key] ?? [])[0] === choice.id} onChange={() => toggleChoice(answerType.key, choice.id)} icon={<span style={{ borderRadius: '50%', border: '1px solid gray', width: 16, height: 16 }} />} checkedIcon={<span style={{ borderRadius: '50%', backgroundColor: '#1976d2', width: 16, height: 16 }} />}/>}
                                                             label={choice.text || "Option"}/>))}
                                                 </FormGroup>
                                             </FormControl>
                                         )}
+
 
                                         {/* Free Text */}
                                         {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
