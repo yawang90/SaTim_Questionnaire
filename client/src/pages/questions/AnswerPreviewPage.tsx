@@ -62,6 +62,7 @@ export default function AnswerPreviewPage() {
         if (!blocks) return;
         blocks.forEach(block => {
             switch (block.kind) {
+                case 'sc':
                 case 'mc': {
                     const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
                         `div.mc-choice-wrapper input[name="group-${block.key}"]`
@@ -106,6 +107,7 @@ export default function AnswerPreviewPage() {
     const extractAnswersFromJson = (doc: JSONContent, blocks: Block[]): { key: string; value: any }[] => {
         const answers: { key: string; value: any }[] = blocks.map(block => {
             switch (block.kind) {
+                case 'sc':
                 case 'mc':
                     return {
                         key: block.key,
@@ -139,6 +141,7 @@ export default function AnswerPreviewPage() {
                 const answer = answers.find(a => a.key === block.key)!;
 
                 switch (block.kind) {
+                    case 'sc':
                     case 'mc':
                         { const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
                             `div.mc-choice-wrapper input[name="group-${block.key}"]`
@@ -147,7 +150,6 @@ export default function AnswerPreviewPage() {
                             if (answer.value[i]) answer.value[i].selected = input.checked;
                         });
                         break; }
-
                     case 'freeText':
                     case 'freeTextInline':
                         { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(

@@ -6,6 +6,7 @@ import {GeoGebraEditorComponent} from "../GeoGebra/GeoGebraEditorComponent.tsx";
 import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorComponent.tsx";
 import {NumericEditorComponent} from "../Numeric/NumericEditorComponent.tsx";
 import {LaTeXComponent} from "../LaTeX/LaTeXComponent.tsx";
+import {SingleChoiceEditorComponent} from "../SC/SingleChoiceEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -40,6 +41,42 @@ export const MCChoice = Node.create({
 
     addNodeView() {
         return ReactNodeViewRenderer(MCChoiceEditorComponent);
+    },
+});
+
+export const SingleChoice = Node.create({
+    name: 'singleChoice',
+    group: 'inline',
+    inline: true,
+    atom: false,
+    content: 'block+',
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            groupId: { default: null },
+            checked: { default: false },
+            allGroups: { default: [] },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-type="singleChoice"]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'div',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'singleChoice',
+                class: 'mc-choice',
+            }),
+            0,
+        ];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(SingleChoiceEditorComponent);
     },
 });
 

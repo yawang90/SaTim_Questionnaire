@@ -5,6 +5,7 @@ import {MCChoiceAnswerComponent} from "../MC/MCChoiceAnswerComponent.tsx";
 import {GeoGebraAnswerNodeView} from "../GeoGebra/GeoGebraAnswerNodeView.tsx";
 import {FreeTextInlineAnswerComponent} from "../FreeText/FreeTextInlineAnswerComponent.tsx";
 import {NumericAnswerComponent} from "../Numeric/NumericAnswerComponent.tsx";
+import {SingleChoiceAnswerComponent} from "../SC/SingleChoiceAnswerComponent.tsx";
 
 export const FreeText = Node.create({
     name: 'freeText',
@@ -104,6 +105,34 @@ export const MCChoice = Node.create({
     },
     addNodeView() {
         return ReactNodeViewRenderer(MCChoiceAnswerComponent);
+    },
+});
+
+export const SingleChoice = Node.create({
+    name: "singleChoice",
+    group: "inline",
+    inline: true,
+    atom: false,
+    content: "block+",
+    addAttributes() {
+        return {
+            id: { default: null },
+            groupId: { default: null },
+            selected: { default: false },
+        };
+    },
+    parseHTML() {
+        return [{ tag: "div[data-type='singleChoice']" }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return [
+            "div",
+            mergeAttributes(HTMLAttributes, { "data-type": "singleChoice", class: "single-choice" }),
+            0,
+        ];
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(SingleChoiceAnswerComponent);
     },
 });
 
