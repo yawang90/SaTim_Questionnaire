@@ -1,14 +1,36 @@
+// AnswerEditorPage.tsx
 import React, { useEffect, useState } from "react";
-import {Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormGroup, Paper, TextField, Typography,
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Box,
+    Button,
+    Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    FormGroup,
+    Paper,
+    TextField,
+    Typography,
 } from "@mui/material";
 import { ExpandMore, Save } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import QuestionLayout from "../../layouts/QuestionLayout";
-import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
+import { loadQuestionForm, updateQuestionAnswers } from "../../services/EditorService.tsx";
 import { Preview } from "../../components/Editor/Preview";
 import type { JSONContent } from "@tiptap/core";
-import {parseContentToBlocks, type Block, type Choice} from "./AnswerUtils.tsx";
+import { parseContentToBlocks, type Block, type Choice } from "./AnswerUtils.tsx";
+import { NumericAnswer } from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
+import { AlgebraAnswer } from "../../components/Editor/AnswerEditor/AlgebraAnswer.tsx";
+
+// Define condition type
+export type Condition = { operator: "<" | "<=" | "=" | ">=" | ">" | "!="; value: string };
 
 export default function AnswerEditorPage() {
     const { id } = useParams<{ id: string }>();
@@ -20,16 +42,17 @@ export default function AnswerEditorPage() {
     const [loading, setLoading] = useState(false);
     const [openPreview, setOpenPreview] = useState(false);
 
-
     const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
+
         parsed.forEach((b) => {
-            if (b.kind === "mc") initial[b.key] = [];
-            else if (b.kind === "sc") initial[b.key] = [];
+            if (b.kind === "mc" || b.kind === "sc") initial[b.key] = [];
+            else if (b.kind === "numeric" || b.kind === "algebra")
+                initial[b.key] = [{ operator: "=", value: "" }];
             else initial[b.key] = "";
         });
 
-        if (persisted && typeof persisted === 'object') {
+        if (persisted && typeof persisted === "object") {
             Object.entries(persisted).forEach(([k, v]) => {
                 if (initial.hasOwnProperty(k)) {
                     if (Array.isArray(initial[k])) {
@@ -44,7 +67,6 @@ export default function AnswerEditorPage() {
         }
         setAnswers(initial);
     };
-
 
     useEffect(() => {
         if (!id) return;
@@ -72,10 +94,10 @@ export default function AnswerEditorPage() {
 
     const toggleChoice = (blockKey: string, choiceId: string) => {
         setAnswers((prev) => {
-            const block = blocks.find(b => b.key === blockKey);
+            const block = blocks.find((b) => b.key === blockKey);
             if (!block) return prev;
 
-            if (block.kind === 'sc') {
+            if (block.kind === "sc") {
                 return { ...prev, [blockKey]: [choiceId] };
             } else {
                 const cur: string[] = prev[blockKey] ?? [];
@@ -85,26 +107,21 @@ export default function AnswerEditorPage() {
         });
     };
 
-    const handleAnswerChange = (blockKey: string, value: string) =>
-        setAnswers((prev) => ({ ...prev, [blockKey]: value }));
+    const handleAnswerChange = (blockKey: string, value: any) => setAnswers((prev) => ({ ...prev, [blockKey]: value }));
 
     const handleSaveAnswers = async () => {
         if (!id) return;
         setLoading(true);
         try {
             const payload: Record<string, any> = {};
-            blocks.forEach(b => {
+            blocks.forEach((b) => {
                 const val = answers[b.key];
-                if (b.kind === 'mc') {
+                if (b.kind === "mc") {
                     payload[b.key] = Array.isArray(val) ? val : [];
-                } else if (b.kind === 'sc') {
-                    if (Array.isArray(val)) {
-                        payload[b.key] = val.length > 0 ? val[0] : null;
-                    } else if (typeof val === 'string') {
-                        payload[b.key] = val || null;
-                    } else {
-                        payload[b.key] = null;
-                    }
+                } else if (b.kind === "sc") {
+                    payload[b.key] = Array.isArray(val) && val.length > 0 ? val[0] : null;
+                } else if (b.kind === "numeric" || b.kind === "algebra") {
+                    payload[b.key] = Array.isArray(val) ? val : [{ operator: "=", value: val || "" }];
                 } else {
                     payload[b.key] = val ?? "";
                 }
@@ -121,8 +138,7 @@ export default function AnswerEditorPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
-                <Box
-                    sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
+                <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
                     <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
                         <Typography variant="h4" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
                             Antworten definieren
@@ -131,9 +147,7 @@ export default function AnswerEditorPage() {
                         {loading && <Typography>Loading…</Typography>}
 
                         {!loading && blocks.length === 0 && (
-                            <Typography sx={{ my: 2 }}>
-                                Keine Antwort-Blöcke im Frage-Inhalt gefunden.
-                            </Typography>
+                            <Typography sx={{ my: 2 }}>Keine Antwort-Blöcke im Frage-Inhalt gefunden.</Typography>
                         )}
 
                         {!loading &&
@@ -163,12 +177,17 @@ export default function AnswerEditorPage() {
                                             <FormControl component="fieldset" fullWidth>
                                                 <FormGroup>
                                                     {(answerType as any).choices.map((choice: Choice) => (
-                                                        <FormControlLabel key={choice.id} control={
-                                                            <Checkbox
-                                                                checked={(answers[answerType.key] ?? []).includes(choice.id)}
-                                                                onChange={() => toggleChoice(answerType.key, choice.id)}
-                                                            />}
-                                                            label={choice.text || "Option"}/>))}
+                                                        <FormControlLabel
+                                                            key={choice.id}
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={(answers[answerType.key] ?? []).includes(choice.id)}
+                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}
+                                                                />
+                                                            }
+                                                            label={choice.text || "Option"}
+                                                        />
+                                                    ))}
                                                 </FormGroup>
                                             </FormControl>
                                         )}
@@ -181,17 +200,28 @@ export default function AnswerEditorPage() {
                                                         <FormControlLabel
                                                             key={choice.id}
                                                             control={
-                                                                <Checkbox checked={(answers[answerType.key] ?? [])[0] === choice.id} onChange={() => toggleChoice(answerType.key, choice.id)} icon={<span style={{ borderRadius: '50%', border: '1px solid gray', width: 16, height: 16 }} />} checkedIcon={<span style={{ borderRadius: '50%', backgroundColor: '#1976d2', width: 16, height: 16 }} />}/>}
-                                                            label={choice.text || "Option"}/>))}
+                                                                <Checkbox
+                                                                    checked={(answers[answerType.key] ?? [])[0] === choice.id}
+                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}
+                                                                    icon={<span style={{ borderRadius: "50%", border: "1px solid gray", width: 16, height: 16 }} />}
+                                                                    checkedIcon={<span style={{ borderRadius: "50%", backgroundColor: "#1976d2", width: 16, height: 16 }} />}
+                                                                />
+                                                            }
+                                                            label={choice.text || "Option"}
+                                                        />
+                                                    ))}
                                                 </FormGroup>
                                             </FormControl>
                                         )}
 
-
                                         {/* Free Text */}
                                         {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
                                             <FormControl fullWidth>
-                                                <TextField label="Erwartete Textantwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
+                                                <TextField
+                                                    label="Erwartete Textantwort"
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
+                                                />
                                                 <Typography variant="caption" color="text.secondary">
                                                     Lassen Sie das Feld frei, falls keine spezifische Antwort erwartet wird
                                                 </Typography>
@@ -201,28 +231,31 @@ export default function AnswerEditorPage() {
                                         {/* Numeric */}
                                         {answerType.kind === "numeric" && (
                                             <FormControl fullWidth>
-                                                <TextField label="Erwartete numerische Antwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
+                                                <NumericAnswer
+                                                    conditions={answers[answerType.key] ?? [{ operator: "=", value: "" }]}
+                                                    onChange={(val) => handleAnswerChange(answerType.key, val)}
+                                                />
                                             </FormControl>
                                         )}
 
                                         {/* Algebra */}
                                         {answerType.kind === "algebra" && (
                                             <FormControl fullWidth>
-                                                <TextField
-                                                    label="Erwartete algebraische Antwort"
-                                                    value={answers[answerType.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
+                                                <AlgebraAnswer
+                                                    conditions={answers[answerType.key] ?? [{ operator: "=", value: "" }]}
+                                                    onChange={(val) => handleAnswerChange(answerType.key, val)}
                                                 />
-                                                <Typography variant="caption" color="text.secondary">
-                                                    (z. B. α + β = γ oder 2x + 3y = 5)
-                                                </Typography>
                                             </FormControl>
                                         )}
 
                                         {/* GeoGebra */}
                                         {answerType.kind === "geoGebra" && (
                                             <FormControl fullWidth>
-                                                <TextField label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
+                                                <TextField
+                                                    label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)"
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
+                                                />
                                                 <Typography variant="caption" color="text.secondary">
                                                     (Hier kannst du z. B. JSON für erwartete GeoGebra-Objektwerte speichern.)
                                                 </Typography>
