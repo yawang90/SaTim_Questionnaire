@@ -4,6 +4,7 @@ export type Choice = { id: string; text: string };
 
 export type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
+    | { kind: "sc"; key: string; choices: Choice[] }
     | { kind: "freeText"; key: string }
     | { kind: "freeTextInline"; key: string }
     | { kind: "numeric"; key: string }
@@ -40,6 +41,7 @@ export const parseContentToBlocks = (doc: any): Block[] => {
     if (!doc || !doc.content) return [];
 
     const mcGroups: Record<string, Choice[]> = {};
+    const scGroups: Record<string, Choice[]> = {};
     const result: Block[] = [];
 
     const walk = (nodes: any[]) => {
@@ -53,6 +55,15 @@ export const parseContentToBlocks = (doc: any): Block[] => {
                     const text = extractText(node) || "Option";
                     if (!mcGroups[groupId]) mcGroups[groupId] = [];
                     mcGroups[groupId].push({ id, text });
+                    break;
+                }
+
+                case "singleChoice": {
+                    const groupId = node.attrs?.groupId ?? uuidv4();
+                    const id = node.attrs?.id ?? uuidv4();
+                    const text = extractText(node) || "Option";
+                    if (!scGroups[groupId]) scGroups[groupId] = [];
+                    scGroups[groupId].push({ id, text });
                     break;
                 }
 
@@ -89,7 +100,19 @@ export const parseContentToBlocks = (doc: any): Block[] => {
     walk(doc.content);
 
     Object.entries(mcGroups).forEach(([groupId, choices]) => {
-        result.push({ kind: "mc", key: groupId, choices });
+        result.push({
+            kind: "mc",
+            key: groupId,
+            choices,
+        });
+    });
+
+    Object.entries(scGroups).forEach(([groupId, choices]) => {
+        result.push({
+            kind: "sc",
+            key: groupId,
+            choices,
+        });
     });
 
     return result;

@@ -23,7 +23,7 @@ export default function AnswerEditorPage() {
     const initAnswersForBlocks = (parsed: Block[]) => {
         const initial: Record<string, any> = {};
         parsed.forEach((b) => {
-            if (b.kind === "mc") initial[b.key] = [];
+            if (b.kind === "mc" || b.kind === "sc") initial[b.key] = [];
             else initial[b.key] = "";
         });
         setAnswers(initial);
@@ -102,64 +102,69 @@ export default function AnswerEditorPage() {
                                     <AccordionSummary expandIcon={<ExpandMore />}>
                                         <Typography variant="subtitle1">
                                             {answerType.kind === "mc"
-                                                ? `Multiple Choice ${idx + 1}`
-                                                : answerType.kind === "freeText"
-                                                    ? `Freitext ${idx + 1}`
-                                                    : answerType.kind === "freeTextInline"
-                                                        ? `Freitext Inline ${idx + 1}`
-                                                        : answerType.kind === "numeric"
-                                                            ? `Numerische Eingabe ${idx + 1}`
-                                                            : `GeoGebra ${idx + 1}`}
+                                                ? `Multiple Choice (${answerType.key})`
+                                                : answerType.kind === "sc"
+                                                    ? `Single Choice (${answerType.key})`
+                                                    : answerType.kind === "freeText"
+                                                        ? `Freitext (${idx + 1})`
+                                                        : answerType.kind === "freeTextInline"
+                                                            ? `Freitext Inline (${idx + 1})`
+                                                            : answerType.kind === "numeric"
+                                                                ? `Numerische Eingabe (${idx + 1})`
+                                                                : `GeoGebra (${idx + 1})`}
                                         </Typography>
                                     </AccordionSummary>
 
                                     <AccordionDetails>
+                                        {/* Multiple Choice */}
                                         {answerType.kind === "mc" && (
                                             <FormControl component="fieldset" fullWidth>
                                                 <FormGroup>
                                                     {(answerType as any).choices.map((choice: Choice) => (
-                                                        <FormControlLabel
-                                                            key={choice.id}
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={(answers[answerType.key] ?? []).includes(choice.id)}
-                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}
-                                                                />
-                                                            }
-                                                            label={choice.text || "Option"}
-                                                        />
-                                                    ))}
+                                                        <FormControlLabel key={choice.id} control={
+                                                            <Checkbox
+                                                                checked={(answers[answerType.key] ?? []).includes(choice.id)}
+                                                                onChange={() => toggleChoice(answerType.key, choice.id)}
+                                                            />}
+                                                            label={choice.text || "Option"}/>))}
                                                 </FormGroup>
                                             </FormControl>
                                         )}
 
+                                        {/* Single Choice */}
+                                        {answerType.kind === "sc" && (
+                                            <FormControl component="fieldset" fullWidth>
+                                                <FormGroup>
+                                                    {(answerType as any).choices.map((choice: Choice) => (
+                                                        <FormControlLabel
+                                                            key={choice.id} control={
+                                                                <Checkbox checked={(answers[answerType.key] ?? [])[0] === choice.id} onChange={() =>
+                                                                    setAnswers((prev) => ({
+                                                                        ...prev,
+                                                                        [answerType.key]: [choice.id]}))} icon={<span style={{ borderRadius: '50%', border: '1px solid gray', width: 16, height: 16 }} />} checkedIcon={<span style={{ borderRadius: '50%', backgroundColor: '#1976d2', width: 16, height: 16 }} />}/>}
+                                                            label={choice.text || "Option"}/>))}
+                                                </FormGroup>
+                                            </FormControl>
+                                        )}
+
+                                        {/* Free Text */}
                                         {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
                                             <FormControl fullWidth>
-                                                <TextField
-                                                    label="Erwartete Textantwort"
-                                                    value={answers[answerType.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
-                                                />
+                                                <TextField label="Erwartete Textantwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
                                             </FormControl>
                                         )}
 
+                                        {/* Numeric */}
                                         {answerType.kind === "numeric" && (
                                             <FormControl fullWidth>
-                                                <TextField
-                                                    label="Erwartete numerische Antwort"
-                                                    value={answers[answerType.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
-                                                />
+                                                <TextField label="Erwartete numerische Antwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
                                             </FormControl>
                                         )}
 
+                                        {/* GeoGebra */}
                                         {answerType.kind === "geoGebra" && (
                                             <FormControl fullWidth>
-                                                <TextField
-                                                    label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)"
-                                                    value={answers[answerType.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
-                                                />
+                                                <TextField label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
                                                 <Typography variant="caption" color="text.secondary">
                                                     (Hier kannst du z. B. JSON für erwartete GeoGebra-Objektwerte speichern.)
                                                 </Typography>
