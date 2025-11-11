@@ -1,9 +1,14 @@
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
-import React, { useState } from "react";
+import React from "react";
 
-export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
-    const { groupId, checked } = node.attrs as { groupId?: string; checked?: boolean };
-    const [isChecked, setIsChecked] = useState(checked || false);
+export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) => {
+    const { groupId } = node.attrs as { groupId?: string};
+
+    const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+        const radios = document.querySelectorAll<HTMLInputElement>(`input[name="group-${groupId || "default"}"]`);
+        radios.forEach(r => (r.checked = false)); // uncheck all siblings
+        (e.currentTarget as HTMLInputElement).checked = true; // check clicked radio
+    };
 
     const renderChildren = (fragment: any): React.ReactNode[] => {
         const nodes: React.ReactNode[] = [];
@@ -36,8 +41,12 @@ export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
             className="mc-choice-wrapper"
             style={{display: "inline-flex", flexDirection: "row", alignItems: "center", padding: "0.5rem 1rem", marginRight: "0.5rem", verticalAlign: "top", gap: "0.5rem",}}>
 
-            <input type="radio" name={`group-${groupId || "default"}`} checked={isChecked} onChange={() => setIsChecked(!isChecked)} style={{ marginBottom: "0.25rem", flexShrink: 0 }}/>
-
+            <input
+                type="radio"
+                name={`group-${groupId || "default"}`}
+                onClick={handleClick}
+                style={{ marginBottom: "0.25rem", flexShrink: 0 }}
+            />
             <div className="mc-choice-content" style={{ display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap" }}>
                 {renderChildren(node.content)}
             </div>
