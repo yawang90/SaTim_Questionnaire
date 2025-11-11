@@ -62,28 +62,11 @@ export default function AnswerPreviewPage() {
         if (!blocks) return;
         blocks.forEach(block => {
             switch (block.kind) {
-                case 'sc':
-                case 'mc': {
+                case 'sc': {
                     const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
                         `div.mc-choice-wrapper input[name="group-${block.key}"]`
                     );
                     checkboxNodes.forEach(input => input.checked = false);
-                    break;
-                }
-                case 'freeText':
-                case 'freeTextInline':
-                case 'numeric': {
-                    const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                        `[data-node-view-wrapper] [id="${block.key}"]`
-                    );
-                    if (inputEl) inputEl.value = '';
-                    break;
-                }
-                case 'geoGebra': {
-                    const ggbEl = document.querySelector<HTMLElement>(
-                        `[data-node-view-wrapper] [id="${block.key}"]`
-                    );
-                  //  if (ggbEl) {}
                     break;
                 }
             }
@@ -214,7 +197,7 @@ export default function AnswerPreviewPage() {
                                         Antworten testen
                                     </Button>
                                     <Button variant="outlined" onClick={handleResetAnswers}>
-                                        Antworten zurücksetzen
+                                        Single Choice zurücksetzen
                                     </Button>
                                     <Button variant="contained" startIcon={<Save />} onClick={handleSaveStatus}>
                                         Speichern
