@@ -151,7 +151,9 @@ export default function AnswerEditorPage() {
                                                             ? `Freitext Inline (${idx + 1})`
                                                             : answerType.kind === "numeric"
                                                                 ? `Numerische Eingabe (${idx + 1})`
-                                                                : `GeoGebra (${idx + 1})`}
+                                                                : answerType.kind === "algebra"
+                                                                    ? `Algebra Eingabe (${idx + 1})`
+                                                                    : `GeoGebra (${idx + 1})`}
                                         </Typography>
                                     </AccordionSummary>
 
@@ -190,6 +192,9 @@ export default function AnswerEditorPage() {
                                         {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
                                             <FormControl fullWidth>
                                                 <TextField label="Erwartete Textantwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Lassen Sie das Feld frei, falls keine spezifische Antwort erwartet wird
+                                                </Typography>
                                             </FormControl>
                                         )}
 
@@ -197,6 +202,20 @@ export default function AnswerEditorPage() {
                                         {answerType.kind === "numeric" && (
                                             <FormControl fullWidth>
                                                 <TextField label="Erwartete numerische Antwort" value={answers[answerType.key] ?? ""} onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}/>
+                                            </FormControl>
+                                        )}
+
+                                        {/* Algebra */}
+                                        {answerType.kind === "algebra" && (
+                                            <FormControl fullWidth>
+                                                <TextField
+                                                    label="Erwartete algebraische Antwort"
+                                                    value={answers[answerType.key] ?? ""}
+                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
+                                                />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    (z. B. α + β = γ oder 2x + 3y = 5)
+                                                </Typography>
                                             </FormControl>
                                         )}
 

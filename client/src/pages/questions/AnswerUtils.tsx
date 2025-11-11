@@ -8,6 +8,7 @@ export type Block =
     | { kind: "freeText"; key: string }
     | { kind: "freeTextInline"; key: string }
     | { kind: "numeric"; key: string }
+    | { kind: "algebra"; key: string }
     | { kind: "geoGebra"; key: string };
 
 
@@ -81,7 +82,11 @@ export const parseContentToBlocks = (doc: any): Block[] => {
 
                 case "numericInput": {
                     const key = node.attrs?.id ?? uuidv4();
-                    result.push({ kind: "numeric", key });
+                    const mode = node.attrs?.mode ?? "numeric";
+                    result.push({
+                        kind: mode === "algebra" ? "algebra" : "numeric",
+                        key,
+                    });
                     break;
                 }
 
