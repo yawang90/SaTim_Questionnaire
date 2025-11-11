@@ -35,32 +35,59 @@ export const extractText = (node: any): string => {
     return "";
 };
 
-/**
- * Converts TipTap JSON content into an array of answer blocks
- */
+function renderNodeToHTML(node: any): string {
+    if (!node) return "";
+
+    switch (node.type) {
+        case "text":
+            return node.text ?? "";
+
+        case "paragraph":
+            return `<p>${(node.content || []).map(renderNodeToHTML).join("")}</p>`;
+
+        case "latex":
+            { const latex = node.attrs?.latex ?? "";
+            return `<span class="mathjax-latex">\\(${latex}\\)</span>`; }
+
+        case "image":
+            return `<img src="${node.attrs?.src ?? ""}" alt="" style="max-width:100%;height:auto;" />`;
+
+        case "mcChoice":
+        case "singleChoice":
+            return (node.content || []).map(renderNodeToHTML).join("");
+
+        default:
+            if (node.content && Array.isArray(node.content)) {
+                return node.content.map(renderNodeToHTML).join("");
+            }
+            return "";
+    }
+}
+
 export function parseContentToBlocks(json: JSONContent): Block[] {
     if (!json || !json.content) return [];
-
     const blockMap: Record<string, Block> = {};
 
     const walk = (nodes: any[]) => {
         nodes.forEach((node) => {
             if (!node) return;
 
-            if (node.type === "multipleChoice" || node.type === "singleChoice") {
-                const kind = node.type === "multipleChoice" ? "mc" : "sc";
+            if (node.type === "mcChoice" || node.type === "singleChoice") {
+                const kind = node.type === "mcChoice" ? "mc" : "sc";
                 const groupId = node.attrs?.groupId || node.attrs?.id || Math.random().toString(36).slice(2, 8);
 
                 if (!blockMap[groupId]) {
                     blockMap[groupId] = { kind, key: groupId, choices: [] };
                 }
+
                 (node.content || []).forEach((choiceNode: any) => {
-                    const id = choiceNode.attrs?.id || Math.random().toString(36).slice(2, 8);
+                    const id = node.attrs?.id || Math.random().toString(36).slice(2, 8);
                     const html = renderNodeToHTML(choiceNode);
                     const text = html.replace(/<[^>]+>/g, "").trim();
                     (blockMap[groupId] as any).choices.push({ id, text, html });
                 });
             }
+
             if (node.type === "freeText") {
                 const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
                 blockMap[key] = { kind: "freeText", key };
@@ -92,29 +119,4 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
 
     walk(json.content);
     return Object.values(blockMap);
-}
-
-function renderNodeToHTML(node: any): string {
-    if (!node) return "";
-
-    switch (node.type) {
-        case "text":
-            return node.text ?? "";
-        case "paragraph":
-            return `<p>${(node.content || [])
-                .map((child: any) => renderNodeToHTML(child))
-                .join("")}</p>`;
-
-        case "latex": {
-            const latex = node.attrs?.latex ?? "";
-            return `<span class="mathjax-latex">\\(${latex}\\)</span>`;
-        }
-        case "image":
-            return `<img src="${node.attrs?.src ?? ""}" alt="" style="max-width:100%;height:auto;" />`;
-        default:
-            if (node.content && Array.isArray(node.content)) {
-                return node.content.map((child: any) => renderNodeToHTML(child)).join("");
-            }
-            return "";
-    }
 }
