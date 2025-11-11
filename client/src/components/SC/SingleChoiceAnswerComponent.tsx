@@ -1,5 +1,6 @@
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import React from "react";
+import {MathJax} from "better-react-mathjax";
 
 export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) => {
     const { groupId } = node.attrs as { groupId?: string};
@@ -25,6 +26,9 @@ export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) =
                 }
             } else if (child.type.name === "text") {
                 nodes.push(<span key={nodes.length}>{child.text}</span>);
+            } else if (child.type.name === "latex") {
+                const latex = child.attrs?.latex || "";
+                nodes.push(<MathJax key={nodes.length} dynamic><span>{`\\(${latex}\\)`}</span></MathJax>);
             } else if (child.type.name === "image") {
                 nodes.push(
                     <img key={nodes.length} src={child.attrs.src} style={{width: child.attrs.width || "auto", height: child.attrs.height || "auto",}}/>

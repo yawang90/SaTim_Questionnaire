@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
+import type {JSONContent} from "@tiptap/core";
 
-export type Choice = { id: string; text: string };
+export type Choice = { id: string; text: string; html?: string;};
 
 export type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
@@ -38,88 +38,83 @@ export const extractText = (node: any): string => {
 /**
  * Converts TipTap JSON content into an array of answer blocks
  */
-export const parseContentToBlocks = (doc: any): Block[] => {
-    if (!doc || !doc.content) return [];
+export function parseContentToBlocks(json: JSONContent): Block[] {
+    if (!json || !json.content) return [];
 
-    const mcGroups: Record<string, Choice[]> = {};
-    const scGroups: Record<string, Choice[]> = {};
-    const result: Block[] = [];
+    const blockMap: Record<string, Block> = {};
 
     const walk = (nodes: any[]) => {
-        for (const node of nodes) {
-            if (!node || !node.type) continue;
+        nodes.forEach((node) => {
+            if (!node) return;
 
-            switch (node.type) {
-                case "mcChoice": {
-                    const groupId = node.attrs?.groupId ?? uuidv4();
-                    const id = node.attrs?.id ?? uuidv4();
-                    const text = extractText(node) || "Option";
-                    if (!mcGroups[groupId]) mcGroups[groupId] = [];
-                    mcGroups[groupId].push({ id, text });
-                    break;
+            if (node.type === "multipleChoice" || node.type === "singleChoice") {
+                const kind = node.type === "multipleChoice" ? "mc" : "sc";
+                const groupId = node.attrs?.groupId || node.attrs?.id || Math.random().toString(36).slice(2, 8);
+
+                if (!blockMap[groupId]) {
+                    blockMap[groupId] = { kind, key: groupId, choices: [] };
                 }
-
-                case "singleChoice": {
-                    const groupId = node.attrs?.groupId ?? uuidv4();
-                    const id = node.attrs?.id ?? uuidv4();
-                    const text = extractText(node) || "Option";
-                    if (!scGroups[groupId]) scGroups[groupId] = [];
-                    scGroups[groupId].push({ id, text });
-                    break;
-                }
-
-                case "freeText": {
-                    const key = node.attrs?.id ?? uuidv4();
-                    result.push({ kind: "freeText", key });
-                    break;
-                }
-
-                case "freeTextInline": {
-                    const key = node.attrs?.id ?? uuidv4();
-                    result.push({ kind: "freeTextInline", key });
-                    break;
-                }
-
-                case "numericInput": {
-                    const key = node.attrs?.id ?? uuidv4();
-                    const mode = node.attrs?.mode ?? "numeric";
-                    result.push({
-                        kind: mode === "algebra" ? "algebra" : "numeric",
-                        key,
-                    });
-                    break;
-                }
-
-                case "geoGebra": {
-                    const key = node.attrs?.id ?? uuidv4();
-                    result.push({ kind: "geoGebra", key });
-                    break;
-                }
-
-                default:
-                    if (node.content) walk(node.content);
+                (node.content || []).forEach((choiceNode: any) => {
+                    const id = choiceNode.attrs?.id || Math.random().toString(36).slice(2, 8);
+                    const html = renderNodeToHTML(choiceNode);
+                    const text = html.replace(/<[^>]+>/g, "").trim();
+                    (blockMap[groupId] as any).choices.push({ id, text, html });
+                });
             }
-        }
+            if (node.type === "freeText") {
+                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                blockMap[key] = { kind: "freeText", key };
+            }
+
+            if (node.type === "freeTextInline") {
+                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                blockMap[key] = { kind: "freeTextInline", key };
+            }
+
+            if (node.type === "numericInput") {
+                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                blockMap[key] = { kind: "numeric", key };
+            }
+
+            if (node.type === "algebraInput") {
+                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                blockMap[key] = { kind: "algebra", key };
+            }
+
+            if (node.type === "geoGebra") {
+                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                blockMap[key] = { kind: "geoGebra", key };
+            }
+
+            if (node.content) walk(node.content);
+        });
     };
 
-    walk(doc.content);
+    walk(json.content);
+    return Object.values(blockMap);
+}
 
-    Object.entries(mcGroups).forEach(([groupId, choices]) => {
-        result.push({
-            kind: "mc",
-            key: groupId,
-            choices,
-        });
-    });
+function renderNodeToHTML(node: any): string {
+    if (!node) return "";
 
-    Object.entries(scGroups).forEach(([groupId, choices]) => {
-        result.push({
-            kind: "sc",
-            key: groupId,
-            choices,
-        });
-    });
+    switch (node.type) {
+        case "text":
+            return node.text ?? "";
+        case "paragraph":
+            return `<p>${(node.content || [])
+                .map((child: any) => renderNodeToHTML(child))
+                .join("")}</p>`;
 
-    return result;
-};
-
+        case "latex": {
+            const latex = node.attrs?.latex ?? "";
+            return `<span class="mathjax-latex">\\(${latex}\\)</span>`;
+        }
+        case "image":
+            return `<img src="${node.attrs?.src ?? ""}" alt="" style="max-width:100%;height:auto;" />`;
+        default:
+            if (node.content && Array.isArray(node.content)) {
+                return node.content.map((child: any) => renderNodeToHTML(child)).join("");
+            }
+            return "";
+    }
+}

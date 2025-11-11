@@ -177,8 +177,8 @@ export default function AnswerPreviewPage() {
                             Status setzen
                         </Typography>
 
-                        <FormControl component="fieldset">
-                                <RadioGroup row value={quizStatus} onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
+                        <FormControl component="fieldset" >
+                            <RadioGroup sx={{ justifyContent: 'center', display: 'flex', gap: 3 }} value={quizStatus} onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
                                     <FormControlLabel value="in bearbeitung" control={<Radio />} label="In Bearbeitung" />
                                     <FormControlLabel value="abgeschlossen" control={<Radio />} label="Abgeschlossen" />
                                     <FormControlLabel value="gelöscht" control={<Radio />} label="Gelöscht" />

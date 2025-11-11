@@ -1,5 +1,5 @@
 // AnswerEditorPage.tsx
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import {
     Accordion,
     AccordionDetails,
@@ -18,19 +18,17 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { ExpandMore, Save } from "@mui/icons-material";
-import { useNavigate, useParams } from "react-router-dom";
+import {ExpandMore, Save} from "@mui/icons-material";
+import {useNavigate, useParams} from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import QuestionLayout from "../../layouts/QuestionLayout";
-import { loadQuestionForm, updateQuestionAnswers } from "../../services/EditorService.tsx";
-import { Preview } from "../../components/Editor/Preview";
-import type { JSONContent } from "@tiptap/core";
-import { parseContentToBlocks, type Block, type Choice } from "./AnswerUtils.tsx";
-import { NumericAnswer } from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
-import { AlgebraAnswer } from "../../components/Editor/AnswerEditor/AlgebraAnswer.tsx";
-
-// Define condition type
-export type Condition = { operator: "<" | "<=" | "=" | ">=" | ">" | "!="; value: string };
+import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
+import {Preview} from "../../components/Editor/Preview";
+import type {JSONContent} from "@tiptap/core";
+import {type Block, type Choice, parseContentToBlocks} from "./AnswerUtils.tsx";
+import {NumericAnswer} from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
+import {AlgebraAnswer} from "../../components/Editor/AnswerEditor/AlgebraAnswer.tsx";
+import {MathJax, MathJaxContext} from "better-react-mathjax";
 
 export default function AnswerEditorPage() {
     const { id } = useParams<{ id: string }>();
@@ -138,6 +136,7 @@ export default function AnswerEditorPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
+                <MathJaxContext>
                 <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
                     <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
                         <Typography variant="h4" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>
@@ -185,8 +184,9 @@ export default function AnswerEditorPage() {
                                                                     onChange={() => toggleChoice(answerType.key, choice.id)}
                                                                 />
                                                             }
-                                                            label={choice.text || "Option"}
-                                                        />
+                                                            label={
+                                                                <MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>
+                                                            }  />
                                                     ))}
                                                 </FormGroup>
                                             </FormControl>
@@ -207,7 +207,8 @@ export default function AnswerEditorPage() {
                                                                     checkedIcon={<span style={{ borderRadius: "50%", backgroundColor: "#1976d2", width: 16, height: 16 }} />}
                                                                 />
                                                             }
-                                                            label={choice.text || "Option"}
+                                                            label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>
+                                                        }
                                                         />
                                                     ))}
                                                 </FormGroup>
@@ -288,6 +289,7 @@ export default function AnswerEditorPage() {
                         </Dialog>
                     </Paper>
                 </Box>
+                </MathJaxContext>
             </QuestionLayout>
         </MainLayout>
     );
