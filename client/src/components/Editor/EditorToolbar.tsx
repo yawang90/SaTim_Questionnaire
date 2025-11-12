@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useReducer } from 'react';
-import { Editor } from '@tiptap/react';
+import React, {useEffect, useReducer, useState} from 'react';
+import {Editor} from '@tiptap/react';
 import {
     Box,
-    Button, Checkbox,
+    Button,
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
@@ -29,7 +30,11 @@ import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ImageIcon from '@mui/icons-material/Image';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import FunctionsIcon from '@mui/icons-material/Functions';
-import { uploadImage } from '../../services/EditorService.tsx';
+import {uploadImage} from '../../services/EditorService.tsx';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
 
 const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 const fontSizes = ['12px', '14px', '16px', '18px', '24px', '32px'];
@@ -50,6 +55,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     const [latexDialogOpen, setLatexDialogOpen] = useState(false);
     const [latexCode, setLatexCode] = useState('');
     const [withHeaderRow, setWithHeaderRow] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [showError, setShowError] = useState(false);
 
     useEffect(() => {
         if (!editor) return;
@@ -74,8 +81,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
             setUploading(true);
             const data = await uploadImage(file);
             await handleInsertImage(data.url);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setErrorMessage('Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.');
+            setShowError(true);
         } finally {
             setUploading(false);
         }
@@ -153,24 +162,37 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         <StrikethroughSIcon />
                     </IconButton>
                 </Tooltip>
+                <Tooltip title="Unterstrichen">
+                    <IconButton
+                        onClick={() => editor.chain().focus().toggleUnderline().run()}
+                        sx={{ color: editor.isActive('underline') ? 'primary.main' : 'text.secondary' }}>
+                        <FormatUnderlinedIcon />
+                    </IconButton>
+                </Tooltip>
 
                 {/* Headings */}
                 <Tooltip title="Überschrift 1">
                     <IconButton
-                        onClick={() => editor.chain().focus().setHeading({ level: 1 }).run()}
-                        sx={{ color: editor.isActive('heading', { level: 1 }) ? 'primary.main' : 'text.secondary' }}
-                    >
+                        onClick={() => {
+                            if (editor.isActive('heading', { level: 1 })) {editor.chain().focus().setParagraph().run();
+                            } else {editor.chain().focus().setHeading({ level: 1 }).run();}
+                        }}
+                        sx={{ color: editor.isActive('heading', { level: 1 }) ? 'primary.main' : 'text.secondary' }}>
                         <LooksOneIcon />
                     </IconButton>
                 </Tooltip>
+
                 <Tooltip title="Überschrift 2">
                     <IconButton
-                        onClick={() => editor.chain().focus().setHeading({ level: 2 }).run()}
-                        sx={{ color: editor.isActive('heading', { level: 2 }) ? 'primary.main' : 'text.secondary' }}
-                    >
+                        onClick={() => {
+                            if (editor.isActive('heading', { level: 2 })) {editor.chain().focus().setParagraph().run();
+                            } else {editor.chain().focus().setHeading({ level: 2 }).run();}
+                        }}
+                        sx={{ color: editor.isActive('heading', { level: 2 }) ? 'primary.main' : 'text.secondary' }}>
                         <LooksTwoIcon />
                     </IconButton>
                 </Tooltip>
+
 
                 {/* Lists */}
                 <Tooltip title="Aufzählung">
@@ -184,8 +206,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                 <Tooltip title="Nummerierte Liste">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                        sx={{ color: editor.isActive('orderedList') ? 'primary.main' : 'text.secondary' }}
-                    >
+                        sx={{ color: editor.isActive('orderedList') ? 'primary.main' : 'text.secondary' }}>
                         <FormatListNumberedIcon />
                     </IconButton>
                 </Tooltip>
@@ -246,12 +267,17 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         Fügen Sie eine Bild-URL ein oder laden Sie eine Datei hoch.
                     </Typography>
                     <TextField fullWidth label="Bild URL" size="small" value={imageUrl} onChange={e => setImageUrl(e.target.value)} sx={{ mb: 2 }}/>
-                    <Box textAlign="center">
-                        <Button variant="outlined" component="label" disabled={uploading}>
-                            {uploading ? 'Hochladen...' : 'Datei auswählen'}
+                    <Box textAlign="center" sx={{ position: 'relative', display: 'inline-block' }}>
+                        <Button variant="outlined" component="label" disabled={uploading} sx={{ minWidth: 160 }}>
+                            {uploading ? 'Wird hochgeladen...' : 'Datei auswählen'}
                             <input hidden type="file" accept="image/*" onChange={e => {
-                                const file = e.target.files?.[0];if (file) handleFileUpload(file);}}/>
+                                const file = e.target.files?.[0];
+                                if (file) handleFileUpload(file);}}/>
                         </Button>
+
+                        {uploading && (
+                            <CircularProgress size={24} sx={{position: 'absolute', top: '50%', left: '50%', marginTop: '-12px', marginLeft: '-12px',}}/>
+                        )}
                     </Box>
                 </DialogContent>
                 <DialogActions>
@@ -266,31 +292,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
             <Dialog fullWidth open={tableDialogOpen} onClose={() => setTableDialogOpen(false)}>
                 <DialogTitle>Neue Tabelle erstellen</DialogTitle>
                 <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1}}>
-                    <TextField
-                        type="number"
-                        label="Zeilen"
-                        value={tableRows}
-                        sx={{ mt: 2}}
-                        onChange={e => setTableRows(Number(e.target.value))}
-                        inputProps={{ min: 1 }}
-                    />
-                    <TextField
-                        type="number"
-                        label="Spalten"
-                        value={tableCols}
-                        onChange={e => setTableCols(Number(e.target.value))}
-                    />
-                    <TextField
-                        type="number"
-                        label="Zellenbreite (px)"
-                        value={cellWidth}
-                        onChange={e => setCellWidth(Number(e.target.value))}
-                        inputProps={{ min: 10 }}
-                    />
-                    <FormControlLabel
-                        control={<Checkbox checked={withHeaderRow} onChange={e => setWithHeaderRow(e.target.checked)} />}
-                        label="Mit Kopfzeile"
-                    />
+                    <TextField type="number" label="Zeilen" value={tableRows} sx={{ mt: 2}} onChange={e => setTableRows(Number(e.target.value))} inputProps={{ min: 1 }}/>
+                    <TextField type="number" label="Spalten" value={tableCols} onChange={e => setTableCols(Number(e.target.value))}/>
+                    <TextField type="number" label="Zellenbreite (px)" value={cellWidth} onChange={e => setCellWidth(Number(e.target.value))} inputProps={{ min: 10 }}/>
+                    <FormControlLabel control={<Checkbox checked={withHeaderRow} onChange={e => setWithHeaderRow(e.target.checked)} />} label="Mit Kopfzeile"/>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setTableDialogOpen(false)}>Abbrechen</Button>
@@ -316,6 +321,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            <Snackbar open={showError} autoHideDuration={5000} onClose={() => setShowError(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: '100%' }}>
+                    {errorMessage}
+                </Alert>
+            </Snackbar>
         </>
     );
 };

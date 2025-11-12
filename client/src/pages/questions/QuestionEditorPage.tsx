@@ -12,7 +12,8 @@ import {
     DialogTitle,
     Menu,
     MenuItem,
-    Paper, Snackbar,
+    Paper,
+    Snackbar,
     Typography
 } from '@mui/material';
 import QuestionLayout from '../../layouts/QuestionLayout';
@@ -20,9 +21,11 @@ import MainLayout from '../../layouts/MainLayout.tsx';
 import {
     FreeText,
     FreeTextInline,
-    GeoGebra, LatexDisplay,
+    GeoGebra,
+    LatexDisplay,
     MCChoice,
-    NumericInput, SingleChoice
+    NumericInput,
+    SingleChoice
 } from "../../components/Editor/NodeEditorPlugins.tsx";
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -38,13 +41,14 @@ import {Preview} from "../../components/Editor/Preview.tsx";
 import {loadQuestionForm, updateQuestionContent} from '../../services/EditorService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
-import { MathJaxContext } from 'better-react-mathjax';
+import {MathJaxContext} from 'better-react-mathjax';
+import Underline from '@tiptap/extension-underline';
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
-            TextStyle, FontSize, FontFamily, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
+            TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
             MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, LatexDisplay, SingleChoice
         ],
@@ -69,20 +73,9 @@ export default function QuestionEditorPage() {
         if (!editor) return;
 
         editor.chain().focus().insertContent({
-            type: 'mcChoice',
-            attrs: {
-                id: uuidv4(),
-                groupId: '',
-                checked: false,
-            },
-            content: [
-                {
-                    type: 'paragraph',
-                    content: [
-                        { type: 'text', text: 'Option 1' }
-                    ]
-                }
-            ]
+            type: 'mcChoice', attrs: {
+            id: uuidv4(), groupId: '', checked: false,},
+            content: [{type: 'paragraph', content: [{ type: 'text', text: 'Option 1' }]}]
         }).run();
     };
 
@@ -91,19 +84,8 @@ export default function QuestionEditorPage() {
 
         editor.chain().focus().insertContent({
             type: 'singleChoice',
-            attrs: {
-                id: uuidv4(),
-                groupId: '',
-                checked: false,
-            },
-            content: [
-                {
-                    type: 'paragraph',
-                    content: [
-                        { type: 'text', text: 'Option 1' }
-                    ]
-                }
-            ]
+            attrs: {id: uuidv4(), groupId: '', checked: false,},
+            content: [{type: 'paragraph', content: [{ type: 'text', text: 'Option 1' }]}]
         }).run();
     };
 

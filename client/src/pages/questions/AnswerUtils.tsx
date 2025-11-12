@@ -1,4 +1,5 @@
 import type {JSONContent} from "@tiptap/core";
+import { v4 as uuidv4 } from "uuid";
 
 export type Choice = { id: string; text: string; html?: string;};
 
@@ -72,45 +73,43 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
         nodes.forEach((node) => {
             if (!node) return;
 
+            const nodeId = node.attrs?.id || uuidv4();
+
             if (node.type === "mcChoice" || node.type === "singleChoice") {
                 const kind = node.type === "mcChoice" ? "mc" : "sc";
-                const groupId = node.attrs?.groupId || node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                const groupId = node.attrs?.groupId || nodeId;
 
                 if (!blockMap[groupId]) {
                     blockMap[groupId] = { kind, key: groupId, choices: [] };
                 }
 
                 (node.content || []).forEach((choiceNode: any) => {
-                    const id = node.attrs?.id || Math.random().toString(36).slice(2, 8);
+                    const choiceId = choiceNode.attrs?.id || uuidv4();
                     const html = renderNodeToHTML(choiceNode);
                     const text = html.replace(/<[^>]+>/g, "").trim();
-                    (blockMap[groupId] as any).choices.push({ id, text, html });
+                    (blockMap[groupId] as any).choices.push({ id: choiceId, text, html });
                 });
             }
 
             if (node.type === "freeText") {
-                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
-                blockMap[key] = { kind: "freeText", key };
+                blockMap[nodeId] = { kind: "freeText", key: nodeId };
             }
 
             if (node.type === "freeTextInline") {
-                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
-                blockMap[key] = { kind: "freeTextInline", key };
+                blockMap[nodeId] = { kind: "freeTextInline", key: nodeId };
             }
 
             if (node.type === "numericInput") {
-                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
-                blockMap[key] = { kind: "numeric", key };
-            }
-
-            if (node.type === "algebraInput") {
-                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
-                blockMap[key] = { kind: "algebra", key };
+                const mode = node.attrs?.mode ?? "numeric";
+                if (mode === "algebra") {
+                    blockMap[nodeId] = { kind: "algebra", key: nodeId };
+                } else {
+                    blockMap[nodeId] = { kind: "numeric", key: nodeId };
+                }
             }
 
             if (node.type === "geoGebra") {
-                const key = node.attrs?.id || Math.random().toString(36).slice(2, 8);
-                blockMap[key] = { kind: "geoGebra", key };
+                blockMap[nodeId] = { kind: "geoGebra", key: nodeId };
             }
 
             if (node.content) walk(node.content);

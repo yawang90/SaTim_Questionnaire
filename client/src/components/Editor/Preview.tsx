@@ -13,6 +13,7 @@ import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import type {JSONContent} from '@tiptap/core';
 import {LatexDisplay} from "./NodeEditorPlugins.tsx";
 import {MathJaxContext} from "better-react-mathjax";
+import Underline from '@tiptap/extension-underline';
 
 interface PreviewProps {
     content: JSONContent | null;
@@ -26,6 +27,7 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             StarterKit,
             TextStyle,
             FontSize,
+            Underline,
             FontFamily,
             TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link,
