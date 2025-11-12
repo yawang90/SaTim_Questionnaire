@@ -19,7 +19,6 @@ export async function evaluateAnswers(id: string, answers: object): Promise<{ sc
         },
         body: JSON.stringify(payload),
     });
-
     return handleResponse(response);
 }
 

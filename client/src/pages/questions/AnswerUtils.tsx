@@ -84,10 +84,9 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
                 }
 
                 (node.content || []).forEach((choiceNode: any) => {
-                    const choiceId = choiceNode.attrs?.id || uuidv4();
                     const html = renderNodeToHTML(choiceNode);
                     const text = html.replace(/<[^>]+>/g, "").trim();
-                    (blockMap[groupId] as any).choices.push({ id: choiceId, text, html });
+                    (blockMap[groupId] as any).choices.push({ id: nodeId, text, html });
                 });
             }
 

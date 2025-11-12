@@ -109,7 +109,6 @@ export const getQuestionsByGroupId = async (groupId: number) => {
     });
 }
 
-
 /**
  * Update the correct answers JSON for a question
  */

@@ -52,7 +52,7 @@ export default function AnswerEditorPage() {
 
         if (persisted && typeof persisted === "object") {
             Object.entries(persisted).forEach(([k, v]) => {
-                if (initial.hasOwnProperty(k)) {
+                if (Object.prototype.hasOwnProperty.call(initial, k)) {
                     if (Array.isArray(initial[k])) {
                         if (Array.isArray(v)) initial[k] = v.slice();
                         else if (v == null) initial[k] = [];
@@ -114,14 +114,24 @@ export default function AnswerEditorPage() {
             const payload: Record<string, any> = {};
             blocks.forEach((b) => {
                 const val = answers[b.key];
-                if (b.kind === "mc") {
-                    payload[b.key] = Array.isArray(val) ? val : [];
-                } else if (b.kind === "sc") {
-                    payload[b.key] = Array.isArray(val) && val.length > 0 ? val[0] : null;
-                } else if (b.kind === "numeric" || b.kind === "algebra") {
-                    payload[b.key] = Array.isArray(val) ? val : [{ operator: "=", value: val || "" }];
-                } else {
-                    payload[b.key] = val ?? "";
+                switch (b.kind) {
+                    case "mc":
+                        payload[b.key] = { type: "mc", value: Array.isArray(val) ? val : [] };
+                        break;
+                    case "sc":
+                        payload[b.key] = { type: "sc", value: Array.isArray(val) && val.length > 0 ? val[0] : null };
+                        break;
+                    case "numeric":
+                    case "algebra":
+                        payload[b.key] = { type: b.kind, value: Array.isArray(val) ? val : [{ operator: "=", value: val || "" }] };
+                        break;
+                    case "freeText":
+                    case "freeTextInline":
+                        payload[b.key] = { type: b.kind, value: val ?? "" };
+                        break;
+                    case "geoGebra":
+                        payload[b.key] = { type: "geoGebra", value: val ?? "" };
+                        break;
                 }
             });
             await updateQuestionAnswers(id, payload);

@@ -51,8 +51,8 @@ export default function AnswerPreviewPage() {
         const answers = extractAnswersFromJson(json, blocks);
 
         try {
-            await evaluateAnswers(id, answers);
-            alert('Antworten gespeichert!');
+            const response = await evaluateAnswers(id, answers);
+            console.log(response)
         } catch (err) {
             console.error(err);
         }
