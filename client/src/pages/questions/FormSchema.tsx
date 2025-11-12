@@ -2,6 +2,13 @@ import type { MetaField } from "./MetaDataPage";
 
 export const initialFormSchema: MetaField[] = [
     {
+        key: "title",
+        label: "Titel",
+        type: "text",
+        placeholder: "Aufgaben Titel",
+        value: "",
+    },
+    {
         key: "author",
         label: "Autor:in",
         type: "text",

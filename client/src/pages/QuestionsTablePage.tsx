@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import {Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
+import {Box, Button, Chip,
+    CircularProgress, Dialog, DialogActions,
+    DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import {DataGrid, type GridColDef, type GridRowId} from "@mui/x-data-grid";
 import { Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { loadAllQuestions } from "../services/EditorService.tsx";
+import {loadAllQuestions, loadQuestionForm} from "../services/EditorService.tsx";
+import {type FullUser, getUserById} from "../services/UserService.tsx";
 
 const groupId = "999";
 
@@ -18,12 +21,27 @@ type QuestionRow = {
     }[];
 };
 
+type QuestionDetails = {
+    id: number;
+    title: string;
+    createdById: string;
+    createdAt: string;
+    updatedById?: string;
+    updatedAt?: string;
+    status: string;
+};
+
 export default function QuestionsTablePage() {
     const navigate = useNavigate();
     const [filterStatus, setFilterStatus] = useState<string>("");
     const [searchText, setSearchText] = useState<string>("");
     const [rows, setRows] = useState<QuestionRow[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [selectedQuestion, setSelectedQuestion] = useState<QuestionDetails | null>(null);
+    const [detailsLoading, setDetailsLoading] = useState<boolean>(false);
+    const [createdByUser, setCreatedByUser] = useState<FullUser | null>(null);
+    const [updatedByUser, setUpdatedByUser] = useState<FullUser | null>(null);
 
     const transformedRows = rows.map((row) => {
         const flatRow: Record<string, any> = { id: row.id, status: row.status};
@@ -91,6 +109,31 @@ export default function QuestionsTablePage() {
         return matchesId && matchesStatus;
     });
 
+    const handleRowClick = async (id: GridRowId) => {
+        setDialogOpen(true);
+        setDetailsLoading(true);
+        setCreatedByUser(null);
+        setUpdatedByUser(null);
+
+        try {
+            const details = await loadQuestionForm(id.toString());
+            setSelectedQuestion(details);
+            if (details.createdById) {
+                const createdUser = await getUserById(details.createdById);
+                setCreatedByUser(createdUser);
+            }
+            if (details.updatedById) {
+                const updatedUser = await getUserById(details.updatedById);
+                setUpdatedByUser(updatedUser);
+            }
+        } catch (error) {
+            console.error("Fehler beim Laden der Aufgabendetails: ", error);
+        } finally {
+            setDetailsLoading(false);
+        }
+    };
+
+
 
     return (
         <MainLayout>
@@ -132,12 +175,49 @@ export default function QuestionsTablePage() {
                         initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
                         showToolbar
                         loading={loading}
-                        onRowClick={(params) => navigate(`/meta/${params.id}`)}
+                        onRowClick={(params) => handleRowClick(params.id)}
                         slotProps={{
                             toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 200 } },
                         }}
                     />
                 </Box>
+                {/* --- Question Details Dialog --- */}
+                <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle>Aufgabendetails</DialogTitle>
+                    <DialogContent dividers>
+                        {detailsLoading ? (
+                            <Box display="flex" justifyContent="center" py={3}><CircularProgress /></Box>
+                        ) : selectedQuestion ? (
+                            <Box display="flex" flexDirection="column" gap={1.5}>
+                                <Typography variant="h6">{selectedQuestion.title}</Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    <strong>Erstellt von:</strong>{" "}
+                                    {createdByUser
+                                        ? `${createdByUser.first_name} ${createdByUser.last_name}`
+                                        : selectedQuestion.createdById}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    <strong>Erstellt am:</strong>{" "}
+                                    {new Date(selectedQuestion.createdAt).toLocaleString()}
+                                </Typography>
+                                    <><Typography variant="body2" color="textSecondary">
+                                        <strong>Zuletzt bearbeitet von:</strong>{" "}
+                                        {updatedByUser
+                                            ? `${updatedByUser.first_name} ${updatedByUser.last_name}`
+                                            : selectedQuestion.updatedById}
+                                    </Typography>
+                                        <Typography variant="body2" color="textSecondary"><strong>Zuletzt bearbeitet am:</strong>{" "}{new Date(selectedQuestion.updatedAt!).toLocaleString()}</Typography></>
+                            </Box>) : (<Typography>Keine Details verfügbar.</Typography>)}
+                    </DialogContent>
+                    <DialogActions sx={{ display: "flex", justifyContent: "space-between", px: 3 }}>
+                        <Button variant="outlined" onClick={() => setDialogOpen(false)}>Schließen</Button>
+                        <Button variant="contained" onClick={() => {
+                            if (selectedQuestion) {
+                                navigate(`/meta/${selectedQuestion.id}`);}
+                        }}>Aufgabe bearbeiten
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </MainLayout>
     );
