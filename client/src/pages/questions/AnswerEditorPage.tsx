@@ -114,8 +114,6 @@ export default function AnswerEditorPage() {
                 const val = answers[b.key];
                 switch (b.kind) {
                     case "mc":
-                        console.log(b)
-                        console.log(val)
                         payload[b.key] = { type: "mc", value: Array.isArray(val) ? val : [] };
                         break;
                     case "sc":
