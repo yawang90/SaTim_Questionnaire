@@ -42,14 +42,12 @@ export default function AnswerEditorPage() {
 
     const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
-
         parsed.forEach((b) => {
             if (b.kind === "mc" || b.kind === "sc") initial[b.key] = [];
             else if (b.kind === "numeric" || b.kind === "algebra")
                 initial[b.key] = [{ operator: "=", value: "" }];
             else initial[b.key] = "";
         });
-
         if (persisted && typeof persisted === "object") {
             Object.entries(persisted).forEach(([k, v]) => {
                 if (Object.prototype.hasOwnProperty.call(initial, k)) {
@@ -95,7 +93,7 @@ export default function AnswerEditorPage() {
             const block = blocks.find((b) => b.key === blockKey);
             if (!block) return prev;
 
-            if (block.kind === "sc") {
+            if (block.kind === "sc" || block.kind === "mc") {
                 return { ...prev, [blockKey]: [choiceId] };
             } else {
                 const cur: string[] = prev[blockKey] ?? [];
@@ -116,6 +114,8 @@ export default function AnswerEditorPage() {
                 const val = answers[b.key];
                 switch (b.kind) {
                     case "mc":
+                        console.log(b)
+                        console.log(val)
                         payload[b.key] = { type: "mc", value: Array.isArray(val) ? val : [] };
                         break;
                     case "sc":
