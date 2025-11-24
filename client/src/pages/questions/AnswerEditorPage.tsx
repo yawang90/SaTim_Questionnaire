@@ -89,19 +89,34 @@ export default function AnswerEditorPage() {
     }, [id]);
 
     const toggleChoice = (blockKey: string, choiceId: string) => {
-        setAnswers((prev) => {
-            const block = blocks.find((b) => b.key === blockKey);
+        setAnswers(prev => {
+            const block = blocks.find(b => b.key === blockKey);
             if (!block) return prev;
 
-            if (block.kind === "sc" || block.kind === "mc") {
-                return { ...prev, [blockKey]: [choiceId] };
-            } else {
-                const cur: string[] = prev[blockKey] ?? [];
-                const next = cur.includes(choiceId) ? cur.filter((c) => c !== choiceId) : [...cur, choiceId];
-                return { ...prev, [blockKey]: next };
+            const prevVal = prev[blockKey] ?? [{ value: [] }];
+            const arr = Array.isArray(prevVal) ? prevVal[0].value ?? [] : [];
+
+            if (block.kind === "sc") {
+                return {
+                    ...prev,
+                    [blockKey]: [{ value: [choiceId] }]
+                };
             }
+
+            if (block.kind === "mc") {
+                const newArr = arr.includes(choiceId)
+                    ? arr.filter((id: string) => id !== choiceId)
+                    : [...arr, choiceId];
+
+                return {
+                    ...prev,
+                    [blockKey]: [{ value: newArr }]
+                };
+            }
+            return prev;
         });
     };
+
 
     const handleAnswerChange = (blockKey: string, value: any) => setAnswers((prev) => ({ ...prev, [blockKey]: value }));
 
@@ -156,7 +171,6 @@ export default function AnswerEditorPage() {
                         {!loading && blocks.length === 0 && (
                             <Typography sx={{ my: 2 }}>Keine Antwort-Blöcke im Frage-Inhalt gefunden.</Typography>
                         )}
-
                         {!loading &&
                             blocks.map((answerType, idx) => (
                                 <Accordion key={answerType.key} sx={{ mb: 1 }}>
@@ -188,13 +202,10 @@ export default function AnswerEditorPage() {
                                                             key={choice.id}
                                                             control={
                                                                 <Checkbox
-                                                                    checked={(answers[answerType.key] ?? []).includes(choice.id)}
-                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}
-                                                                />
-                                                            }
-                                                            label={
-                                                                <MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>
-                                                            }  />
+                                                                    checked={(answers[answerType.key][0].value ?? []).includes(choice.id)}
+                                                                    onChange={() => toggleChoice(answerType.key, choice.id)}/>}
+                                                            // TODO does not toggle correctly
+                                                            label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>}/>
                                                     ))}
                                                 </FormGroup>
                                             </FormControl>
