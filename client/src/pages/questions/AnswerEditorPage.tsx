@@ -1,4 +1,3 @@
-// AnswerEditorPage.tsx
 import React, {useEffect, useState} from "react";
 import {
     Accordion,
@@ -42,25 +41,36 @@ export default function AnswerEditorPage() {
 
     const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
+
         parsed.forEach((b) => {
-            if (b.kind === "mc" || b.kind === "sc") initial[b.key] = [];
-            else if (b.kind === "numeric" || b.kind === "algebra")
-                initial[b.key] = [{ operator: "=", value: "" }];
-            else initial[b.key] = "";
+            switch (b.kind) {
+                case "mc":
+                    initial[b.key] = [];
+                    break;
+                case "sc":
+                    initial[b.key] = null;
+                    break;
+                case "numeric":
+                case "algebra":
+                    initial[b.key] = [{ operator: "=", value: "" }];
+                    break;
+                case "freeText":
+                case "freeTextInline":
+                    initial[b.key] = "";
+                    break;
+                case "geoGebra":
+                    initial[b.key] = {};
+                    break;
+            }
         });
+
         if (persisted && typeof persisted === "object") {
-            Object.entries(persisted).forEach(([k, v]) => {
-                if (Object.prototype.hasOwnProperty.call(initial, k)) {
-                    if (Array.isArray(initial[k])) {
-                        if (Array.isArray(v)) initial[k] = v.slice();
-                        else if (v == null) initial[k] = [];
-                        else initial[k] = [v];
-                    } else {
-                        initial[k] = v ?? "";
-                    }
-                }
+            Object.entries(persisted).forEach(([key, obj]) => {
+                if (!initial[key]) return;
+                initial[key] = obj.value ?? initial[key];
             });
         }
+
         setAnswers(initial);
     };
 
@@ -93,30 +103,22 @@ export default function AnswerEditorPage() {
             const block = blocks.find(b => b.key === blockKey);
             if (!block) return prev;
 
-            const prevVal = prev[blockKey] ?? [{ value: [] }];
-            const arr = Array.isArray(prevVal) ? prevVal[0].value ?? [] : [];
-
             if (block.kind === "sc") {
-                return {
-                    ...prev,
-                    [blockKey]: [{ value: [choiceId] }]
-                };
+                return { ...prev, [blockKey]: choiceId };
             }
 
             if (block.kind === "mc") {
+                const arr = prev[blockKey] ?? [];
                 const newArr = arr.includes(choiceId)
                     ? arr.filter((id: string) => id !== choiceId)
                     : [...arr, choiceId];
 
-                return {
-                    ...prev,
-                    [blockKey]: [{ value: newArr }]
-                };
+                return { ...prev, [blockKey]: newArr };
             }
+
             return prev;
         });
     };
-
 
     const handleAnswerChange = (blockKey: string, value: any) => setAnswers((prev) => ({ ...prev, [blockKey]: value }));
 
@@ -129,21 +131,21 @@ export default function AnswerEditorPage() {
                 const val = answers[b.key];
                 switch (b.kind) {
                     case "mc":
-                        payload[b.key] = { type: "mc", value: Array.isArray(val) ? val : [] };
+                        payload[b.key] = { type: "mc", value: val ?? [] };
                         break;
                     case "sc":
-                        payload[b.key] = { type: "sc", value: Array.isArray(val) && val.length > 0 ? val[0] : null };
+                        payload[b.key] = { type: "sc", value: val ?? null };
                         break;
                     case "numeric":
                     case "algebra":
-                        payload[b.key] = { type: b.kind, value: Array.isArray(val) ? val : [{ operator: "=", value: val || "" }] };
+                        payload[b.key] = { type: b.kind, value: val };
                         break;
                     case "freeText":
                     case "freeTextInline":
                         payload[b.key] = { type: b.kind, value: val ?? "" };
                         break;
                     case "geoGebra":
-                        payload[b.key] = { type: "geoGebra", value: val ?? "" };
+                        payload[b.key] = { type: "geoGebra", value: val };
                         break;
                 }
             });
@@ -202,9 +204,8 @@ export default function AnswerEditorPage() {
                                                             key={choice.id}
                                                             control={
                                                                 <Checkbox
-                                                                    checked={(answers[answerType.key][0].value ?? []).includes(choice.id)}
+                                                                    checked={(answers[answerType.key] ?? []).includes(choice.id)}
                                                                     onChange={() => toggleChoice(answerType.key, choice.id)}/>}
-                                                            // TODO does not toggle correctly
                                                             label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>}/>
                                                     ))}
                                                 </FormGroup>
@@ -220,7 +221,7 @@ export default function AnswerEditorPage() {
                                                             key={choice.id}
                                                             control={
                                                                 <Checkbox
-                                                                    checked={(answers[answerType.key] ?? [])[0] === choice.id}
+                                                                    checked={(answers[answerType.key] ?? null) === choice.id}
                                                                     onChange={() => toggleChoice(answerType.key, choice.id)}
                                                                     icon={<span style={{ borderRadius: "50%", border: "1px solid gray", width: 16, height: 16 }} />}
                                                                     checkedIcon={<span style={{ borderRadius: "50%", backgroundColor: "#1976d2", width: 16, height: 16 }} />}

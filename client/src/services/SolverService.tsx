@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL;
  * @param answers - TipTap JSON representing user’s completed answers
  * @returns {Promise<{ score: number; total: number; feedback?: string }>} evaluation result
  */
-export async function evaluateAnswers(id: string, answers: object): Promise<{ score: number; total: number; feedback?: string }> {
+export async function evaluateAnswers(id: string, answers: object): Promise<{ score: number; total: number }> {
     const token = localStorage.getItem("token");
     const payload = { answers };
     const response = await authFetch(`${API_URL}/api/solver/${id}/evaluate`, {
