@@ -54,7 +54,9 @@ export interface UserAnswerInput {
 }
 
 export interface EvaluateDetail {
-    value: any;
+    key: string;
+    given: any;
+    expected: any;
     correct: boolean;
 }
 
@@ -171,7 +173,9 @@ export const evaluateAnswersService = async (
             }
         }
         details.push({
-            value: correctAnswer?.value,
+            key,
+            given: userAnswer?.value ?? null,
+            expected: correctAnswer?.value,
             correct: isCorrect
         });
     }

@@ -1,13 +1,26 @@
 import React, {useEffect, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
 import QuestionLayout from '../../layouts/QuestionLayout.tsx';
-import {Box, Button, FormControl, FormControlLabel, Paper, Radio, RadioGroup, Typography,} from '@mui/material';
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    Paper,
+    Radio,
+    RadioGroup,
+    Typography,
+} from '@mui/material';
 import {Save} from '@mui/icons-material';
 import {useNavigate, useParams} from 'react-router-dom';
 import {Preview} from '../../components/Editor/Preview';
 import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
-import {type Block, mapQuestionsStatus, parseContentToBlocks} from "./AnswerUtils.tsx";
+import {type Block, mapQuestionsStatus, parseContentToBlocks, PrettyTestResult} from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
 
@@ -20,6 +33,8 @@ export default function AnswerPreviewPage() {
     const [quizStatus, setQuizStatus] = useState<'in bearbeitung' | 'abgeschlossen' | 'gelöscht'>('in bearbeitung');
     const [loading, setLoading] = useState(false);
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
+    const [testResult, setTestResult] = useState<any>(null);
+    const [testDialogOpen, setTestDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -46,17 +61,19 @@ export default function AnswerPreviewPage() {
 
     const handleTestAnswers = async () => {
         if (!id || !editorRef.current) return;
-
         const json = editorRef.current.getJSON();
         const answers = extractAnswersFromJson(json, blocks);
-
         try {
             const response = await evaluateAnswers(id, answers);
-            console.log(response)
+            setTestResult(response);
+            setTestDialogOpen(true);
         } catch (err) {
             console.error(err);
+            setTestResult({ error: 'Fehler bei der Auswertung.' });
+            setTestDialogOpen(true);
         }
     };
+
 
     const handleResetAnswers = () => {
         if (!blocks) return;
@@ -213,6 +230,22 @@ export default function AnswerPreviewPage() {
                     </Paper>
                 </Box>
             </QuestionLayout>
+            <Dialog
+                open={testDialogOpen}
+                onClose={() => setTestDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth>
+                <DialogTitle>Testergebnis</DialogTitle>
+
+                <DialogContent dividers>
+                    <PrettyTestResult result={testResult} />
+                </DialogContent>
+
+                <DialogActions>
+                    <Button onClick={() => setTestDialogOpen(false)}>Schließen</Button>
+                </DialogActions>
+            </Dialog>
+
         </MainLayout>
     );
 }

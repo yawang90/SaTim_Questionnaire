@@ -66,7 +66,7 @@ export default function AnswerEditorPage() {
 
         if (persisted && typeof persisted === "object") {
             Object.entries(persisted).forEach(([key, obj]) => {
-                if (!initial[key]) return;
+                if (!(key in initial)) return;
                 initial[key] = obj.value ?? initial[key];
             });
         }
