@@ -3,6 +3,7 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Alert,
     Box,
     Button,
     Checkbox,
@@ -13,7 +14,7 @@ import {
     FormControl,
     FormControlLabel,
     FormGroup,
-    Paper,
+    Paper, Snackbar,
     TextField,
     Typography,
 } from "@mui/material";
@@ -38,6 +39,8 @@ export default function AnswerEditorPage() {
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
     const [openPreview, setOpenPreview] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
 
     const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
@@ -124,6 +127,12 @@ export default function AnswerEditorPage() {
 
     const handleSaveAnswers = async () => {
         if (!id) return;
+        const errors = validateAnswersBeforeSave();
+        if (errors.length > 0) {
+            setSnackbarMessage(errors.join("\n"));
+            setSnackbarOpen(true);
+            return;
+        }
         setLoading(true);
         try {
             const payload: Record<string, any> = {};
@@ -157,6 +166,51 @@ export default function AnswerEditorPage() {
             setLoading(false);
         }
     };
+
+    const validateAnswersBeforeSave = () => {
+        const errors: string[] = [];
+
+        blocks.forEach((b) => {
+            const val = answers[b.key];
+
+            switch (b.kind) {
+                case "mc":
+                    if (!val || val.length === 0) {
+                        errors.push(`Multiple Choice (${b.key}) braucht mindestens eine richtige Auswahl.`);
+                    }
+                    break;
+
+                case "sc":
+                    if (val === null) {
+                        errors.push(`Single Choice (${b.key}) braucht eine richtige Auswahl.`);
+                    }
+                    break;
+
+                case "numeric":
+                case "algebra":
+                    if (!Array.isArray(val) || val.length === 0 || !val[0].value?.toString().trim()) {
+                        errors.push(`${b.kind === "numeric" ? "Numerische" : "Algebra"} Eingabe (${b.key}) braucht einen gültigen Wert.`);
+                    }
+                    break;
+
+                case "freeText":
+                case "freeTextInline":
+                    if (!val || !val.trim()) {
+                        errors.push(`Freitext (${b.key}) darf nicht leer sein.`);
+                    }
+                    break;
+
+                case "geoGebra":
+                    if (!val || Object.keys(val).length === 0) {
+                        errors.push(`GeoGebra (${b.key}) darf nicht leer sein.`);
+                    }
+                    break;
+            }
+        });
+
+        return errors;
+    };
+
 
     return (
         <MainLayout>
@@ -309,6 +363,11 @@ export default function AnswerEditorPage() {
                         </Dialog>
                     </Paper>
                 </Box>
+                    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                        <Alert onClose={() => setSnackbarOpen(false)} severity="error" variant="filled" sx={{ whiteSpace: "pre-line" }}  >
+                            {snackbarMessage}
+                        </Alert>
+                    </Snackbar>
                 </MathJaxContext>
             </QuestionLayout>
         </MainLayout>
