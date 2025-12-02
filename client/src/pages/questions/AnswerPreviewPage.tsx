@@ -117,6 +117,7 @@ export default function AnswerPreviewPage() {
                     case 'freeText':
                     case 'freeTextInline':
                     case 'numeric':
+                    case 'algebra':
                     case 'geoGebra':
                         return { key: block.key, value: '' };
                     default:
@@ -162,7 +163,10 @@ export default function AnswerPreviewPage() {
                         );
                         if (inputEl) answer.value = inputEl.value;
                         break; }
-
+                    case 'algebra': {
+                        answer.value = node.attrs?.value ?? '';
+                        break;
+                    }
                     case 'numeric':
                         { const numericEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
                             `[data-node-view-wrapper] [id="${block.key}"]`
