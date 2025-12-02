@@ -21,7 +21,9 @@
     "express": "^5.1.0",
     "joi": "^18.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mathlive": "^0.108.2",
     "multer": "^2.0.2",
+    "nerdamer": "^1.1.13",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -56,10 +56,36 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
     return (
         <NodeViewWrapper as="span" className="numeric-input" style={{display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 0', margin: '0 2px',}}>
             {mode === 'numeric' ? (
-                <TextField value={value} id={node.attrs.id} onChange={e => {
-                    const cleaned = e.target.value.replace(/[^0-9.,-]/g, '')
-                    setValue(cleaned)
-                    updateAttributes({ value: cleaned })}} placeholder="123.." size="small" variant="outlined" inputRef={textareaRef} sx={{ width: 380 }}/>
+                <TextField
+                    value={value}
+                    id={node.attrs.id}
+                    onChange={e => {
+                        let input = e.target.value;
+                        input = input.replace(',', '.');
+                        input = input.replace(/[^0-9.-]/g, '');
+                        if ((input.match(/-/g) || []).length > 1) {
+                            input = input.replace(/-/g, '');
+                            input = '-' + input;
+                        } else if (input.indexOf('-') > 0) {
+                            input = input.replace(/-/g, '');
+                            input = '-' + input;
+                        }
+                        const parts = input.split('.');
+                        if (parts.length > 2) {
+                            input = parts[0] + '.' + parts.slice(1).join('');
+                        }
+                        if (parts[1]?.length > 5) {
+                            input = parts[0] + '.' + parts[1].slice(0, 5);
+                        }
+                        setValue(input);
+                        updateAttributes({ value: input });
+                    }}
+                    placeholder="1.12345"
+                    size="small"
+                    variant="outlined"
+                    inputRef={textareaRef}
+                    sx={{ width: 380 }}
+                />
             ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     {/*// @ts-ignore*/}

@@ -1,5 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import type { question } from "@prisma/client";
+import { convertLatexToAsciiMath  } from "mathlive";
+import nerdamer from "nerdamer";
 
 type AnswerType = "sc" | "mc" | "numeric" | "algebra" | "freeText" | "geoGebra" | "freeTextInline";
 
@@ -25,7 +27,7 @@ interface NumericAnswer extends CorrectAnswerBase {
 
 interface AlgebraAnswer extends CorrectAnswerBase {
     type: "algebra";
-    value: string;
+    value: any;
 }
 
 interface FreeTextAnswer extends CorrectAnswerBase {
@@ -127,29 +129,101 @@ export const evaluateAnswersService = async (
                 }
 
                 case "numeric": {
-                    const { value, operator = "=" } = correctAnswer;
+                    const conditions = Array.isArray(correctAnswer.value)
+                        ? correctAnswer.value
+                        : [{ value: String(correctAnswer.value), operator: correctAnswer.operator || "=", logic: "and" }];
                     const userVal = Number(userAnswer.value);
 
-                    if (
-                        (operator === "=" && userVal === value) ||
-                        (operator === "<" && userVal < value) ||
-                        (operator === ">" && userVal > value) ||
-                        (operator === "<=" && userVal <= value) ||
-                        (operator === ">=" && userVal >= value)
-                    ) {
+                    let result = conditions[0]?.logic === "and";
+                    for (const condition of conditions) {
+                        const condValue = Number(condition.value);
+                        let check = false;
+                        const EPS = 1e-12;
+                        switch (condition.operator) {
+                            case "=":
+                                check = Math.abs(userVal - condValue) < EPS;
+                                break;
+                            case "<":
+                                check = userVal < condValue - EPS;
+                                break;
+                            case ">":
+                                check = userVal > condValue + EPS;
+                                break;
+                            case "<=":
+                                check = userVal <= condValue + EPS;
+                                break;
+                            case ">=":
+                                check = userVal >= condValue - EPS;
+                                break;
+                        }
+
+                        if (condition.logic === "and") result = result && check;
+                        else result = result || check;
+                    }
+
+                    if (result) {
                         isCorrect = true;
                         score += 1;
                     }
+
                     break;
                 }
 
-                case "algebra":
-                    if (String(userAnswer.value) === correctAnswer.value) {
-                        isCorrect = true;
-                        score += 1;
+                case "algebra": {
+                    const conditions = correctAnswer.value as {
+                        logic: "and" | "or";
+                        value: string;
+                        operator: "<" | ">" | "<=" | ">=" | "=";
+                    }[];
+
+                    const givenLatex = String(userAnswer.value);
+
+                    try {
+                        const givenAscii = convertLatexToAsciiMath(givenLatex);
+                        const givenExpr = nerdamer(givenAscii).expand();
+                        let result = (conditions[0]?.logic === "and");
+
+                        for (const condition of conditions) {
+                            const expectedAscii = convertLatexToAsciiMath(condition.value);
+                            const expectedExpr = nerdamer(expectedAscii).expand();
+                            const diff = nerdamer(`(${givenExpr}) - (${expectedExpr})`).expand();
+
+                            let check = false;
+                            const test = (cmd: string) => {
+                                const res = nerdamer(cmd).text();
+                                if (res === "true") return true;
+                                return res !== "false";
+
+                            };
+                            switch (condition.operator) {
+                                case "=":
+                                    check = test(`isZero(${diff})`);
+                                    break;
+                                case "<":
+                                    check = test(`isNegative(${diff})`);
+                                    break;
+                                case ">":
+                                    check = test(`isPositive(${diff})`);
+                                    break;
+                                case "<=":
+                                    check = test(`isNegative(${diff})`) || test(`isZero(${diff})`);
+                                    break;
+                                case ">=":
+                                    check = test(`isPositive(${diff})`) || test(`isZero(${diff})`);
+                                    break;
+                            }
+                            if (condition.logic === "and") result = result && check;
+                            else result = result || check;
+                        }
+                        if (result) {
+                            isCorrect = true;
+                            score += 1;
+                        }
+                    } catch (err) {
+                        console.error("Algebra evaluation failed:", err);
                     }
                     break;
-
+                }
                 case "freeText":
                 case "freeTextInline":
                     if (
