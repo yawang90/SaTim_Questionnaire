@@ -1,7 +1,11 @@
 import prisma from "../config/prismaClient.js";
 import type { question } from "@prisma/client";
 import { convertLatexToAsciiMath  } from "mathlive";
-import nerdamer from "nerdamer";
+import nerdamer from 'nerdamer';
+import "nerdamer/Algebra.js";
+import 'nerdamer/Solve.js';
+import 'nerdamer/Calculus.js';
+import 'nerdamer/Extra.js';
 
 type AnswerType = "sc" | "mc" | "numeric" | "algebra" | "freeText" | "geoGebra" | "freeTextInline";
 
@@ -179,42 +183,35 @@ export const evaluateAnswersService = async (
                     const givenLatex = String(userAnswer.value);
 
                     try {
-                        const givenAscii = convertLatexToAsciiMath(givenLatex);
-                        const givenExpr = nerdamer(givenAscii).expand();
-                        let result = (conditions[0]?.logic === "and");
+                        const givenExpr = nerdamer.factor(nerdamer(convertLatexToAsciiMath(givenLatex)).expand());
+                        let result = conditions[0]?.logic === "and";
 
                         for (const condition of conditions) {
-                            const expectedAscii = convertLatexToAsciiMath(condition.value);
-                            const expectedExpr = nerdamer(expectedAscii).expand();
-                            const diff = nerdamer(`(${givenExpr}) - (${expectedExpr})`).expand();
-
+                            const expectedExpr = nerdamer.factor(nerdamer(convertLatexToAsciiMath(condition.value)).expand());
                             let check = false;
-                            const test = (cmd: string) => {
-                                const res = nerdamer(cmd).text();
-                                if (res === "true") return true;
-                                return res !== "false";
 
-                            };
                             switch (condition.operator) {
                                 case "=":
-                                    check = test(`isZero(${diff})`);
+                                    check = givenExpr.eq(expectedExpr);
                                     break;
                                 case "<":
-                                    check = test(`isNegative(${diff})`);
-                                    break;
-                                case ">":
-                                    check = test(`isPositive(${diff})`);
+                                    check = givenExpr.lt(expectedExpr);
                                     break;
                                 case "<=":
-                                    check = test(`isNegative(${diff})`) || test(`isZero(${diff})`);
+                                    check = givenExpr.lte(expectedExpr);
+                                    break;
+                                case ">":
+                                    check = givenExpr.gt(expectedExpr);
                                     break;
                                 case ">=":
-                                    check = test(`isPositive(${diff})`) || test(`isZero(${diff})`);
+                                    check = givenExpr.gte(expectedExpr);
                                     break;
                             }
+
                             if (condition.logic === "and") result = result && check;
                             else result = result || check;
                         }
+
                         if (result) {
                             isCorrect = true;
                             score += 1;
