@@ -27,8 +27,10 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
                 label: 'Custom',
                 tooltip: 'Variables and numbers',
                 rows: [
+                    ['0','1','2','3','4','5','6','7','8','9','.'],
                     ['a', 'b', 'c', 'x', 'y', 'z', '\\alpha', '\\beta', '\\gamma'],
-                    ['+', '-', '[*]', '[/]', '=', '\\sqrt{#0}','#@^{#?}', '(', ')']
+                    ['+', '-', '[*]', ':', '=', '\\sqrt{#0}', '\\frac{#0}{#?}', '#@^{#?}', '(', ')'],
+                    [], [], []
                 ]
             }
             document.body.style.setProperty('--keycap-height', '32px')
@@ -95,6 +97,8 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
                         style={{width: 380, border: '1px solid #ccc', borderRadius: 4, padding: '4px 8px', fontSize: '1rem',}}
                         virtual-keyboard-mode="manual"
                         virtual-keyboards="custom"
+                        virtual-keyboard-appearance="floating"
+                        virtual-keyboard-theme="material"
                     />
                 </Box>
             )}
