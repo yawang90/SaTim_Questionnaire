@@ -1,5 +1,5 @@
 import prisma from "../config/prismaClient.js";
-import {type survey, survey_mode, type survey_status, type surveyInstance} from "@prisma/client";
+import {type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
 import XLSX from "xlsx";
 
 /**
@@ -251,6 +251,7 @@ export const processSurveyExcels = async (
         where: { id: surveyId },
         data: {
             bookletMappingExcelUrl: "",
+            status: survey_status.PREPARED,
         },
     });
 };

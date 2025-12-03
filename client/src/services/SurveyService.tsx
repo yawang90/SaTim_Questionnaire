@@ -1,10 +1,12 @@
+import type {surveyStatus} from "../pages/survey/SurveyUpdatePage.tsx";
+
 export interface CreateSurveyDTO {
     title: string;
     description?: string;
     fromDate?: string;
     toDate?: string;
     mode: "adaptiv" | "design";
-    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+    status?: surveyStatus;
 }
 
 export interface SurveyResponse {
@@ -13,8 +15,16 @@ export interface SurveyResponse {
     description?: string;
     createdAt: string;
     updatedAt: string;
-    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+    status?: surveyStatus;
     mode: string;
+    instances?: {
+        id: number;
+        surveyId: number;
+        name: string;
+        validFrom: string;
+        validTo: string;
+    }[];
+    hasActiveInstance?: boolean;
 }
 
 // @ts-expect-error
@@ -104,7 +114,7 @@ export async function getSurveyById(id: string): Promise<SurveyResponse & { crea
 export async function updateSurvey(id: string, data: {
     title?: string;
     description?: string;
-    status?: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+    status?: surveyStatus;
 }) {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");

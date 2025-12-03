@@ -22,6 +22,7 @@ import {createSurveyInstance, getSurveyById, getSurveyInstances} from "../../ser
 import dayjs, {Dayjs} from "dayjs";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 import {Add} from "@mui/icons-material";
+import type {surveyStatus} from "./SurveyUpdatePage.tsx";
 
 interface UserRef {
     id: number;
@@ -37,7 +38,7 @@ interface SurveyDetail {
     updatedAt: string;
     createdBy: UserRef;
     updatedBy: UserRef;
-    status: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+    status: surveyStatus;
     mode: "DESIGN" | "ADAPTIV";
 }
 
@@ -66,6 +67,7 @@ const SurveyDetailPage = () => {
 
     const statusLabels: Record<SurveyDetail["status"], string> = {
         IN_PROGRESS: "Entwurf",
+        PREPARED: "Vorbereitet",
         ACTIVE: "Aktiv",
         FINISHED: "Geschlossen",
     };
@@ -94,7 +96,7 @@ const SurveyDetailPage = () => {
                 updatedAt: data.updatedAt,
                 createdBy: data.createdBy ?? { id: 0, first_name: "Unbekannt", last_name: "" },
                 updatedBy: data.updatedBy ?? { id: 0, first_name: "Unbekannt", last_name: "" },
-                status: (data.status ?? "IN_PROGRESS") as "ACTIVE" | "IN_PROGRESS" | "FINISHED",
+                status: (data.status ?? "IN_PROGRESS") as surveyStatus,
                 mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
             });
 

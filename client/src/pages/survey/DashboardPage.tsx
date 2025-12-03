@@ -1,21 +1,53 @@
-import { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {Box, Button, Card, CardActions, CardContent, CardHeader, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, IconButton, Radio, RadioGroup, Snackbar, Alert, TextField, Typography,} from "@mui/material";
-import { Add, BarChart, CalendarToday, MoreVert } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import { createSurvey, getSurveys } from "../../services/SurveyService.tsx";
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CardHeader,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle, FormControl,
+    FormControlLabel,
+    Grid, InputLabel,
+    MenuItem,
+    Radio,
+    RadioGroup, Select,
+    Snackbar,
+    TextField,
+    Typography,
+} from "@mui/material";
+import {Add, BarChart, CalendarToday} from "@mui/icons-material";
+import {useNavigate} from "react-router-dom";
+import {createSurvey, getSurveys} from "../../services/SurveyService.tsx";
+import type {surveyStatus} from "./SurveyUpdatePage.tsx";
 
 interface Survey {
     id: string;
     title: string;
     description: string;
     createdAt: string;
-    status: "Aktiv" | "Entwurf" | "Geschlossen";
+    status: "Aktiv" | "Entwurf" | "Vorbereitet" | "Geschlossen";
     mode?: "adaptiv" | "design";
+    instances?: {
+        id: number;
+        surveyId: number;
+        name: string;
+        validFrom: string;
+        validTo: string;
+    }[];
+    hasActiveInstance?: boolean;
 }
 
 const DashboardPage = () => {
     const navigate = useNavigate();
+    const [statusFilter, setStatusFilter] = useState<Survey["status"] | "ALL">("ALL");
 
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [loading, setLoading] = useState(true);
@@ -33,7 +65,7 @@ const DashboardPage = () => {
                 title: newSurvey.title,
                 description: newSurvey.description,
                 mode: newSurvey.mode,
-                status: "IN_PROGRESS" as "ACTIVE" | "IN_PROGRESS" | "FINISHED",
+                status: "IN_PROGRESS" as surveyStatus,
             };
 
             const created = await createSurvey(payload);
@@ -64,18 +96,22 @@ const DashboardPage = () => {
             case "Aktiv":
                 return "info";
             case "Entwurf":
+                return "default";
+            case "Vorbereitet":
                 return "primary";
             case "Geschlossen":
                 return "secondary";
             default:
-                return "secondary";
+                return "default";
         }
     };
 
-    const mapStatus = (status: "ACTIVE" | "IN_PROGRESS" | "FINISHED" | undefined): Survey["status"] => {
+    const mapStatus = (status: surveyStatus): Survey["status"] => {
         switch (status) {
             case "ACTIVE":
                 return "Aktiv";
+            case "PREPARED":
+                return "Vorbereitet";
             case "IN_PROGRESS":
                 return "Entwurf";
             case "FINISHED":
@@ -90,15 +126,27 @@ const DashboardPage = () => {
             setLoading(true);
             try {
                 const existingSurveys = await getSurveys();
+                const now = new Date();
+
                 setSurveys(
-                    existingSurveys.map((s) => ({
-                        id: s.id.toString(),
-                        title: s.title,
-                        description: s.description || "",
-                        createdAt: s.createdAt,
-                        status: mapStatus(s.status),
-                        mode: s.mode as "adaptiv" | "design",
-                    }))
+                    existingSurveys.map((s) => {
+                        const hasActiveInstance = s.instances?.some(inst => {
+                            const from = new Date(inst.validFrom);
+                            const to = new Date(inst.validTo);
+                            return from <= now && now <= to;
+                        }) ?? false;
+
+                        return {
+                            id: s.id.toString(),
+                            title: s.title,
+                            description: s.description || "",
+                            createdAt: s.createdAt,
+                            status: mapStatus(s.status ?? "IN_PROGRESS"),
+                            mode: s.mode.toLowerCase() as "adaptiv" | "design",
+                            instances: s.instances,
+                            hasActiveInstance,
+                        };
+                    })
                 );
             } catch (err) {
                 console.error("Failed to load surveys:", err);
@@ -124,18 +172,30 @@ const DashboardPage = () => {
                             Erstelle und bearbeite Erhebungen
                         </Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => setIsDialogOpen(true)}>
-                        Neue Erhebung
-                    </Button>
+                    <Box display="flex" gap={2} alignItems="center">
+                        <Button variant="contained" startIcon={<Add />} onClick={() => setIsDialogOpen(true)}>
+                            Neue Erhebung
+                        </Button>
+                    </Box>
                 </Box>
-
+                <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Status</InputLabel>
+                        <Select value={statusFilter} label="Serie" onChange={(e) => setStatusFilter(e.target.value as Survey["status"] | "ALL")}>
+                            <MenuItem value="ALL">Alle</MenuItem>
+                            <MenuItem value="Aktiv">Aktiv</MenuItem>
+                            <MenuItem value="Entwurf">Entwurf</MenuItem>
+                            <MenuItem value="Vorbereitet">Vorbereitet</MenuItem>
+                            <MenuItem value="Geschlossen">Geschlossen</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
                 <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
                     <DialogTitle>Erhebung erstellen</DialogTitle>
                     <form onSubmit={handleCreateSurvey}>
                         <DialogContent sx={{ pt: 0 }}>
                             <TextField label="Titel" fullWidth required margin="normal" value={newSurvey.title} onChange={(e) => setNewSurvey({ ...newSurvey, title: e.target.value })}/>
-                            <TextField label="Beschreibung" fullWidth required multiline rows={4} margin="normal" value={newSurvey.description} onChange={(e) => setNewSurvey({ ...newSurvey, description: e.target.value })}
-                            />
+                            <TextField label="Beschreibung" fullWidth required multiline rows={4} margin="normal" value={newSurvey.description} onChange={(e) => setNewSurvey({ ...newSurvey, description: e.target.value })}/>
                             <Typography variant="subtitle1" gutterBottom>
                                 Modus
                             </Typography>
@@ -170,15 +230,15 @@ const DashboardPage = () => {
                     </Box>
                 ) : (
                     <Grid container spacing={3}>
-                        {surveys.map((survey) => (
+                        {surveys.filter((s) => statusFilter === "ALL" || s.status === statusFilter).map((survey) => (
                             //@ts-ignore
                             <Grid item key={survey.id} sx={{ width: 350, flexGrow: 0 }}>
                                 <Card>
                                     <CardHeader
                                         title={survey.title}
-                                        subheader={<Chip label={survey.status} color={getStatusColor(survey.status)} size="small"/>}
-                                        // action={<IconButton><MoreVert /></IconButton>}
-                                    />
+                                        subheader={<Box display="flex" gap={1}>
+                                            <Chip label={survey.status} color={getStatusColor(survey.status)} size="small" />
+                                            {survey.hasActiveInstance && (<Chip label="Aktive Instanz" color="info" size="small" />)}</Box>}/>
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" fontSize="0.875rem">
                                             <Box display="flex" alignItems="center" gap={0.5}>

@@ -25,6 +25,8 @@ import {
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
 
+export type surveyStatus = "ACTIVE" | "PREPARED" | "IN_PROGRESS" | "FINISHED";
+
 interface UserRef {
     id: number;
     first_name: string;
@@ -39,7 +41,7 @@ interface SurveyDetail {
     updatedAt: string;
     createdBy: UserRef;
     updatedBy: UserRef;
-    status: "ACTIVE" | "IN_PROGRESS" | "FINISHED";
+    status: surveyStatus;
     mode: "DESIGN" | "ADAPTIV";
     file1?: File | null;
     file2?: File | null;
@@ -80,7 +82,7 @@ const SurveyUpdatePage = () => {
                     updatedBy: data.updatedBy
                         ? { id: data.updatedBy.id, first_name: data.updatedBy.first_name, last_name: data.updatedBy.last_name }
                         : { id: 0, first_name: "Unbekannt", last_name: "" },
-                    status: (data.status ?? "IN_PROGRESS") as "ACTIVE" | "IN_PROGRESS" | "FINISHED",
+                    status: (data.status ?? "IN_PROGRESS") as surveyStatus,
                     mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                     file1: null,
                     file2: null,
@@ -167,20 +169,22 @@ const SurveyUpdatePage = () => {
                                 onChange={(e) => setSurvey({ ...survey, title: e.target.value })}/>
                         </Grid>
 
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField
-                                select
-                                label="Status"
-                                fullWidth
-                                value={survey.status}
-                                onChange={(e) =>
-                                    setSurvey({ ...survey, status: e.target.value as "ACTIVE" | "IN_PROGRESS" | "FINISHED" })
-                                }>
-                                <MenuItem value="ACTIVE">Aktiv</MenuItem>
-                                <MenuItem value="IN_PROGRESS">Entwurf</MenuItem>
-                                <MenuItem value="FINISHED">Geschlossen</MenuItem>
-                            </TextField>
-                        </Grid>
+                        {survey.status === "PREPARED" && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <TextField
+                                    select
+                                    label="Status"
+                                    fullWidth
+                                    value={survey.status}
+                                    onChange={(e) =>
+                                        setSurvey({ ...survey, status: e.target.value as surveyStatus })
+                                    }
+                                >
+                                    <MenuItem value="PREPARED">Vorbereitet</MenuItem>
+                                    <MenuItem value="FINISHED">Geschlossen</MenuItem>
+                                </TextField>
+                            </Grid>
+                        )}
 
                         <Grid size={{ xs: 12 }}>
                             <TextField label="Beschreibung" fullWidth multiline rows={4} value={survey.description} onChange={(e) => setSurvey({ ...survey, description: e.target.value })}/>

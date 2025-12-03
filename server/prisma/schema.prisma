@@ -59,6 +59,7 @@ enum question_status {
 
 enum survey_status {
   ACTIVE
+  PREPARED
   IN_PROGRESS
   FINISHED
 }

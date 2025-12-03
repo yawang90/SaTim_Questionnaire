@@ -180,7 +180,6 @@ export const updateSurveyInstanceHandler = async (req: Request, res: Response) =
 
         const { name, validFrom, validTo } = req.body;
 
-        // Only pass existing fields
         const updatePayload: any = { updatedById: userId };
         if (name) updatePayload.name = name;
         if (validFrom) updatePayload.validFrom = new Date(validFrom);
