@@ -252,7 +252,7 @@ const DashboardPage = () => {
                                             Bearbeiten
                                         </Button>
                                         <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/survey/details/${survey.id}`)}>
-                                            Übersicht
+                                            Instanzen
                                         </Button>
                                     </CardActions>
                                 </Card>

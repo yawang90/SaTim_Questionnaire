@@ -70,13 +70,6 @@ const SurveyDetailPage = () => {
         severity: "success",
     });
 
-    const statusLabels: Record<SurveyDetail["status"], string> = {
-        IN_PROGRESS: "Entwurf",
-        PREPARED: "Vorbereitet",
-        ACTIVE: "Aktiv",
-        FINISHED: "Geschlossen",
-    };
-
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
     const [selectedInstance, setSelectedInstance] = useState<SurveyInstance | null>(null);
     const [generatedLink, setGeneratedLink] = useState("");
@@ -207,34 +200,6 @@ const SurveyDetailPage = () => {
     return (
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
-                <Paper sx={{ p: 3 }}>
-                    <Typography variant="h5" gutterBottom>
-                        Erhebung Details
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Typography variant="subtitle1"><strong>Titel:</strong> {survey.title}</Typography>
-                    <Typography variant="subtitle1"><strong>Status:</strong> {statusLabels[survey.status]}</Typography>
-                    <Typography variant="subtitle1"><strong>Modus:</strong> {survey.mode}</Typography>
-                    <Typography variant="subtitle1" sx={{ mt: 2 }}><strong>Beschreibung:</strong></Typography>
-                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mb: 2 }}>{survey.description}</Typography>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Typography variant="subtitle1">
-                        <strong>Erstellt von:</strong> {survey.createdBy.first_name} {survey.createdBy.last_name}
-                    </Typography>
-                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        <strong>Erstellt am:</strong> {new Date(survey.createdAt).toLocaleString()}
-                    </Typography>
-
-                    <Typography variant="subtitle1">
-                        <strong>Zuletzt geändert von:</strong> {survey.updatedBy.first_name} {survey.updatedBy.last_name}
-                    </Typography>
-                    <Typography variant="subtitle1">
-                        <strong>Zuletzt geändert am:</strong> {new Date(survey.updatedAt).toLocaleString()}
-                    </Typography>
-                </Paper>
                 <Paper sx={{ p: 3 }}>
                     <Typography variant="h5" gutterBottom>Instanzen</Typography>
                     <Divider sx={{ mb: 2 }} />
