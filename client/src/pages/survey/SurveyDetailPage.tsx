@@ -90,6 +90,7 @@ const SurveyDetailPage = () => {
         validFrom: null,
         validTo: null
     });
+    const [instanceFilter, setInstanceFilter] = useState<"ALL" | "ACTIVE" | "FUTURE" | "PAST">("ALL");
 
 
     useEffect(() => {
@@ -239,12 +240,30 @@ const SurveyDetailPage = () => {
                     <Divider sx={{ mb: 2 }} />
                     <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}> Neue Instanz erstellen</Button>
                     <Divider sx={{ my: 2 }} />
+                    <Box sx={{ display: "flex", mb: 2 }}>
+                        <TextField select label="Status filtern" value={instanceFilter} onChange={(e) => setInstanceFilter(e.target.value as any)} SelectProps={{ native: true }} size="small" sx={{ width: 200 }}>
+                            <option value="ALL">Alle</option>
+                            <option value="ACTIVE">Aktiv</option>
+                            <option value="FUTURE">Zukünftig</option>
+                            <option value="PAST">Vergangen</option>
+                        </TextField>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
 
                     {instances.length === 0 ? (
                         <Typography variant="body2" color="text.secondary">Keine Instanzen vorhanden.</Typography>
                     ) : (
                         <Grid container spacing={2}>
-                            {instances.map((inst) => {
+                            {instances.filter((inst) => {
+                                const now = dayjs();
+                                const from = dayjs(inst.validFrom);
+                                const to = dayjs(inst.validTo);
+
+                                if (instanceFilter === "FUTURE") return now.isBefore(from);
+                                if (instanceFilter === "PAST") return now.isAfter(to);
+                                if (instanceFilter === "ACTIVE") return now.isAfter(from) && now.isBefore(to);
+                                return true;
+                            }).map((inst) => {
                                 const now = dayjs();
                                 const from = dayjs(inst.validFrom);
                                 const to = dayjs(inst.validTo);
