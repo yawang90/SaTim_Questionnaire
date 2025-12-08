@@ -18,7 +18,12 @@ import {
     Typography
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
-import {createSurveyInstance, getSurveyById, getSurveyInstances} from "../../services/SurveyService.tsx";
+import {
+    createSurveyInstance,
+    getSurveyById,
+    getSurveyInstances,
+    updateSurveyInstance
+} from "../../services/SurveyService.tsx";
 import dayjs, {Dayjs} from "dayjs";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 import {Add} from "@mui/icons-material";
@@ -78,6 +83,13 @@ const SurveyDetailPage = () => {
     const [instances, setInstances] = useState<SurveyInstance[]>([]);
     const [instanceDialogOpen, setInstanceDialogOpen] = useState(false);
     const [newInstance, setNewInstance] = useState<NewInstanceInput>({ name: "", validFrom: null, validTo: null });
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editInstance, setEditInstance] = useState<SurveyInstance | null>(null);
+    const [editData, setEditData] = useState<NewInstanceInput>({
+        name: "",
+        validFrom: null,
+        validTo: null
+    });
 
 
     useEffect(() => {
@@ -125,6 +137,7 @@ const SurveyDetailPage = () => {
             setSnackbar({ open: true, message: "Fehler beim Kopieren des Links.", severity: "error" });
         }
     };
+
     const handleCreateInstance = async () => {
         if (!survey || !newInstance.name || !newInstance.validFrom || !newInstance.validTo) {
             setSnackbar({ open: true, message: "Bitte alle Felder ausfüllen.", severity: "error" });
@@ -148,6 +161,40 @@ const SurveyDetailPage = () => {
         } catch (err) {
             console.error("Failed to create instance:", err);
             setSnackbar({ open: true, message: "Fehler beim Erstellen der Instanz.", severity: "error" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdateInstance = async () => {
+        if (!survey || !editInstance) return;
+
+        if (!editData.name || !editData.validFrom || !editData.validTo) {
+            setSnackbar({ open: true, message: "Bitte alle Felder ausfüllen.", severity: "error" });
+            return;
+        }
+
+        if (editData.validTo.isBefore(editData.validFrom)) {
+            setSnackbar({ open: true, message: "Das Enddatum muss nach dem Startdatum liegen.", severity: "error" });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await updateSurveyInstance(editInstance.id, {
+                name: editData.name,
+                validFrom: editData.validFrom.toISOString(),
+                validTo: editData.validTo.toISOString(),
+            });
+
+            setSnackbar({ open: true, message: "Instanz aktualisiert.", severity: "success" });
+            setEditDialogOpen(false);
+            setEditInstance(null);
+
+            await fetchSurvey();
+        } catch (err) {
+            console.error("Failed to update instance:", err);
+            setSnackbar({ open: true, message: "Fehler beim Aktualisieren.", severity: "error" });
         } finally {
             setLoading(false);
         }
@@ -227,9 +274,19 @@ const SurveyDetailPage = () => {
                                             <Typography variant="body2">
                                                 Von: {from.format("DD.MM.YYYY")} — Bis: {to.format("DD.MM.YYYY")}
                                             </Typography>
-                                                <Button size="small" variant="outlined" onClick={() => handleOpenLinkDialog(inst)}>
-                                                    Test URL generieren
-                                                </Button>
+                                            <Button size="small" variant="contained" onClick={() => handleOpenLinkDialog(inst)}>
+                                                Test URL generieren
+                                            </Button>
+                                            <Button size="small" variant="outlined" onClick={() => {
+                                                setEditInstance(inst);
+                                                setEditData({
+                                                    name: inst.name,
+                                                    validFrom: dayjs(inst.validFrom),
+                                                    validTo: dayjs(inst.validTo)
+                                                });
+                                                setEditDialogOpen(true);}}>
+                                                Bearbeiten
+                                            </Button>
                                         </Paper>
                                     </Grid>
                                 );
@@ -269,7 +326,6 @@ const SurveyDetailPage = () => {
                         </Button>
                     </DialogActions>
                 </Dialog>
-
                 <Dialog open={linkDialogOpen} onClose={() => setLinkDialogOpen(false)} fullWidth maxWidth="sm">
                     <DialogTitle>Test Instanz-Link</DialogTitle>
                     <DialogContent>
@@ -281,6 +337,22 @@ const SurveyDetailPage = () => {
                     <DialogActions>
                         <Button onClick={() => setLinkDialogOpen(false)}>Schließen</Button>
                         <Button variant="contained" onClick={handleCopyLink}>Kopieren</Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
+                    <DialogTitle>Instanz bearbeiten</DialogTitle>
+                    <DialogContent>
+                        <Box display="flex" flexDirection="column" gap={2} mt={1}>
+                            <TextField label="Name" fullWidth value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })}/>
+                            <DatePicker label="Gültig von" value={editData.validFrom} onChange={(date) => setEditData({ ...editData, validFrom: date })}/>
+                            <DatePicker label="Gültig bis" value={editData.validTo} onChange={(date) => setEditData({ ...editData, validTo: date })}/>
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
+                        <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo || loading}>
+                            {loading ? "Speichern..." : "Aktualisieren"}
+                        </Button>
                     </DialogActions>
                 </Dialog>
                 <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

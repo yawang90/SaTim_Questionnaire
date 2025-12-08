@@ -230,3 +230,28 @@ export async function getSurveyInstances(surveyId: number) {
 
     return res.json();
 }
+
+export async function updateSurveyInstance(
+    instanceId: number,
+    data: SurveyInstanceDTO
+) {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/instance/${instanceId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const message = await res.text();
+        throw new Error(`Failed to update survey instance: ${message}`);
+    }
+
+    return res.json();
+}
+
