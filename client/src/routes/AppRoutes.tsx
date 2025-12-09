@@ -10,12 +10,14 @@ import ProfilePage from "../pages/ProfilePage.tsx";
 import MetaDataPage from "../pages/questions/MetaDataPage.tsx";
 import SurveyUpdatePage from "../pages/survey/SurveyUpdatePage.tsx";
 import SurveyInstancePage from "../pages/survey/SurveyInstancePage.tsx";
+import QuizPage from "../pages/quiz/QuizPage.tsx";
 
 function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<LandingPage />} />
+
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/survey/:id" element={<SurveyUpdatePage />} />
                 <Route path="/survey/details/:id" element={<SurveyInstancePage />} />
@@ -25,6 +27,8 @@ function AppRoutes() {
                 <Route path="/answers/:id" element={<AnswerEditorPage />} />
                 <Route path="/preview/:id" element={<AnswerPreviewPage />} />
 
+                // public pages, no login
+                <Route path="/quiz/:id" element={<QuizPage/>} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
 

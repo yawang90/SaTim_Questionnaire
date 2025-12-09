@@ -248,7 +248,7 @@ const SurveyUpdatePage = () => {
                     <Typography sx={{ pb: 3 }} variant="h5" gutterBottom>Aufgaben Zuordnung (Booklet)</Typography>
                     <Tooltip title={survey.hasActiveInstance ? "Die Design-Matrix kann nicht geändert werden, solange aktive Durchführungen existieren." : ""} arrow>
                        <span>
-                        <Button disabled={survey.hasActiveInstance || saving} variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
+                        <Button disabled={survey.hasActiveInstance || saving} variant="contained" color="primary" onClick={() => {setFile1(null);setFile2(null);setUploadDialogOpen(true);}}>
                             Design-Matrix hochladen
                         </Button></span>
                     </Tooltip>
