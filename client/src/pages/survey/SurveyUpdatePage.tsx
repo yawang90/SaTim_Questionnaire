@@ -13,7 +13,7 @@ import {
     MenuItem,
     Paper,
     Snackbar,
-    TextField,
+    TextField, Tooltip,
     Typography,
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
@@ -45,6 +45,7 @@ interface SurveyDetail {
     mode: "DESIGN" | "ADAPTIV";
     file1?: File | null;
     file2?: File | null;
+    hasActiveInstance?: boolean;
 }
 
 const statusLabels: Record<SurveyDetail["status"], string> = {
@@ -93,6 +94,7 @@ const SurveyUpdatePage = () => {
                     mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                     file1: null,
                     file2: null,
+                    hasActiveInstance: data.hasActiveInstance
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
@@ -239,9 +241,12 @@ const SurveyUpdatePage = () => {
                 {survey.mode === "DESIGN" && (
                 <Paper sx={{ p: 3 }}>
                     <Typography sx={{ pb: 3 }} variant="h5" gutterBottom>Aufgaben Zuordnung (Booklet)</Typography>
-                    <Button variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
-                        Design-Matrix hochladen
-                    </Button>
+                    <Tooltip title={survey.hasActiveInstance ? "Die Design-Matrix kann nicht geändert werden, solange aktive Durchführungen existieren." : ""} arrow>
+                       <span>
+                        <Button disabled={survey.hasActiveInstance} variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
+                            Design-Matrix hochladen
+                        </Button></span>
+                    </Tooltip>
                 </Paper> )}
 
                 {survey.mode === "DESIGN" && booklets.length > 0 && (

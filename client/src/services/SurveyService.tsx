@@ -67,7 +67,21 @@ export async function getSurveys(): Promise<SurveyResponse[]> {
         throw new Error(`Failed to fetch surveys: ${message}`);
     }
 
-    return res.json();
+    const surveys = await res.json();
+    const now = new Date();
+    return surveys.map((s: any) => {
+        const hasActiveInstance =
+            s.instances?.some((inst: any) => {
+                const from = new Date(inst.validFrom);
+                const to = new Date(inst.validTo);
+                return from <= now && now <= to;
+            }) ?? false;
+
+        return {
+            ...s,
+            hasActiveInstance,
+        };
+    });
 }
 
 export async function updateSurveyFiles(id: string, file1: File, file2: File) {
@@ -92,7 +106,7 @@ export interface UserRef {
     last_name: string;
 }
 
-export async function getSurveyById(id: string): Promise<SurveyResponse & { createdBy: UserRef; updatedBy: UserRef }> {
+export async function getSurveyById(id: string): Promise<any> {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
 
@@ -104,11 +118,23 @@ export async function getSurveyById(id: string): Promise<SurveyResponse & { crea
     });
 
     if (!res.ok) {
-        const message = await res.text();
-        throw new Error(`Failed to fetch survey by id: ${message}`);
+        const msg = await res.text();
+        throw new Error(msg);
     }
 
-    return res.json();
+    const s = await res.json();
+    const now = new Date();
+        console.log(s)
+    return {
+        ...s,
+        hasActiveInstance:
+            s.instances?.some((inst: any) => {
+                const from = new Date(inst.validFrom);
+                const to = new Date(inst.validTo);
+                return from <= now && now <= to;
+            }) ?? false,
+        booklet: s.booklet ?? [],
+        hasBooklet: (s.booklet?.length ?? 0) > 0,};
 }
 
 export async function updateSurvey(id: string, data: {

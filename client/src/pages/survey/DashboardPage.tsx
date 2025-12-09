@@ -20,7 +20,7 @@ import {
     Radio,
     RadioGroup, Select,
     Snackbar,
-    TextField,
+    TextField, Tooltip,
     Typography,
 } from "@mui/material";
 import {Add, BarChart, CalendarToday} from "@mui/icons-material";
@@ -106,6 +106,21 @@ const DashboardPage = () => {
         }
     };
 
+    const getStatusInfo = (status: Survey["status"]) => {
+        switch (status) {
+            case "Aktiv":
+                return "Die Erhebung hat eine aktive Durchführung und läuft aktuell.";
+            case "Entwurf":
+                return "Es ist noch kein Booklet für die Erhebung erfasst.";
+            case "Vorbereitet":
+                return "Die Erhebung ist vorbereitet und es können Durchführungen erstellt werden.";
+            case "Geschlossen":
+                return "Die Erhebung ist abgeschlossen und es können keine Durchführungen erstellt werden.";
+            default:
+                return "";
+        }
+    };
+
     const mapStatus = (status: surveyStatus): Survey["status"] => {
         switch (status) {
             case "ACTIVE":
@@ -126,16 +141,8 @@ const DashboardPage = () => {
             setLoading(true);
             try {
                 const existingSurveys = await getSurveys();
-                const now = new Date();
-
                 setSurveys(
                     existingSurveys.map((s) => {
-                        const hasActiveInstance = s.instances?.some(inst => {
-                            const from = new Date(inst.validFrom);
-                            const to = new Date(inst.validTo);
-                            return from <= now && now <= to;
-                        }) ?? false;
-
                         return {
                             id: s.id.toString(),
                             title: s.title,
@@ -144,7 +151,7 @@ const DashboardPage = () => {
                             status: mapStatus(s.status ?? "IN_PROGRESS"),
                             mode: s.mode.toLowerCase() as "adaptiv" | "design",
                             instances: s.instances,
-                            hasActiveInstance,
+                            hasActiveInstance: s.hasActiveInstance,
                         };
                     })
                 );
@@ -237,8 +244,11 @@ const DashboardPage = () => {
                                     <CardHeader
                                         title={survey.title}
                                         subheader={<Box display="flex" gap={1}>
-                                            <Chip label={survey.status} color={getStatusColor(survey.status)} size="small" />
-                                            {survey.hasActiveInstance && (<Chip label="Aktive Instanz" color="info" size="small" />)}</Box>}/>
+                                            <Tooltip title={getStatusInfo(survey.status)} arrow>
+                                                <Chip label={survey.status} color={getStatusColor(survey.status)} size="small" sx={{ cursor: "help" }}/>
+                                            </Tooltip>
+                                            {survey.hasActiveInstance && (<Tooltip title={"Es ist eine laufende Durchführung vorhanden. Es können keine Änderungen an Booklets vorgenommen werden."} arrow>
+                                                    <Chip label="Aktive Durchführungen" color="info" size="small" sx={{ cursor: "help" }}/></Tooltip>)}</Box>}/>
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" fontSize="0.875rem">
                                             <Box display="flex" alignItems="center" gap={0.5}>
@@ -252,7 +262,7 @@ const DashboardPage = () => {
                                             Bearbeiten
                                         </Button>
                                         <Button size="small" variant="contained" fullWidth onClick={() => navigate(`/survey/details/${survey.id}`)}>
-                                            Instanzen
+                                            Durchführungen
                                         </Button>
                                     </CardActions>
                                 </Card>

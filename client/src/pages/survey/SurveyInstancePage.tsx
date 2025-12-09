@@ -14,7 +14,7 @@ import {
     LinearProgress,
     Paper,
     Snackbar,
-    TextField,
+    TextField, Tooltip,
     Typography
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
@@ -45,6 +45,8 @@ interface SurveyDetail {
     updatedBy: UserRef;
     status: surveyStatus;
     mode: "DESIGN" | "ADAPTIV";
+    booklet?: { id: number }[];
+    hasBooklet?: boolean;
 }
 
 interface SurveyInstance {
@@ -59,7 +61,7 @@ interface NewInstanceInput {
     validFrom: Dayjs | null;
     validTo: Dayjs | null;
 }
-const SurveyDetailPage = () => {
+const SurveyInstancePage = () => {
     const { id } = useParams<{ id: string }>();
 
     const [survey, setSurvey] = useState<SurveyDetail | null>(null);
@@ -104,6 +106,7 @@ const SurveyDetailPage = () => {
                 updatedBy: data.updatedBy ?? { id: 0, first_name: "Unbekannt", last_name: "" },
                 status: (data.status ?? "IN_PROGRESS") as surveyStatus,
                 mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
+                booklet: data.booklet
             });
 
             const inst = await getSurveyInstances(data.id);
@@ -148,13 +151,13 @@ const SurveyDetailPage = () => {
                 validFrom: newInstance.validFrom.toISOString(),
                 validTo: newInstance.validTo.toISOString(),
             });
-            setSnackbar({ open: true, message: "Test Instanz erfolgreich erstellt.", severity: "success" });
+            setSnackbar({ open: true, message: "Test Durchführung erfolgreich erstellt.", severity: "success" });
             setInstanceDialogOpen(false);
             setNewInstance({ name: "", validFrom: null, validTo: null });
             await fetchSurvey();
         } catch (err) {
             console.error("Failed to create instance:", err);
-            setSnackbar({ open: true, message: "Fehler beim Erstellen der Instanz.", severity: "error" });
+            setSnackbar({ open: true, message: "Fehler beim Erstellen der Durchführung.", severity: "error" });
         } finally {
             setLoading(false);
         }
@@ -181,7 +184,7 @@ const SurveyDetailPage = () => {
                 validTo: editData.validTo.toISOString(),
             });
 
-            setSnackbar({ open: true, message: "Instanz aktualisiert.", severity: "success" });
+            setSnackbar({ open: true, message: "Durchführung aktualisiert.", severity: "success" });
             setEditDialogOpen(false);
             setEditInstance(null);
 
@@ -201,9 +204,11 @@ const SurveyDetailPage = () => {
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
                 <Paper sx={{ p: 3 }}>
-                    <Typography variant="h5" gutterBottom>Instanzen</Typography>
+                    <Typography variant="h5" gutterBottom>Durchführungen</Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <Button variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}> Neue Instanz erstellen</Button>
+                    <Tooltip title={!survey.hasBooklet ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden." : ""} arrow>
+                       <span><Button disabled={!survey.hasBooklet} variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}>Neue Durchführung erstellen</Button></span>
+                    </Tooltip>
                     <Divider sx={{ my: 2 }} />
                     <Box sx={{ display: "flex", mb: 2 }}>
                         <TextField select label="Status filtern" value={instanceFilter} onChange={(e) => setInstanceFilter(e.target.value as any)} SelectProps={{ native: true }} size="small" sx={{ width: 200 }}>
@@ -216,7 +221,7 @@ const SurveyDetailPage = () => {
                     <Divider sx={{ my: 2 }} />
 
                     {instances.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">Keine Instanzen vorhanden.</Typography>
+                        <Typography variant="body2" color="text.secondary">Keine Durchführungen vorhanden.</Typography>
                     ) : (
                         <Grid container spacing={2}>
                             {instances.filter((inst) => {
@@ -279,7 +284,7 @@ const SurveyDetailPage = () => {
                     )}
                 </Paper>
                 <Dialog open={instanceDialogOpen} onClose={() => setInstanceDialogOpen(false)} fullWidth maxWidth="sm">
-                    <DialogTitle>Neue Instanz erstellen</DialogTitle>
+                    <DialogTitle>Neue Durchführung erstellen</DialogTitle>
                     <DialogContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={1}>
                             <TextField
@@ -311,10 +316,10 @@ const SurveyDetailPage = () => {
                     </DialogActions>
                 </Dialog>
                 <Dialog open={linkDialogOpen} onClose={() => setLinkDialogOpen(false)} fullWidth maxWidth="sm">
-                    <DialogTitle>Test Instanz-Link</DialogTitle>
+                    <DialogTitle>Test Durchführung-Link</DialogTitle>
                     <DialogContent>
                         <Typography gutterBottom>
-                            Diesen Link kannst du teilen, um die Umfrageinstanz aufzurufen:
+                            Diesen Link kannst du teilen, um die Umfrage aufzurufen:
                         </Typography>
                         <TextField fullWidth value={generatedLink} InputProps={{ readOnly: true }} sx={{ mt: 1 }}/>
                     </DialogContent>
@@ -324,7 +329,7 @@ const SurveyDetailPage = () => {
                     </DialogActions>
                 </Dialog>
                 <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
-                    <DialogTitle>Instanz bearbeiten</DialogTitle>
+                    <DialogTitle>Durchführung bearbeiten</DialogTitle>
                     <DialogContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={1}>
                             <TextField label="Name" fullWidth value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })}/>
@@ -347,4 +352,4 @@ const SurveyDetailPage = () => {
     );
 };
 
-export default SurveyDetailPage;
+export default SurveyInstancePage;
