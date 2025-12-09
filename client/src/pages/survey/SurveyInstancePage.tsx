@@ -54,6 +54,7 @@ interface SurveyInstance {
     name: string;
     validFrom: string;
     validTo: string;
+    bookletVersion: number;
 }
 
 interface NewInstanceInput {
@@ -263,6 +264,9 @@ const SurveyInstancePage = () => {
                                             </Box>
                                             <Typography variant="body2">
                                                 Von: {from.format("DD.MM.YYYY")} — Bis: {to.format("DD.MM.YYYY")}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                               Booklet Version: {inst.bookletVersion}
                                             </Typography>
                                             <Button size="small" variant="contained" onClick={() => handleOpenLinkDialog(inst)}>
                                                 Test URL generieren
