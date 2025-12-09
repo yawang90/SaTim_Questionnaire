@@ -106,7 +106,8 @@ const SurveyInstancePage = () => {
                 updatedBy: data.updatedBy ?? { id: 0, first_name: "Unbekannt", last_name: "" },
                 status: (data.status ?? "IN_PROGRESS") as surveyStatus,
                 mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
-                booklet: data.booklet
+                booklet: data.booklet,
+                hasBooklet: data.hasBooklet
             });
 
             const inst = await getSurveyInstances(data.id);

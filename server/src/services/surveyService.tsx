@@ -54,7 +54,7 @@ interface UpdateSurveyInstanceInput {
 }
 
 /**
- * Create a new survey and optionally its instances
+ * Create a new survey
  */
 export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => {
     const createData: any = {
@@ -103,15 +103,34 @@ export const getAllSurveys = async (): Promise<survey[]> => {
 /**
  * Get a single survey by ID
  */
-export const getSurveyById = async (id: number): Promise<survey | null> => {
-    return prisma.survey.findUnique({
+export const getSurveyById = async (id: number) => {
+    const survey = await prisma.survey.findUnique({
         where: { id },
         include: {
             createdBy: { select: { id: true, first_name: true, last_name: true } },
             updatedBy: { select: { id: true, first_name: true, last_name: true } },
             instances: true,
+            booklet: {
+                orderBy: { bookletId: "asc" },
+            },
         },
     });
+
+    if (!survey) throw new Error("Survey not found");
+
+    const now = new Date();
+    const hasActiveInstance = survey.instances?.some(
+        inst => new Date(inst.validFrom) <= now && now <= new Date(inst.validTo)
+    ) ?? false;
+
+    const hasBooklet = (survey.booklet?.length ?? 0) > 0;
+
+    return {
+        ...survey,
+        hasActiveInstance,
+        booklet: survey.booklet ?? [],
+        hasBooklet,
+    };
 };
 
 /**
@@ -143,6 +162,15 @@ export const deleteSurveyById = async (id: number): Promise<survey> => {
 };
 
 export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Promise<surveyInstance> => {
+    const survey = await prisma.survey.findUnique({
+        where: { id: data.surveyId },
+        select: { bookletVersion: true }
+    });
+
+    if (!survey) {
+        throw new Error("Survey not found");
+    }
+
     return prisma.surveyInstance.create({
         data: {
             surveyId: data.surveyId,
@@ -151,6 +179,7 @@ export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Pro
             validTo: data.validTo,
             createdById: data.createdById,
             updatedById: data.updatedById,
+            bookletVersion: survey.bookletVersion,
         },
     });
 };
@@ -220,6 +249,11 @@ export const processSurveyExcels = async (
     await prisma.booklet.deleteMany({
         where: { surveyId },
     });
+    const updatedSurvey = await prisma.survey.update({
+        where: { id: surveyId },
+        data: { bookletVersion: { increment: 1 } },
+        select: { bookletVersion: true }
+    });
 
     for (const [bookletName, questionIds] of Object.entries(bookletMap)) {
         const bookletId = parseInt(bookletName.replace(/\D/g, "")) || 0;
@@ -233,7 +267,6 @@ export const processSurveyExcels = async (
         if (validQuestionIds.length !== questionIds.length) {
             throw new Error("Some question IDs do not exist");
         }
-
         await prisma.booklet.create({
             data: {
                 bookletId,
@@ -243,10 +276,10 @@ export const processSurveyExcels = async (
                 },
                 excelFileUrl: "",
                 createdById,
+                version: updatedSurvey.bookletVersion,
             },
         });
     }
-
     return prisma.survey.update({
         where: { id: surveyId },
         data: {

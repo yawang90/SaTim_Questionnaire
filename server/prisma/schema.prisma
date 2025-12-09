@@ -77,21 +77,23 @@ model survey {
   instances              surveyInstance[]
   booklet                booklet[]
   bookletMappingExcelUrl String?
+  bookletVersion         Int              @default(0)
 
   createdBy users @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users @relation("UpdatedSurveys", fields: [updatedById], references: [id])
 }
 
 model surveyInstance {
-  id          Int      @id @default(autoincrement())
-  surveyId    Int
-  name        String
-  validFrom   DateTime
-  validTo     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  createdById Int
-  updatedById Int
+  id             Int      @id @default(autoincrement())
+  surveyId       Int
+  name           String
+  validFrom      DateTime
+  validTo        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdById    Int
+  updatedById    Int
+  bookletVersion Int      @default(0)
 
   survey    survey @relation(fields: [surveyId], references: [id])
   createdBy users  @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
@@ -112,6 +114,7 @@ model booklet {
   assignedCount Int        @default(0)
   createdAt     DateTime   @default(now())
   createdById   Int
+  version       Int        @default(0)
 
   survey    survey @relation(fields: [surveyId], references: [id])
   createdBy users  @relation("CreatedBooklets", fields: [createdById], references: [id])

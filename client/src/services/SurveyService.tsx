@@ -121,18 +121,10 @@ export async function getSurveyById(id: string): Promise<any> {
         const msg = await res.text();
         throw new Error(msg);
     }
-
     const s = await res.json();
-    const now = new Date();
-        console.log(s)
     return {
         ...s,
-        hasActiveInstance:
-            s.instances?.some((inst: any) => {
-                const from = new Date(inst.validFrom);
-                const to = new Date(inst.validTo);
-                return from <= now && now <= to;
-            }) ?? false,
+        hasActiveInstance: s.hasActiveInstance,
         booklet: s.booklet ?? [],
         hasBooklet: (s.booklet?.length ?? 0) > 0,};
 }
@@ -191,6 +183,7 @@ export interface Booklet {
     questions: any[];
     excelFileUrl: string;
     createdAt: string;
+    version: number;
 }
 
 export async function getSurveyBooklets(surveyId: string): Promise<Booklet[]> {

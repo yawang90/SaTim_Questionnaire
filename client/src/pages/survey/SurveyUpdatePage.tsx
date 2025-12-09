@@ -107,9 +107,11 @@ const SurveyUpdatePage = () => {
     }, [id]);
 
     const handleSaveFiles = async () => {
-        if (!survey || !file1 || !file2) return;
-
         setSaving(true);
+        if (!survey || !file1 || !file2) {
+            setSaving(false);
+            return;
+        }
         try {
             await uploadSurveyExcels(survey.id.toString(), file1, file2);
             setSnackbar({ open: true, message: "Dateien erfolgreich hochgeladen.", severity: "success" });
@@ -243,7 +245,7 @@ const SurveyUpdatePage = () => {
                     <Typography sx={{ pb: 3 }} variant="h5" gutterBottom>Aufgaben Zuordnung (Booklet)</Typography>
                     <Tooltip title={survey.hasActiveInstance ? "Die Design-Matrix kann nicht geändert werden, solange aktive Durchführungen existieren." : ""} arrow>
                        <span>
-                        <Button disabled={survey.hasActiveInstance} variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
+                        <Button disabled={survey.hasActiveInstance || saving} variant="contained" color="primary" onClick={() => setUploadDialogOpen(true)}>
                             Design-Matrix hochladen
                         </Button></span>
                     </Tooltip>
@@ -253,10 +255,12 @@ const SurveyUpdatePage = () => {
                     <Paper sx={{ p: 3 }}>
                         <Typography sx={{ pb: 3 }} variant="h5">Booklets</Typography>
                         <Typography sx={{ pb: 1 }}>Zuvor hochgeladene Booklets werden hier angezeigt. Bei erneutem hochladen der Design-Matrix, werden alte Booklets automatisch gelöscht.</Typography>
+                        <Typography sx={{ pb: 1 }}>
+                            {booklets.length > 0 && `Booklet Version: ${booklets[0].version}`}
+                        </Typography>
                         <Button variant="outlined" onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
-
                         <Dialog open={bookletDialogOpen} onClose={() => setBookletDialogOpen(false)} fullScreen maxWidth="sm">
                             <DialogTitle>Booklets</DialogTitle>
                             <DialogContent>
