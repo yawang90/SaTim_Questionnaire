@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from "react-router-dom";
-import MainLayout from "../../layouts/MainLayout.tsx";
-import { v4 as uuidv4 } from "uuid";
-import { getQuiz, type Quiz as QuizType } from "../../services/QuizService.tsx";
-import {Box} from "@mui/material";
+import React, {useEffect, useState} from 'react';
+import {useParams} from "react-router-dom";
+import {v4 as uuidv4} from "uuid";
+import {getQuiz, type Quiz as QuizType} from "../../services/QuizService.tsx";
+import QuizLayout from "../../layouts/QuizLayout.tsx";
+import GeneralLayout from "../../layouts/GeneralLayout.tsx";
+import type {useEditor} from "@tiptap/react";
+import {Preview} from "../../components/Editor/Preview.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -11,6 +13,7 @@ export default function QuizPage() {
     const [loading, setLoading] = useState(true);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
 
     useEffect(() => {
         const key = "quizUserId";
@@ -50,20 +53,14 @@ export default function QuizPage() {
         fetchQuizData();
     }, [userId, id]);
 
-    if (loading) return <MainLayout><div>Laden...</div></MainLayout>;
-    if (error) return <MainLayout><div>Fehler: {error}</div></MainLayout>;
+    if (loading) return <GeneralLayout><h4>Laden...</h4></GeneralLayout>;
+    if (error) return <GeneralLayout><h4>Fehler: {error}</h4></GeneralLayout>;
 
     return (
-        <MainLayout>
-            <Box sx={{ minHeight: "100vh", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
+        <QuizLayout totalQuestions={quiz?.questions?.length || 0} answeredQuestions={2} userId={userId || ""}>
             <div>
-                <p>UserId: {userId}</p>
-                <h2>{quiz?.title}</h2>
-                <ul>
-                    {quiz?.questions.map(q => (<li key={q.id}>{q.text}</li>
-                    ))}
-                </ul>
-            </div></Box>
-        </MainLayout>
+                <Preview content={quiz?.questions?.at(0).contentJson || {}} editorRef={editorRef} />
+            </div>
+        </QuizLayout>
     );
 }

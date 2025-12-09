@@ -123,7 +123,7 @@ const SurveyInstancePage = () => {
 
     const handleOpenLinkDialog = (instance: SurveyInstance) => {
         setSelectedInstance(instance);
-        const url = `${window.location.origin}/survey/${survey?.id}/instance/${instance.id}`;
+        const url = `${window.location.origin}/quiz/${instance.id}`;
         setGeneratedLink(url);
         setLinkDialogOpen(true);
     };

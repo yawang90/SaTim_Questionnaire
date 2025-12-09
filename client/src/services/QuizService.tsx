@@ -5,6 +5,7 @@ export interface QuizQuestion {
     id: number;
     text: string;
     options?: string[];
+    contentJson: JSON;
     type: "text" | "single-choice" | "multi-choice";
 }
 
@@ -22,6 +23,7 @@ export interface AnswerDTO {
 /**
  * Fetch a quiz by id
  * @param id Quiz ID
+ * @param userId
  * @returns Quiz object
  */
 export async function getQuiz(id: string, userId: string): Promise<Quiz> {
