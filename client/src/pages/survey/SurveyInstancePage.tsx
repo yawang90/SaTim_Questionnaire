@@ -208,8 +208,8 @@ const SurveyInstancePage = () => {
                 <Paper sx={{ p: 3 }}>
                     <Typography variant="h5" gutterBottom>Durchführungen</Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <Tooltip title={!survey.hasBooklet ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden." : ""} arrow>
-                       <span><Button disabled={!survey.hasBooklet} variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}>Neue Durchführung erstellen</Button></span>
+                    <Tooltip title={!survey.hasBooklet ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden." : survey.status === "FINISHED" ? "Die Erhebung wurde bereits geschlossen, es können keine Durchführungen mehr angelegt werden.": ""} arrow>
+                       <span><Button disabled={!survey.hasBooklet || survey.status === "FINISHED"} variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}>Neue Durchführung erstellen</Button></span>
                     </Tooltip>
                     <Divider sx={{ my: 2 }} />
                     <Box sx={{ display: "flex", mb: 2 }}>

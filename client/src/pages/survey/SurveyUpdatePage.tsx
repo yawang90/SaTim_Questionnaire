@@ -159,9 +159,12 @@ const SurveyUpdatePage = () => {
         }
     };
 
+    const uniqueQuestionCount = Array.from(
+        new Set(booklets.flatMap(b => b.questions.map(q => q.id)))
+    ).length;
+
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
-
     return (
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
@@ -254,10 +257,13 @@ const SurveyUpdatePage = () => {
                 {survey.mode === "DESIGN" && booklets.length > 0 && (
                     <Paper sx={{ p: 3 }}>
                         <Typography sx={{ pb: 3 }} variant="h5">Booklets</Typography>
-                        <Typography sx={{ pb: 1 }}>Zuvor hochgeladene Booklets werden hier angezeigt. Bei erneutem hochladen der Design-Matrix, werden alte Booklets automatisch gelöscht.</Typography>
+                        <Typography sx={{ pb: 1 }}>Zuvor hochgeladene Booklets werden hier angezeigt. Bei erneutem hochladen der Design-Matrix, werden alte Booklets automatisch gelöscht und die Versions Zahl erhöht.</Typography>
                         <Typography sx={{ pb: 1 }}>
                             {booklets.length > 0 && `Booklet Version: ${booklets[0].version}`}
                         </Typography>
+                        <Typography sx={{ pb: 1 }}>  {booklets.length > 0 && `Anzahl Slots: ${uniqueQuestionCount}`}</Typography>
+                        <Typography sx={{ pb: 1 }}>  {booklets.length > 0 && `Anzahl Booklets: ${booklets.length}`}</Typography>
+
                         <Button variant="outlined" onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
