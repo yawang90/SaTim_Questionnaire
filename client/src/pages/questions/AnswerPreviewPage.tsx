@@ -20,9 +20,15 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {Preview} from '../../components/Editor/Preview';
 import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
-import {type Block, mapQuestionsStatus, parseContentToBlocks, PrettyTestResult} from "./AnswerUtils.tsx";
+import {
+    type Block,
+    extractAnswersFromJson,
+    mapQuestionsStatus,
+    parseContentToBlocks,
+} from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
+import PrettyTestResult from "./PrettyTestResult.tsx";
 
 export default function AnswerPreviewPage() {
     const { id } = useParams<{ id: string }>();
@@ -103,91 +109,6 @@ export default function AnswerPreviewPage() {
             setLoading(false);
         }
     };
-
-    const extractAnswersFromJson = (doc: JSONContent, blocks: Block[]): { key: string; value: any }[] => {
-        const answers: { key: string; value: any }[] = blocks
-            .map(block => {
-                switch (block.kind) {
-                    case 'sc':
-                    case 'mc':
-                        return {
-                            key: block.key,
-                            value: block.choices.map(choice => ({ id: choice.id, selected: false })),
-                        };
-                    case 'freeText':
-                    case 'freeTextInline':
-                    case 'numeric':
-                    case 'algebra':
-                    case 'geoGebra':
-                        return { key: block.key, value: '' };
-                    default:
-                        return undefined;
-                }
-            })
-            .filter((a): a is { key: string; value: any } => a !== undefined);
-
-
-        interface TipTapNode {
-            type: string;
-            attrs?: Record<string, any>;
-            content?: TipTapNode[];
-            text?: string;
-        }
-
-        const walk = (nodes: TipTapNode[]) => {
-            for (const node of nodes) {
-                if (!node || !node.type) continue;
-
-                const block = blocks.find(b => b.key === node.attrs?.id || b.key === node.attrs?.groupId);
-                if (!block) {
-                    if (node.content) walk(node.content);
-                    continue;
-                }
-
-                const answer = answers.find(a => a.key === block.key)!;
-
-                switch (block.kind) {
-                    case 'sc':
-                    case 'mc':
-                        { const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
-                            `div.mc-choice-wrapper input[name="group-${block.key}"]`
-                        );
-                        checkboxNodes.forEach((input, i) => {
-                            if (answer.value[i]) answer.value[i].selected = input.checked;
-                        });
-                        break; }
-                    case 'freeText':
-                    case 'freeTextInline':
-                        { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                            `[data-node-view-wrapper] [id="${block.key}"]`
-                        );
-                        if (inputEl) answer.value = inputEl.value;
-                        break; }
-                    case 'algebra': {
-                        answer.value = node.attrs?.value ?? '';
-                        break;
-                    }
-                    case 'numeric':
-                        { const numericEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                            `[data-node-view-wrapper] [id="${block.key}"]`
-                        );
-                        if (numericEl) answer.value = numericEl.value;
-                        break; }
-
-                    case 'geoGebra':
-                        answer.value = node.attrs?.materialId ?? '';
-                        break;
-                }
-
-                if (node.content) walk(node.content);
-            }
-        };
-
-        if (doc.content) walk(doc.content as TipTapNode[]);
-
-        return answers;
-    };
-
 
     return (
         <MainLayout>

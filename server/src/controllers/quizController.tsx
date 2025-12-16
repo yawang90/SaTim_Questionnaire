@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import {getQuiz} from "../services/quizService.js";
+import {getQuiz, submitQuizAnswer} from "../services/quizService.js";
 
 /**
  * Get a quiz by ID
@@ -25,20 +25,21 @@ export const getQuizHandler = async (req: Request, res: Response) => {
  */
 export const submitAnswerHandler = async (req: Request, res: Response) => {
     try {
-        const quizId = req.params.id;
-        const userId = req.body.userId;
-        const { questionId, answer } = req.body;
+        const surveyId = Number(req.params.id);
+        const {userId, instanceId, bookletId, questionId, answer,} = req.body;
 
-        if (!quizId || !userId || !questionId || answer === undefined) {
+        if (!surveyId || !instanceId || !bookletId || !userId || !questionId || answer === undefined) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-      //  const result = await submitQuizAnswer(quizId, userId, questionId, answer);
-        //      res.status(200).json({ success: true, result });
-    } catch (err) {
-        console.error("Error submitting answer:", err);
+        const result = await submitQuizAnswer({surveyId, instanceId, bookletId, userId, questionId, answerJson: answer,});
+        res.status(200).json({ success: true, result });
+    } catch (err: any) {
+        if (err.message === "QUESTION_ALREADY_ANSWERED") {
+            return res.status(409).json({ error: "Question already answered" });
+        }
+        console.error(err);
         res.status(500).json({ error: "Failed to submit answer" });
     }
 };
-
 

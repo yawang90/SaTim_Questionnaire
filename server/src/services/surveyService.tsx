@@ -249,11 +249,6 @@ export const processSurveyExcels = async (
     await prisma.booklet.deleteMany({
         where: { surveyId },
     });
-    const updatedSurvey = await prisma.survey.update({
-        where: { id: surveyId },
-        data: { bookletVersion: { increment: 1 } },
-        select: { bookletVersion: true }
-    });
 
     for (const [bookletName, questionIds] of Object.entries(bookletMap)) {
         const bookletId = parseInt(bookletName.replace(/\D/g, "")) || 0;
@@ -263,10 +258,16 @@ export const processSurveyExcels = async (
             select: { id: true },
         });
         const validQuestionIds = validQuestions.map(q => q.id);
+        const uniqueQuestionIds = [...new Set(questionIds)];
 
-        if (validQuestionIds.length !== questionIds.length) {
+        if (validQuestionIds.length !== uniqueQuestionIds.length) {
             throw new Error("Some question IDs do not exist");
         }
+        const updatedSurvey = await prisma.survey.update({
+            where: { id: surveyId },
+            data: { bookletVersion: { increment: 1 } },
+            select: { bookletVersion: true }
+        });
         await prisma.booklet.create({
             data: {
                 bookletId,

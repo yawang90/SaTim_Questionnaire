@@ -23,18 +23,13 @@ export interface AnswerDTO {
 /**
  * Fetch a quiz by id
  * @param id Quiz ID
- * @param userId
+ * @param userId Cookie Session ID
  * @returns Quiz object
  */
 export async function getQuiz(id: string, userId: string): Promise<Quiz> {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("User not authenticated");
-
     const res = await fetch(`${API_BASE}/api/quiz/${id}?userId=${userId}`, {
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        },
+            "Content-Type": "application/json"},
     });
 
     if (!res.ok) {
@@ -49,18 +44,14 @@ export async function getQuiz(id: string, userId: string): Promise<Quiz> {
  * Submit an answer for a quiz question
  * @param quizId Quiz ID
  * @param answer Answer object
+ * @param userId Cookie Session ID
  * @returns Confirmation or saved answer
  */
 export async function submitAnswer(quizId: string, answer: AnswerDTO, userId: string) {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("User not authenticated");
-
     const res = await fetch(`${API_BASE}/api/quiz/${quizId}/answer?userId=${userId}`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        },
+            "Content-Type": "application/json"},
         body: JSON.stringify(answer),
     });
 

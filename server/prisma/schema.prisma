@@ -79,10 +79,9 @@ model survey {
   bookletMappingExcelUrl String?
   bookletVersion         Int              @default(0)
 
-  createdBy users @relation("CreatedSurveys", fields: [createdById], references: [id])
-  updatedBy users @relation("UpdatedSurveys", fields: [updatedById], references: [id])
-
-  answer answer[]
+  createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
+  updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
+  answer    answer[] @relation("BelogsToSurvey")
 }
 
 model surveyInstance {
@@ -97,11 +96,10 @@ model surveyInstance {
   updatedById    Int
   bookletVersion Int      @default(0)
 
-  survey    survey @relation(fields: [surveyId], references: [id])
-  createdBy users  @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
-  updatedBy users  @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
-
-  answer answer[]
+  survey    survey   @relation(fields: [surveyId], references: [id])
+  createdBy users    @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
+  updatedBy users    @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
+  answer    answer[] @relation("BelongsToInstance")
 }
 
 enum survey_mode {
@@ -122,22 +120,36 @@ model booklet {
 
   survey    survey   @relation(fields: [surveyId], references: [id])
   createdBy users    @relation("CreatedBooklets", fields: [createdById], references: [id])
-  answer    answer[]
+  answer    answer[] @relation("BelongsToBooklet")
 
   @@index([surveyId])
 }
 
 model answer {
-  id         Int      @id @default(autoincrement())
-  surveyId   Int
-  instanceId Int
-  bookletId  Int
-  userId     String
-  answers    Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int          @id @default(autoincrement())
+  surveyId    Int
+  instanceId  Int
+  bookletId   Int
+  userId      String
+  userAnswers userAnswer[] @relation("BelongsToAnswer")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  survey   survey         @relation(fields: [surveyId], references: [id])
-  instance surveyInstance @relation(fields: [instanceId], references: [id])
-  booklet  booklet        @relation(fields: [bookletId], references: [id])
+  survey   survey         @relation("BelogsToSurvey", fields: [surveyId], references: [id])
+  instance surveyInstance @relation("BelongsToInstance", fields: [instanceId], references: [id])
+  booklet  booklet        @relation("BelongsToBooklet", fields: [bookletId], references: [id])
+
+  @@unique([surveyId, instanceId, bookletId, userId])
+}
+
+model userAnswer {
+  id         Int      @id @default(autoincrement())
+  answerId   Int
+  questionId Int
+  answerJson Json
+  createdAt  DateTime @default(now())
+  solvedTime DateTime @default(now())
+  answer     answer   @relation("BelongsToAnswer", fields: [answerId], references: [id])
+
+  @@unique([answerId, questionId])
 }

@@ -1,6 +1,5 @@
-import {Box, Paper, Typography} from "@mui/material";
 import type {JSONContent} from "@tiptap/core";
-import { v4 as uuidv4 } from "uuid";
+import {v4 as uuidv4} from "uuid";
 
 export type Choice = { id: string; text: string; html?: string;};
 
@@ -120,68 +119,85 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
     return Object.values(blockMap);
 }
 
-export function PrettyTestResult({ result }: { result: any }) {
-    if (!result)
-        return <Typography>Keine Daten vorhanden.</Typography>;
-
-    if (result.error)
-        return (
-            <Typography color="error">
-                {result.error}
-            </Typography>
-        );
-
-    return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Header */}
-            <Box>
-                <Typography variant="h6">
-                    Ergebnis
-                </Typography>
-                <Typography variant="body1">
-                    Richtig: <strong>{result.score ?? "-"}</strong> / {result.total ?? "-"}
-                </Typography>
-            </Box>
-
-            {/* Details */}
-            {Array.isArray(result.details) && result.details.length > 0 && (
-                <Box sx={{ mt: 1 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        Details:
-                    </Typography>
-
-                    {result.details.map((d: any, i: number) => (
-                        <Paper
-                            key={i}
-                            sx={{p: 2, mb: 1, backgroundColor: d.correct ? "#e8f5e9" : "#ffebee", border: "1px solid", borderColor: d.correct ? "#2e7d32" : "#c62828",}}>
-                            <Typography variant="body1">
-                                <strong>Frage:</strong> {d.key}
-                            </Typography>
-
-                            <Typography variant="body2">
-                                <strong>Ihre Antwort:</strong>{" "}
-                                {formatValue(d.given)}
-                            </Typography>
-
-                            <Typography variant="body2">
-                                <strong>Erwartet:</strong>{" "}
-                                {formatValue(d.expected)}
-                            </Typography>
-
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                <strong>Status:</strong>{" "}
-                                {d.correct ? "✔Richtig" : "Falsch"}
-                            </Typography>
-                        </Paper>
-                    ))}
-                </Box>
-            )}
-        </Box>
-    );
+export interface TipTapNode {
+    type: string;
+    attrs?: Record<string, any>;
+    content?: TipTapNode[];
+    text?: string;
 }
 
-function formatValue(value: any) {
-    if (value === null || value === undefined) return "–";
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value);
+export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { key: string; value: any }[] {
+    const answers: { key: string; value: any }[] = blocks
+        .map(block => {
+            switch (block.kind) {
+                case 'sc':
+                case 'mc':
+                    return {
+                        key: block.key,
+                        value: block.choices.map(choice => ({ id: choice.id, selected: false })),
+                    };
+                case 'freeText':
+                case 'freeTextInline':
+                case 'numeric':
+                case 'algebra':
+                case 'geoGebra':
+                    return { key: block.key, value: '' };
+                default:
+                    return undefined;
+            }
+        })
+        .filter((a): a is { key: string; value: any } => a !== undefined);
+
+    const walk = (nodes: TipTapNode[]) => {
+        for (const node of nodes) {
+            if (!node || !node.type) continue;
+
+            const block = blocks.find(b => b.key === node.attrs?.id || b.key === node.attrs?.groupId);
+            if (!block) {
+                if (node.content) walk(node.content);
+                continue;
+            }
+
+            const answer = answers.find(a => a.key === block.key)!;
+
+            switch (block.kind) {
+                case 'sc':
+                case 'mc':
+                { const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
+                    `div.mc-choice-wrapper input[name="group-${block.key}"]`
+                );
+                    checkboxNodes.forEach((input, i) => {
+                        if (answer.value[i]) answer.value[i].selected = input.checked;
+                    });
+                    break; }
+                case 'freeText':
+                case 'freeTextInline':
+                { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                    `[data-node-view-wrapper] [id="${block.key}"]`
+                );
+                    if (inputEl) answer.value = inputEl.value;
+                    break; }
+                case 'algebra': {
+                    answer.value = node.attrs?.value ?? '';
+                    break;
+                }
+                case 'numeric':
+                { const numericEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                    `[data-node-view-wrapper] [id="${block.key}"]`
+                );
+                    if (numericEl) answer.value = numericEl.value;
+                    break; }
+
+                case 'geoGebra':
+                    answer.value = node.attrs?.materialId ?? '';
+                    break;
+            }
+
+            if (node.content) walk(node.content);
+        }
+    };
+
+    if (doc.content) walk(doc.content as TipTapNode[]);
+
+    return answers;
 }
