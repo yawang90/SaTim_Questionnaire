@@ -165,9 +165,15 @@ export const initialFormSchema: MetaField[] = [
 
     {
         key: "gradeLevels",
-        label: "Jahrgangsstufe",
+        label: "Nicht geeignet für Jahrgangsstufe",
         type: "checkbox",
         options: ["7", "8", "9", "10", "11", "12"],
         optionsValue: {},
+    },
+    {
+        key: "gradeLevelsFreeText",
+        label: "Mittelschweres Item für",
+        type: "textarea",
+        value: "",
     },
 ];
