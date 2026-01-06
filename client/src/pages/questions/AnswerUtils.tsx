@@ -9,7 +9,7 @@ export type Block =
     | { kind: "freeText"; key: string }
     | { kind: "freeTextInline"; key: string }
     | { kind: "numeric"; key: string }
-    | { kind: "algebra"; key: string }
+    | { kind: "lineEquation"; key: string }
     | { kind: "geoGebra"; key: string };
 
 
@@ -99,12 +99,11 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
             }
 
             if (node.type === "numericInput") {
-                const mode = node.attrs?.mode ?? "numeric";
-                if (mode === "algebra") {
-                    blockMap[nodeId] = { kind: "algebra", key: nodeId };
-                } else {
-                    blockMap[nodeId] = { kind: "numeric", key: nodeId };
-                }
+                blockMap[nodeId] = { kind: "numeric", key: nodeId };
+            }
+
+            if (node.type === "lineEquation") {
+                blockMap[nodeId] = { kind: "lineEquation", key: nodeId };
             }
 
             if (node.type === "geoGebra") {
@@ -139,7 +138,7 @@ export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { ke
                 case 'freeText':
                 case 'freeTextInline':
                 case 'numeric':
-                case 'algebra':
+                case 'lineEquation':
                 case 'geoGebra':
                     return { key: block.key, value: '' };
                 default:
@@ -177,7 +176,7 @@ export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { ke
                 );
                     if (inputEl) answer.value = inputEl.value;
                     break; }
-                case 'algebra': {
+                case 'lineEquation': {
                     answer.value = node.attrs?.value ?? '';
                     break;
                 }

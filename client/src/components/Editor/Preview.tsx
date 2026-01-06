@@ -1,7 +1,7 @@
 import React from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import {FreeText, FreeTextInline, GeoGebra, MCChoice, NumericInput, SingleChoice} from './NodeAnswerPlugins.tsx';
+import {FreeText, FreeTextInline, GeoGebra, MCChoice, NumericInput, LineEquation, SingleChoice} from './NodeAnswerPlugins.tsx';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -40,6 +40,7 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             FreeText,
             FreeTextInline,
             NumericInput,
+            LineEquation,
             MCChoice, LatexDisplay, SingleChoice
         ],
         content: content || { type: 'doc', content: [] },

@@ -54,7 +54,7 @@ export default function AnswerEditorPage() {
                     initial[b.key] = null;
                     break;
                 case "numeric":
-                case "algebra":
+                case "lineEquation":
                     initial[b.key] = [{ operator: "=", value: "" }];
                     break;
                 case "freeText":
@@ -146,7 +146,7 @@ export default function AnswerEditorPage() {
                         payload[b.key] = { type: "sc", value: val ?? null };
                         break;
                     case "numeric":
-                    case "algebra":
+                    case "lineEquation":
                         payload[b.key] = { type: b.kind, value: val };
                         break;
                     case "freeText":
@@ -187,9 +187,9 @@ export default function AnswerEditorPage() {
                     break;
 
                 case "numeric":
-                case "algebra":
+                case "lineEquation":
                     if (!Array.isArray(val) || val.length === 0 || !val[0].value?.toString().trim()) {
-                        errors.push(`${b.kind === "numeric" ? "Numerische" : "Algebra"} Eingabe (${b.key}) braucht einen gültigen Wert.`);
+                        errors.push(`${b.kind === "numeric" ? "Numerische" : "Geraden Gleichnung"} Eingabe (${b.key}) braucht einen gültigen Wert.`);
                     }
                     break;
 
@@ -242,8 +242,8 @@ export default function AnswerEditorPage() {
                                                             ? `Freitext Inline (${idx + 1})`
                                                             : answerType.kind === "numeric"
                                                                 ? `Numerische Eingabe (${idx + 1})`
-                                                                : answerType.kind === "algebra"
-                                                                    ? `Algebra Eingabe (${idx + 1})`
+                                                                : answerType.kind === "lineEquation"
+                                                                    ? `Geradengleichung (${idx + 1})`
                                                                     : `GeoGebra (${idx + 1})`}
                                         </Typography>
                                     </AccordionSummary>
@@ -313,8 +313,8 @@ export default function AnswerEditorPage() {
                                             </FormControl>
                                         )}
 
-                                        {/* Algebra */}
-                                        {answerType.kind === "algebra" && (
+                                        {/* LineEquation */}
+                                        {answerType.kind === "lineEquation" && (
                                             <FormControl fullWidth>
                                                 <AlgebraAnswer
                                                     conditions={answers[answerType.key] ?? [{ operator: "=", value: "" }]}

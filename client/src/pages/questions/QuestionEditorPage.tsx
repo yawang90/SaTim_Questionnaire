@@ -22,7 +22,7 @@ import {
     FreeText,
     FreeTextInline,
     GeoGebra,
-    LatexDisplay,
+    LatexDisplay, LineEquation,
     MCChoice,
     NumericInput,
     SingleChoice
@@ -50,7 +50,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
-            MCChoice, FreeText, FreeTextInline, NumericInput, GeoGebra, LatexDisplay, SingleChoice
+            MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -110,6 +110,14 @@ export default function QuestionEditorPage() {
         editor.chain().focus().insertContent({
             type: 'numericInput',
             attrs: {id: uuidv4(), mode: 'numeric',},
+        }).run();
+    };
+
+    const addLineEquation = () => {
+        if (!editor) return;
+        editor.chain().focus().insertContent({
+            type: 'lineEquation',
+            attrs: {id: uuidv4(), mode: 'lineEquation',},
         }).run();
     };
 
@@ -222,7 +230,8 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addSingleChoiceBlock}>Single Choice Option</MenuItem>
                                 <MenuItem onClick={addFreeText}>Freitext Block</MenuItem>
                                 <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
-                                <MenuItem onClick={addNumeric}>Numerisch/Algebra</MenuItem>
+                                <MenuItem onClick={addNumeric}>Numerisch</MenuItem>
+                                <MenuItem onClick={addLineEquation}>Geradengleichung</MenuItem>
                                 <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
                             </Menu>
                         </Box>

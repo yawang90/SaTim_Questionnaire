@@ -7,6 +7,7 @@ import {FreeTextInlineEditorComponent} from "../FreeText/FreeTextInlineEditorCom
 import {NumericEditorComponent} from "../Numeric/NumericEditorComponent.tsx";
 import {LaTeXComponent} from "../LaTeX/LaTeXComponent.tsx";
 import {SingleChoiceEditorComponent} from "../SC/SingleChoiceEditorComponent.tsx";
+import {LineEquationEditorComponent} from "../LineEquation/LineEquationEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -224,3 +225,37 @@ export const LatexDisplay = Node.create({
         return ReactNodeViewRenderer(LaTeXComponent);
     },
 });
+
+export const LineEquation = Node.create({
+    name: 'lineEquation',
+
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            placeholder: { default: 'Geradengleichung Eingabe' },
+        }
+    },
+
+    parseHTML() {
+        return [{ tag: 'span[data-type="line-equation"]' }]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'line-equation',
+                class: 'line-equation',
+            }),
+        ]
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(LineEquationEditorComponent)
+    },
+})
