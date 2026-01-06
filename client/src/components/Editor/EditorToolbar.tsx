@@ -28,13 +28,14 @@ import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 import LooksOneIcon from '@mui/icons-material/LooksOne';
 import LooksTwoIcon from '@mui/icons-material/LooksTwo';
 import ImageIcon from '@mui/icons-material/Image';
-import TableChartIcon from '@mui/icons-material/TableChart';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import {uploadImage} from '../../services/EditorService.tsx';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 
 const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 const fontSizes = ['12px', '14px', '16px', '18px', '24px', '32px'];
@@ -247,7 +248,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                 {/* Table */}
                 <Tooltip title="Tabelle einfügen">
                     <IconButton sx={{ color: 'text.secondary' }} onClick={() => setTableDialogOpen(true)}>
-                        <TableChartIcon />
+                        <PlaylistAddIcon />
+                    </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Tabelle löschen">
+                    <IconButton sx={{color: 'text.secondary'}} onClick={() => editor?.chain().focus().deleteTable().run()} disabled={!editor?.isActive('table')}>
+                    <PlaylistRemoveIcon/>
                     </IconButton>
                 </Tooltip>
 

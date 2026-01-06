@@ -22,7 +22,8 @@ import {
     FreeText,
     FreeTextInline,
     GeoGebra,
-    LatexDisplay, LineEquation,
+    LatexDisplay,
+    LineEquation,
     MCChoice,
     NumericInput,
     SingleChoice
@@ -49,7 +50,7 @@ export default function QuestionEditorPage() {
         extensions: [
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
-            Link, Table.configure({resizable: true}), TableRow, TableCell, TableHeader, Image,
+            Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, Image,
             MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',

@@ -2,10 +2,12 @@ import React, {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
     Alert,
+    Backdrop,
     Box,
     Button,
     CardContent,
     Checkbox,
+    CircularProgress,
     FormControlLabel,
     FormGroup,
     MenuItem,
@@ -226,6 +228,12 @@ export default function MetaDataPage() {
                     </Paper>
                 </Box>
             </QuestionLayout>
+            <Backdrop
+                sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={loading}>
+                <CircularProgress color="inherit" />
+            </Backdrop>
+
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={4000}
