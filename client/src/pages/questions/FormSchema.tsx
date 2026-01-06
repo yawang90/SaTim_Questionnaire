@@ -7,6 +7,7 @@ export const initialFormSchema: MetaField[] = [
         type: "text",
         placeholder: "Aufgaben Titel",
         value: "",
+        required: true,
     },
     {
         key: "author",
@@ -131,11 +132,16 @@ export const initialFormSchema: MetaField[] = [
         ],
         optionsValue: {},
     },
-
     {
         key: "answerFormat",
         label: "Antwortformat",
-        type: "text",
+        type: "select",
+        options: [
+            "Geschlossen",
+            "Offene Formel- / Zahleingabe",
+            "Offene Texteingabe",
+            "Offene Zeichnung / Konstruktion"
+        ],
         value: "",
     },
     {
@@ -173,7 +179,16 @@ export const initialFormSchema: MetaField[] = [
     {
         key: "gradeLevelsFreeText",
         label: "Mittelschweres Item für",
-        type: "textarea",
+        type: "select",
+        options: [
+            "JG 07",
+            "JG 08",
+            "JG 09",
+            "JG 10",
+            "JG 11",
+            "JG 12"
+        ],
         value: "",
     },
+
 ];

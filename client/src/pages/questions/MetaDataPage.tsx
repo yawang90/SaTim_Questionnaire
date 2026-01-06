@@ -1,13 +1,16 @@
 import React, {useEffect, useState} from "react";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
+    Alert,
     Box,
     Button,
     CardContent,
     Checkbox,
     FormControlLabel,
     FormGroup,
+    MenuItem,
     Paper,
+    Snackbar,
     TextField,
     Typography,
 } from "@mui/material";
@@ -17,7 +20,7 @@ import {initialFormSchema} from "./FormSchema.tsx";
 import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 
-type FieldType = "text" | "textarea" | "checkbox";
+type FieldType = "text" | "textarea" | "checkbox" | "select";
 const groupId = "999";
 
 export interface MetaField {
@@ -28,12 +31,14 @@ export interface MetaField {
     options?: string[];
     optionsValue?: Record<string, boolean>;
     placeholder?: string;
+    required?: boolean;
 }
 
 export default function MetaDataPage() {
     const navigate = useNavigate();
     const [formSchema, setFormSchema] = useState<MetaField[]>(initialFormSchema);
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState<Record<string, boolean>>({});
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
@@ -42,9 +47,14 @@ export default function MetaDataPage() {
     const { id } = useParams<{ id: string }>();
     const handleTextChange = (key: string, value: string) => {
         setFormSchema((prev) =>
-            prev.map((field) => field.key === key ? { ...field, value } : field)
+            prev.map((field) =>
+                field.key === key ? { ...field, value } : field
+            )
         );
+
+        setErrors((prev) => ({ ...prev, [key]: false }));
     };
+
 
     const handleCheckboxChange = (key: string, option: string, checked: boolean) => {
         setFormSchema((prev) =>
@@ -55,6 +65,24 @@ export default function MetaDataPage() {
     };
 
     const handleSave = async () => {
+        const newErrors: Record<string, boolean> = {};
+
+        formSchema.forEach((field) => {
+            if (field.required && !field.value?.trim()) {
+                newErrors[field.key] = true;
+            }
+        });
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setSnackbar({
+                open: true,
+                message: "Bitte füllen Sie alle Pflichtfelder aus.",
+                severity: "error",
+            });
+            return;
+        }
+        setErrors({});
         setLoading(true);
         try {
             if (id) {
@@ -114,8 +142,54 @@ export default function MetaDataPage() {
                                             <Typography variant="h6" sx={{ mb: 1 }}>
                                                 {field.label}
                                             </Typography>
-                                            <TextField fullWidth multiline={field.type === "textarea"} value={field.value || ""} onChange={(e) => handleTextChange(field.key, e.target.value)} placeholder={field.placeholder}/>
+                                            <TextField
+                                                fullWidth
+                                                multiline={field.type === "textarea"}
+                                                value={field.value || ""}
+                                                onChange={(e) => handleTextChange(field.key, e.target.value)}
+                                                placeholder={field.placeholder}
+                                                required={field.required}
+                                                error={errors[field.key]}
+                                                helperText={
+                                                    errors[field.key]
+                                                        ? "Dieses Feld ist erforderlich"
+                                                        : field.required
+                                                            ? "Pflichtfeld"
+                                                            : ""
+                                                }
+                                            />
                                         </Box>);}
+                                if (field.type === "select") {
+                                    return (
+                                        <Box key={field.key}>
+                                            <Typography variant="h6" sx={{ mb: 1 }}>
+                                                {field.label}
+                                            </Typography>
+
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                value={field.value || ""}
+                                                onChange={(e) => handleTextChange(field.key, e.target.value)}
+                                                required={field.required}
+                                                error={errors[field.key]}
+                                                helperText={
+                                                    errors[field.key]
+                                                        ? "Bitte wählen Sie eine Option"
+                                                        : field.required
+                                                            ? "Pflichtfeld"
+                                                            : ""
+                                                }
+                                            >
+                                                {field.options?.map((option) => (
+                                                    <MenuItem key={option} value={option}>
+                                                        {option}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Box>
+                                    );
+                                }
 
                                 if (field.type === "checkbox") {
                                     return (
@@ -152,6 +226,19 @@ export default function MetaDataPage() {
                     </Paper>
                 </Box>
             </QuestionLayout>
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                <Alert
+                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                    severity={snackbar.severity}
+                    sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+
         </MainLayout>
     );
 }
