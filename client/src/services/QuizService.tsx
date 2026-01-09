@@ -10,10 +10,19 @@ export interface QuizQuestion {
 }
 
 export interface Quiz {
-    id: string;
-    title: string;
-    questions: QuizQuestion[];
+    surveyId: number;
+    surveyTitle: string;
+    instanceId: number;
+    bookletId: number;
+    question: {
+        id: number;
+        contentJson?: any;
+        contentHtml?: string | null;
+        correctAnswers?: any;
+    } | null;
+    answerId: number;
 }
+
 
 export interface AnswerDTO {
     questionId: number;
@@ -47,8 +56,8 @@ export async function getQuiz(id: string, userId: string): Promise<Quiz> {
  * @param userId Cookie Session ID
  * @returns Confirmation or saved answer
  */
-export async function submitAnswer(quizId: string, answer: AnswerDTO, userId: string) {
-    const res = await fetch(`${API_BASE}/api/quiz/${quizId}/answer?userId=${userId}`, {
+export async function submitAnswer(answer: AnswerDTO, userId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/${answer.questionId}/answer?userId=${userId}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"},

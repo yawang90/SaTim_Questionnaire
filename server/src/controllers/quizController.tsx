@@ -25,19 +25,29 @@ export const getQuizHandler = async (req: Request, res: Response) => {
  */
 export const submitAnswerHandler = async (req: Request, res: Response) => {
     try {
-        const surveyId = Number(req.params.id);
-        const {userId, instanceId, bookletId, questionId, answer,} = req.body;
+        const questionId = Number(req.params.id);
+        const userId = req.query.userId as string;
+        const { answer } = req.body;
 
-        if (!surveyId || !instanceId || !bookletId || !userId || !questionId || answer === undefined) {
+        if (!questionId || !userId || answer === undefined) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        const result = await submitQuizAnswer({surveyId, instanceId, bookletId, userId, questionId, answerJson: answer,});
+        const result = await submitQuizAnswer(
+            userId,
+            questionId,
+            answer
+        );
+
         res.status(200).json({ success: true, result });
     } catch (err: any) {
         if (err.message === "QUESTION_ALREADY_ANSWERED") {
-            return res.status(409).json({ error: "Question already answered" });
+            return res.status(409).json({ error: err.message });
         }
+        if (err.message === "ANSWER_RECORD_NOT_FOUND") {
+            return res.status(404).json({ error: err.message });
+        }
+
         console.error(err);
         res.status(500).json({ error: "Failed to submit answer" });
     }
