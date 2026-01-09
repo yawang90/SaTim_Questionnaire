@@ -10,7 +10,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
-import {Button, Snackbar, Alert} from '@mui/material';
+import {Button, Snackbar, Alert, Stack, CircularProgress} from '@mui/material';
 import {type Block, extractAnswersFromJson, parseContentToBlocks} from '../questions/AnswerUtils.tsx';
 
 export default function QuizPage() {
@@ -26,6 +26,7 @@ export default function QuizPage() {
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
     const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
     const [quizFinished, setQuizFinished] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const key = "quizUserId";
@@ -46,29 +47,25 @@ export default function QuizPage() {
     }, []);
 
     useEffect(() => {
-        if (!userId || !id) return;
-        const fetchQuizData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await getQuiz(id, userId);
-                setQuiz(data);
-
-                if (!data.question) {
-                    setQuizFinished(true);
-                } else {
-                    setQuizFinished(false);
-                }
-                setAnsweredQuestions(data.answeredQuestions);
-                setTotalQuestions(data.totalQuestions);
-            } catch (err: any) {
-                setError(err.message || "Failed to load quiz");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchQuizData();
     }, [userId, id]);
+
+    const fetchQuizData = async () => {
+        if (!userId || !id) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await getQuiz(id, userId);
+            setQuiz(data);
+            setQuizFinished(!data.question);
+            setAnsweredQuestions(data.answeredQuestions);
+            setTotalQuestions(data.totalQuestions);
+        } catch (err: any) {
+            setError(err.message || "Failed to load quiz");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleTestAnswers = async () => {
         if (!editorRef.current || !quiz || !quiz.question || !userId) return;
@@ -95,31 +92,38 @@ export default function QuizPage() {
             setSnackbarOpen(true);
             return;
         }
-
+        if (!id) return;
         const answerDTO: AnswerDTO = {
             questionId: question.id,
+            instanceId: id,
             answer: extractedAnswers.length === 1
                 ? extractedAnswers[0].value
                 : extractedAnswers.map(a => a.value),
         };
 
         try {
+            setSubmitting(true);
             await submitAnswer(answerDTO, userId);
-            const next = await getQuiz(id!, userId);
-            if (!next.question) {
-                console.log("Quiz completed!");
-                setQuiz(next);
-                return;
-            }
-            setQuiz(next);
+            await fetchQuizData();
         } catch (err) {
             console.error(err);
             setSnackbarMessage("Fehler beim Absenden der Antwort.");
             setSnackbarOpen(true);
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (loading) return <GeneralLayout><h4>Laden...</h4></GeneralLayout>;
+    if (loading)
+        return (
+            <GeneralLayout>
+                <Stack direction="column" justifyContent="center" alignItems="center" sx={{ height: '60vh' }}><CircularProgress />
+                    <Typography variant="h6" sx={{ mt: 2 }}>
+                        Laden...
+                    </Typography>
+                </Stack>
+            </GeneralLayout>
+        );
     if (error) return <GeneralLayout><h4>Fehler: {error}</h4></GeneralLayout>;
 
     return (
@@ -159,10 +163,9 @@ export default function QuizPage() {
                     )}
                 </Box>
                 <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                    {quiz?.question && <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
-                        Antwort abschicken
-                    </Button>
-                    }
+                    {quiz?.question && <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} disabled={submitting} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
+                        {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort abschicken"}
+                    </Button>}
                 </Box>
             </main>
 

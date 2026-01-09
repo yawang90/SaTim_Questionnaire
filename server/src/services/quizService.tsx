@@ -1,5 +1,6 @@
 import type { JsonValue } from "@prisma/client/runtime/library";
 import prisma from "../config/prismaClient.js";
+import type { Prisma } from "@prisma/client";
 
 export interface QuizQuestion {
     id: number;
@@ -88,9 +89,42 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
         answeredQuestions
     };
 }
+/**
+ * Submit an answer for a quiz question
+ */
 
-export async function submitQuizAnswer(userId: string, questionId: number, answerJson: any) {
+export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue) {
+    const answerRecord = await prisma.answer.findFirst({
+        where: {userId, instanceId,},
+        include: {questionsAnswers: true,},
+    });
+    if (!answerRecord) {
+        throw new Error("ANSWER_RECORD_NOT_FOUND");
+    }
+    let questionAnswer = answerRecord.questionsAnswers.find(
+        qa => qa.questionId === questionId
+    );
+    if (!questionAnswer) {
+        throw new Error("ANSWER_QUESTIONS_RECORD_NOT_FOUND");
+    }
+    if (questionAnswer.answerJson !== null) {
+        throw new Error("QUESTION_ALREADY_ANSWERED");
+    }
+    const now = new Date();
+    const updatedQA = await prisma.questionAnswer.update({
+        where: {
+            id: questionAnswer.id,
+        },
+        data: {
+            answerJson,
+            solvingTimeEnd: now,
+            solvedTime: now,
+        },
+    });
+
+    return updatedQA;
 }
+
 
 async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: Date | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
     const answeredQuestionIds = new Set(

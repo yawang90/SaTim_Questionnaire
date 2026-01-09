@@ -28,6 +28,7 @@ export interface Quiz {
 
 export interface AnswerDTO {
     questionId: number;
+    instanceId: string;
     answer: string | string[];
 }
 

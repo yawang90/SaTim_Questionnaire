@@ -27,17 +27,13 @@ export const submitAnswerHandler = async (req: Request, res: Response) => {
     try {
         const questionId = Number(req.params.id);
         const userId = req.query.userId as string;
-        const { answer } = req.body;
+        const { answer, instanceId } = req.body;
 
         if (!questionId || !userId || answer === undefined) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        const result = await submitQuizAnswer(
-            userId,
-            questionId,
-            answer
-        );
+        const result = await submitQuizAnswer(userId, questionId, Number(instanceId), answer);
 
         res.status(200).json({ success: true, result });
     } catch (err: any) {
