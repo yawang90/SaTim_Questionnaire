@@ -19,13 +19,13 @@ export default function QuizPage() {
     const [loading, setLoading] = useState(true);
     const [totalQuestions, setTotalQuestions] = useState<number>(0);
     const [answeredQuestions, setAnsweredQuestions] = useState<number>(0);
-    const [currentQuestion, setCurrentQuestion] = useState<number>(0);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
     const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+    const [quizFinished, setQuizFinished] = useState(false);
 
     useEffect(() => {
         const key = "quizUserId";
@@ -47,22 +47,26 @@ export default function QuizPage() {
 
     useEffect(() => {
         if (!userId || !id) return;
-
         const fetchQuizData = async () => {
             setLoading(true);
             setError(null);
             try {
                 const data = await getQuiz(id, userId);
                 setQuiz(data);
-                setAnsweredQuestions(0);
+
+                if (!data.question) {
+                    setQuizFinished(true);
+                } else {
+                    setQuizFinished(false);
+                }
+                setAnsweredQuestions(data.answeredQuestions);
+                setTotalQuestions(data.totalQuestions);
             } catch (err: any) {
-                console.error(err);
                 setError(err.message || "Failed to load quiz");
             } finally {
                 setLoading(false);
             }
         };
-
         fetchQuizData();
     }, [userId, id]);
 
@@ -137,14 +141,28 @@ export default function QuizPage() {
             </AppBar>
             <main style={{padding: '2rem', marginTop: 80}}>
                 <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
-                    {quiz?.question && (
-                        <Preview content={quiz.question.contentJson} editorRef={editorRef} />
+                    {quizFinished ? (
+                        <Box sx={{ textAlign: 'center', py: 6 }}>
+                            <Typography variant="h4" gutterBottom>
+                                Quiz abgeschlossen!
+                            </Typography>
+                            <Typography variant="body1">
+                                Vielen Dank für Ihre Teilnahme.
+                            </Typography>
+                        </Box>
+                    ) : (quiz?.question && (
+                            <Preview
+                                content={quiz.question.contentJson}
+                                editorRef={editorRef}
+                            />
+                        )
                     )}
                 </Box>
                 <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                    <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
+                    {quiz?.question && <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
                         Antwort abschicken
                     </Button>
+                    }
                 </Box>
             </main>
 

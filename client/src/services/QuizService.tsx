@@ -21,6 +21,8 @@ export interface Quiz {
         correctAnswers?: any;
     } | null;
     answerId: number;
+    totalQuestions: number;
+    answeredQuestions: number;
 }
 
 
@@ -51,7 +53,6 @@ export async function getQuiz(id: string, userId: string): Promise<Quiz> {
 
 /**
  * Submit an answer for a quiz question
- * @param quizId Quiz ID
  * @param answer Answer object
  * @param userId Cookie Session ID
  * @returns Confirmation or saved answer

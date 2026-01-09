@@ -15,6 +15,8 @@ export interface NextQuestion {
     bookletId: number;
     question: QuizQuestion | null;
     answerId: number;
+    totalQuestions: number;
+    answeredQuestions: number;
 }
 
 export async function getQuiz(instanceId: string, userId: string): Promise<NextQuestion> {
@@ -70,6 +72,10 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
             update: {},
         });
     }
+    const totalQuestions = answerRecord.questionIds.length;
+    const answeredQuestions = answerRecord.questionsAnswers.filter(
+        qa => qa.answerJson !== null
+    ).length;
 
     return {
         surveyId: survey.id,
@@ -78,6 +84,8 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
         bookletId: answerRecord.bookletId,
         question: nextQuestion,
         answerId: answerRecord.id,
+        totalQuestions,
+        answeredQuestions
     };
 }
 
