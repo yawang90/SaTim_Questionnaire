@@ -164,3 +164,16 @@ export async function updateQuestionStatus(id: string, status: string) {
     });
     return handleResponse(response);
 }
+
+export async function duplicateQuestion(questionId: number) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_URL}/api/editor/question/${questionId}/duplicate`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error("Could not duplicate question");
+    return response.json();
+}

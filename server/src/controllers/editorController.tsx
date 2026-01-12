@@ -1,6 +1,6 @@
 import type {Request, Response} from 'express';
 import {
-    createQuestionMeta,
+    createQuestionMeta, duplicateQuestionById,
     findQuestionById,
     getQuestionsByGroupId, saveImage, updateQuestionAnswersById,
     updateQuestionContentById,
@@ -166,6 +166,20 @@ export const updateQuestionStatus = async (req: Request, res: Response) => {
     } catch (err) {
         console.error('Error updating question status:', err);
         res.status(500).json({ error: 'Failed to update question status' });
+    }
+};
+
+export const duplicateQuestion = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const userId = Number((req as any).user?.id);
+        if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+        const duplicated = await duplicateQuestionById(id, userId);
+        res.status(201).json(duplicated);
+    } catch (err: any) {
+        console.error("Error duplicating question:", err);
+        res.status(500).json({ error: err.message || "Failed to duplicate question" });
     }
 };
 

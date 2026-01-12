@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import {Box, Button, Chip,
+import {
+    Alert,
+    Box, Button, Chip,
     CircularProgress, Dialog, DialogActions,
-    DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, TextField, Typography,} from "@mui/material";
+    DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Snackbar, TextField, Typography,
+} from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
 import {DataGrid, type GridColDef, type GridRowId} from "@mui/x-data-grid";
 import { Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import {loadAllQuestions, loadQuestionForm} from "../services/EditorService.tsx";
+import {duplicateQuestion, loadAllQuestions, loadQuestionForm} from "../services/EditorService.tsx";
 import {type FullUser, getUserById} from "../services/UserService.tsx";
 
 const groupId = "999";
@@ -42,6 +45,9 @@ export default function QuestionsTablePage() {
     const [detailsLoading, setDetailsLoading] = useState<boolean>(false);
     const [createdByUser, setCreatedByUser] = useState<FullUser | null>(null);
     const [updatedByUser, setUpdatedByUser] = useState<FullUser | null>(null);
+    const [duplicating, setDuplicating] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const transformedRows = rows.map((row) => {
         const flatRow: Record<string, any> = { id: row.id, status: row.status};
@@ -133,11 +139,35 @@ export default function QuestionsTablePage() {
         }
     };
 
+    const handleDuplicateQuestion = async () => {
+        if (!selectedQuestion) return;
+        setDuplicating(true);
+        try {
+            const duplicatedQuestion = await duplicateQuestion(selectedQuestion.id);
+            setSnackbarMessage(`Aufgabe ${duplicatedQuestion.id} erfolgreich dupliziert`);
+            setSnackbarOpen(true);
+            const data: QuestionRow[] = await loadAllQuestions(groupId);
+            setRows(data);
+        } catch (error) {
+            console.error("Fehler beim Duplizieren:", error);
+            setSnackbarMessage("Fehler beim Duplizieren der Aufgabe.");
+            setSnackbarOpen(true);
+        } finally {
+            setDuplicating(false);
+            setDialogOpen(false);
+        }
+    };
 
 
     return (
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6 }}>
+                {(loading || detailsLoading) && (
+                    <Box sx={{position: "absolute", top: 0, left: 0, width: "100%", height: "100%", bgcolor: "rgba(255,255,255,0.6)", zIndex: 9999, display: "flex", justifyContent: "center", alignItems: "center",}}>
+                        <CircularProgress size={60} />
+                    </Box>
+                )}
+
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Box>
                         <Typography variant="h4">Aufgabenübersicht</Typography>
@@ -166,8 +196,8 @@ export default function QuestionsTablePage() {
                         </Select>
                     </FormControl>
                 </Box>
-
                 <Box sx={{ height: 500, width: "100%" }}>
+                    {(!loading) &&
                     <DataGrid
                         rows={filteredRows}
                         columns={columns}
@@ -179,15 +209,13 @@ export default function QuestionsTablePage() {
                         slotProps={{
                             toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 200 } },
                         }}
-                    />
+                    />}
                 </Box>
                 {/* --- Question Details Dialog --- */}
                 <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
                     <DialogTitle>Aufgabendetails</DialogTitle>
                     <DialogContent dividers>
-                        {detailsLoading ? (
-                            <Box display="flex" justifyContent="center" py={3}><CircularProgress /></Box>
-                        ) : selectedQuestion ? (
+                        { selectedQuestion ? (
                             <Box display="flex" flexDirection="column" gap={1.5}>
                                 <Typography variant="h6">{selectedQuestion.title}</Typography>
                                 <Typography variant="body2" color="textSecondary">
@@ -211,6 +239,9 @@ export default function QuestionsTablePage() {
                     </DialogContent>
                     <DialogActions sx={{ display: "flex", justifyContent: "space-between", px: 3 }}>
                         <Button variant="outlined" onClick={() => setDialogOpen(false)}>Schließen</Button>
+                        <Button variant="outlined" onClick={handleDuplicateQuestion} disabled={duplicating}>
+                            {duplicating ? <CircularProgress color="inherit" /> : "Aufgabe duplizieren"}
+                        </Button>
                         <Button variant="contained" onClick={() => {
                             if (selectedQuestion) {
                                 navigate(`/meta/${selectedQuestion.id}`);}
@@ -219,6 +250,11 @@ export default function QuestionsTablePage() {
                     </DialogActions>
                 </Dialog>
             </Box>
+            <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert onClose={() => setSnackbarOpen(false)} severity="warning" sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </MainLayout>
     );
 }

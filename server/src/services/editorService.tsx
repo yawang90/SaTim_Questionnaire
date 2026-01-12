@@ -133,3 +133,39 @@ export const updateQuestionStatusById = async (
     });
 };
 
+export const duplicateQuestionById = async (id: number, userId: number): Promise<question> => {
+    const original = await prisma.question.findUnique({
+        where: { id },
+    });
+
+    if (!original) throw new Error("Original question not found");
+
+    const metadata: Record<string, any> = original.metadata
+        ? JSON.parse(JSON.stringify(original.metadata))
+        : {};
+
+    const contentJson: Record<string, any> = original.contentJson
+        ? JSON.parse(JSON.stringify(original.contentJson))
+        : {};
+
+    const correctAnswers: Record<string, any> = original.correctAnswers
+        ? JSON.parse(JSON.stringify(original.correctAnswers))
+        : {};
+
+    const contentHtml = original.contentHtml || null;
+
+    const duplicate = await prisma.question.create({
+        data: {
+            metadata,
+            group_id: original.group_id,
+            createdById: userId,
+            updatedById: userId,
+            status: question_status.ACTIVE,
+            contentJson,
+            contentHtml,
+            correctAnswers
+        },
+    });
+
+    return duplicate;
+};
