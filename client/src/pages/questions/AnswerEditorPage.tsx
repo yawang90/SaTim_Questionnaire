@@ -167,6 +167,15 @@ export default function AnswerEditorPage() {
         }
     };
 
+    const hasValidConditions = (conditions: any[], variable: "m" | "c") => {
+        const filtered = conditions.filter(c => c.variable === variable);
+        if (filtered.length === 0) return false;
+
+        return filtered.every(
+            c => typeof c.value === "string" && c.value.trim().length > 0
+        );
+    };
+
     const validateAnswersBeforeSave = () => {
         const errors: string[] = [];
 
@@ -187,12 +196,23 @@ export default function AnswerEditorPage() {
                     break;
 
                 case "numeric":
-                case "lineEquation":
                     if (!Array.isArray(val) || val.length === 0 || !val[0].value?.toString().trim()) {
-                        errors.push(`${b.kind === "numeric" ? "Numerische" : "Geraden Gleichnung"} Eingabe (${b.key}) braucht einen gültigen Wert.`);
+                        errors.push(`Numerische Eingabe (${b.key}) braucht einen gültigen Wert.`);
                     }
                     break;
-
+                case "lineEquation":
+                    console.log(b)
+                    if (!Array.isArray(val)) {
+                        errors.push(`Geradengleichung (${b.key}) ist ungültig.`);
+                        break;
+                    }
+                    if (!hasValidConditions(val, "m")) {
+                        errors.push(`Geradengleichung (${b.key}): Es muss mindestens eine gültige Bedingung für m definiert sein.`);
+                    }
+                    if (!hasValidConditions(val, "c")) {
+                        errors.push(`Geradengleichung (${b.key}): Es muss mindestens eine gültige Bedingung für c definiert sein.`);
+                    }
+                    break;
                 case "freeText":
                 case "freeTextInline":
                     if (!val || !val.trim()) {

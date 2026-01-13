@@ -1,7 +1,10 @@
 import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
 
-export type Choice = { id: string; text: string; html?: string;};
+export type Choice = { id: string; text: string; html?: string; };
+export type Answer =
+    | { kind: "mc" | "sc"; key: string; value: { id: string; selected: boolean }[] }
+    | { kind: "freeText" | "freeTextInline" | "numeric" | "lineEquation" | "geoGebra"; key: string; value: string };
 
 export type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
@@ -46,9 +49,10 @@ function renderNodeToHTML(node: any): string {
         case "paragraph":
             return `<p>${(node.content || []).map(renderNodeToHTML).join("")}</p>`;
 
-        case "latex":
-            { const latex = node.attrs?.latex ?? "";
-            return `<span class="mathjax-latex">\\(${latex}\\)</span>`; }
+        case "latex": {
+            const latex = node.attrs?.latex ?? "";
+            return `<span class="mathjax-latex">\\(${latex}\\)</span>`;
+        }
 
         case "image":
             return `<img src="${node.attrs?.src ?? ""}" alt="" style="max-width:100%;height:auto;" />`;
@@ -80,34 +84,34 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
                 const groupId = node.attrs?.groupId || nodeId;
 
                 if (!blockMap[groupId]) {
-                    blockMap[groupId] = { kind, key: groupId, choices: [] };
+                    blockMap[groupId] = {kind, key: groupId, choices: []};
                 }
 
                 (node.content || []).forEach((choiceNode: any) => {
                     const html = renderNodeToHTML(choiceNode);
                     const text = html.replace(/<[^>]+>/g, "").trim();
-                    (blockMap[groupId] as any).choices.push({ id: nodeId, text, html });
+                    (blockMap[groupId] as any).choices.push({id: nodeId, text, html});
                 });
             }
 
             if (node.type === "freeText") {
-                blockMap[nodeId] = { kind: "freeText", key: nodeId };
+                blockMap[nodeId] = {kind: "freeText", key: nodeId};
             }
 
             if (node.type === "freeTextInline") {
-                blockMap[nodeId] = { kind: "freeTextInline", key: nodeId };
+                blockMap[nodeId] = {kind: "freeTextInline", key: nodeId};
             }
 
             if (node.type === "numericInput") {
-                blockMap[nodeId] = { kind: "numeric", key: nodeId };
+                blockMap[nodeId] = {kind: "numeric", key: nodeId};
             }
 
             if (node.type === "lineEquation") {
-                blockMap[nodeId] = { kind: "lineEquation", key: nodeId };
+                blockMap[nodeId] = {kind: "lineEquation", key: nodeId};
             }
 
             if (node.type === "geoGebra") {
-                blockMap[nodeId] = { kind: "geoGebra", key: nodeId };
+                blockMap[nodeId] = {kind: "geoGebra", key: nodeId};
             }
 
             if (node.content) walk(node.content);
@@ -125,28 +129,28 @@ export interface TipTapNode {
     text?: string;
 }
 
-export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { key: string; value: any }[] {
-    const answers: { key: string; value: any }[] = blocks
+export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answer[] {
+    const answers: Answer[] = blocks
         .map(block => {
             switch (block.kind) {
                 case 'sc':
                 case 'mc':
                     return {
+                        kind: block.kind,
                         key: block.key,
-                        value: block.choices.map(choice => ({ id: choice.id, selected: false })),
+                        value: block.choices.map(choice => ({id: choice.id, selected: false})),
                     };
                 case 'freeText':
                 case 'freeTextInline':
                 case 'numeric':
                 case 'lineEquation':
                 case 'geoGebra':
-                    return { key: block.key, value: '' };
+                    return {kind: block.kind, key: block.key, value: ''};
                 default:
-                    return undefined;
+                    return {kind: 'unknown', key: '', value: null};
             }
         })
-        .filter((a): a is { key: string; value: any } => a !== undefined);
-
+        .filter((a): a is Answer => !!a);
     const walk = (nodes: TipTapNode[]) => {
         for (const node of nodes) {
             if (!node || !node.type) continue;
@@ -161,31 +165,35 @@ export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { ke
 
             switch (block.kind) {
                 case 'sc':
-                case 'mc':
-                { const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
-                    `div.mc-choice-wrapper input[name="group-${block.key}"]`
-                );
+                case 'mc': {
+                    const checkboxNodes = document.querySelectorAll<HTMLInputElement>(
+                        `div.mc-choice-wrapper input[name="group-${block.key}"]`
+                    );
+                    const answerValues = answer.value as { id: string; selected: boolean }[];
                     checkboxNodes.forEach((input, i) => {
-                        if (answer.value[i]) answer.value[i].selected = input.checked;
+                        if (answerValues[i]) answerValues[i].selected = input.checked;
                     });
-                    break; }
+                    break;
+                }
                 case 'freeText':
-                case 'freeTextInline':
-                { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                    `[data-node-view-wrapper] [id="${block.key}"]`
-                );
+                case 'freeTextInline': {
+                    const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                        `[data-node-view-wrapper] [id="${block.key}"]`
+                    );
                     if (inputEl) answer.value = inputEl.value;
-                    break; }
+                    break;
+                }
                 case 'lineEquation': {
                     answer.value = node.attrs?.value ?? '';
                     break;
                 }
-                case 'numeric':
-                { const numericEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                    `[data-node-view-wrapper] [id="${block.key}"]`
-                );
+                case 'numeric': {
+                    const numericEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                        `[data-node-view-wrapper] [id="${block.key}"]`
+                    );
                     if (numericEl) answer.value = numericEl.value;
-                    break; }
+                    break;
+                }
 
                 case 'geoGebra':
                     answer.value = node.attrs?.materialId ?? '';
@@ -200,3 +208,32 @@ export function extractAnswersFromJson (doc: JSONContent, blocks: Block[]): { ke
 
     return answers;
 }
+
+/**
+ * Basic validation for a linear equation of the form y = m*x + c
+ *  * Checks if an answer represents a valid linear equation of the form y = …
+ *  *
+ *  * Allowed rules for the right-hand side (RHS):
+ *  * - Numbers, optionally with decimal points (e.g., 3, 4.5)
+ *  * - Variables: x, y, z
+ *  * - Basic arithmetic operators: +, -, :, \cdot
+ *  * - Parentheses for grouping: ( )
+ *  * - Fraction notation using LaTeX-style: \frac{numerator}{denominator}
+ *  * - No other characters are allowed
+ *  */
+export function isValidLineEquation(answer: Answer): boolean {
+    const value = answer.value;
+    if (typeof value !== "string") return false;
+
+    const sanitized = value.replace(/\s+/g, "");
+
+    if (!sanitized.startsWith("y=")) return false;
+
+    const rhs = sanitized.slice(2);
+
+    const allowedPattern = /^[0-9.,xyz+\-:()\\cdot\\frac{}]+$/;
+
+    return allowedPattern.test(rhs);
+}
+
+

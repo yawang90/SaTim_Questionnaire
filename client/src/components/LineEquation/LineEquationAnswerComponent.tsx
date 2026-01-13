@@ -26,10 +26,10 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
             }
             document.body.style.setProperty('--keycap-height', '32px')
             document.body.style.setProperty('--keycap-font-size', '15px')
-            mf.value = "y="
-            if (!node.attrs.value) {
-                updateAttributes({ value })
+            if (!mf.getValue()) {
+                mf.value = 'y='
             }
+
             const handleInput = () => {
                 const latex = mf.getValue('latex')
                 setValue(latex)

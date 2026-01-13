@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import MainLayout from '../../layouts/MainLayout.tsx';
 import QuestionLayout from '../../layouts/QuestionLayout.tsx';
 import {
+    Alert,
     Box,
     Button,
     Dialog,
@@ -12,7 +13,7 @@ import {
     FormControlLabel,
     Paper,
     Radio,
-    RadioGroup,
+    RadioGroup, Snackbar,
     Typography,
 } from '@mui/material';
 import {Save} from '@mui/icons-material';
@@ -22,7 +23,7 @@ import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorServi
 import type {JSONContent} from '@tiptap/core';
 import {
     type Block,
-    extractAnswersFromJson,
+    extractAnswersFromJson, isValidLineEquation,
     mapQuestionsStatus,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
@@ -31,7 +32,7 @@ import {evaluateAnswers} from "../../services/SolverService.tsx";
 import PrettyTestResult from "./PrettyTestResult.tsx";
 
 export default function AnswerPreviewPage() {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [questionContent, setQuestionContent] = useState<JSONContent | null>(null);
@@ -41,6 +42,15 @@ export default function AnswerPreviewPage() {
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
     const [testResult, setTestResult] = useState<any>(null);
     const [testDialogOpen, setTestDialogOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'error' | 'success' | 'info'
+    }>({
+        open: false,
+        message: '',
+        severity: 'info',
+    });
 
     useEffect(() => {
         if (!id) return;
@@ -51,7 +61,7 @@ export default function AnswerPreviewPage() {
                 const content =
                     typeof question.contentJson === 'string'
                         ? JSON.parse(question.contentJson)
-                        : question.contentJson ?? { type: 'doc', content: [] };
+                        : question.contentJson ?? {type: 'doc', content: []};
                 setQuestionContent(content);
                 setQuizStatus(mapQuestionsStatus(question.status));
 
@@ -69,13 +79,26 @@ export default function AnswerPreviewPage() {
         if (!id || !editorRef.current) return;
         const json = editorRef.current.getJSON();
         const answers = extractAnswersFromJson(json, blocks);
+        const lineEquations = answers.filter(a => a.kind === 'lineEquation');
+
+        for (const eq of lineEquations) {
+            const value = eq.value;
+            if (typeof value !== "string" || !isValidLineEquation(eq)) {
+                setSnackbar({
+                    open: true,
+                    message: `Ungültige lineare Gleichung: ${value}`,
+                    severity: 'error',
+                });
+                return;
+            }
+        }
         try {
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
             setTestDialogOpen(true);
         } catch (err) {
             console.error(err);
-            setTestResult({ error: 'Fehler bei der Auswertung.' });
+            setTestResult({error: 'Fehler bei der Auswertung.'});
             setTestDialogOpen(true);
         }
     };
@@ -113,21 +136,30 @@ export default function AnswerPreviewPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, true]}>
-                <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
-                    <Paper elevation={0} sx={{ padding: 3, border: '2px solid #000' }}>
-                        <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+                <Box sx={{
+                    minHeight: '100vh',
+                    backgroundColor: 'background.default',
+                    py: 3,
+                    px: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    mt: 6
+                }}>
+                    <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
+                        <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                             Status setzen
                         </Typography>
 
-                        <FormControl component="fieldset" >
-                            <RadioGroup sx={{ justifyContent: 'center', display: 'flex', gap: 3 }} value={quizStatus} onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
-                                    <FormControlLabel value="in bearbeitung" control={<Radio />} label="In Bearbeitung" />
-                                    <FormControlLabel value="abgeschlossen" control={<Radio />} label="Abgeschlossen" />
-                                    <FormControlLabel value="gelöscht" control={<Radio />} label="Gelöscht" />
-                                </RadioGroup>
-                            </FormControl>
+                        <FormControl component="fieldset">
+                            <RadioGroup sx={{justifyContent: 'center', display: 'flex', gap: 3}} value={quizStatus}
+                                        onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
+                                <FormControlLabel value="in bearbeitung" control={<Radio/>} label="In Bearbeitung"/>
+                                <FormControlLabel value="abgeschlossen" control={<Radio/>} label="Abgeschlossen"/>
+                                <FormControlLabel value="gelöscht" control={<Radio/>} label="Gelöscht"/>
+                            </RadioGroup>
+                        </FormControl>
 
-                        <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+                        <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                             Vorschau des Quiz
                         </Typography>
 
@@ -135,8 +167,8 @@ export default function AnswerPreviewPage() {
 
                         {!loading && questionContent && (
                             <>
-                                <Preview content={questionContent} editorRef={editorRef} />
-                                <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
+                                <Preview content={questionContent} editorRef={editorRef}/>
+                                <Box sx={{mt: 3, display: 'flex', gap: 2, justifyContent: 'center'}}>
                                     <Button variant="outlined" onClick={() => navigate(-1)}>
                                         Zurück
                                     </Button>
@@ -146,7 +178,7 @@ export default function AnswerPreviewPage() {
                                     <Button variant="outlined" onClick={handleResetAnswers}>
                                         Single Choice zurücksetzen
                                     </Button>
-                                    <Button variant="contained" startIcon={<Save />} onClick={handleSaveStatus}>
+                                    <Button variant="contained" startIcon={<Save/>} onClick={handleSaveStatus}>
                                         Speichern
                                     </Button>
                                 </Box>
@@ -163,14 +195,23 @@ export default function AnswerPreviewPage() {
                 <DialogTitle>Testergebnis</DialogTitle>
 
                 <DialogContent dividers>
-                    <PrettyTestResult result={testResult} />
+                    <PrettyTestResult result={testResult}/>
                 </DialogContent>
 
                 <DialogActions>
                     <Button onClick={() => setTestDialogOpen(false)}>Schließen</Button>
                 </DialogActions>
             </Dialog>
-
+            <Snackbar open={snackbar.open} autoHideDuration={4000}
+                      onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
+                      anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
+                <Alert
+                    onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
+                    severity={snackbar.severity}
+                    sx={{width: "100%"}}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </MainLayout>
     );
 }
