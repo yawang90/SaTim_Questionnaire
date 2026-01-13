@@ -9,6 +9,7 @@ export const NumericEditorComponent: React.FC<NodeViewProps> = () => {
             <TextField
                 variant="outlined"
                 size="small"
+                disabled={true}
                 placeholder="Numerische Eingabe"
                 style={{ width: '12rem', minWidth: '3rem' }}
             />

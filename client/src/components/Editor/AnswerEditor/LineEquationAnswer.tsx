@@ -4,20 +4,22 @@ import {MathInput} from "./MathInput.tsx";
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 
 export interface Condition {
+    variable: "m" | "c";
     operator: "=" | "<" | ">" | "<=" | ">=";
     value: string;
     logic?: "and" | "or";
 }
 
-interface AlgebraAnswerProps {
+interface LineEquationProps {
     conditions: Condition[];
     onChange: (conditions: Condition[]) => void;
 }
 
 const operators: Condition["operator"][] = ["=", "<", ">", "<=", ">="];
 const logics: Condition["logic"][] = ["and", "or"];
+const variables: Condition["variable"][] = ["m", "c"];
 
-export const AlgebraAnswer: React.FC<AlgebraAnswerProps> = ({ conditions, onChange }) => {
+export const LineEquationAnswer: React.FC<LineEquationProps > = ({ conditions, onChange }) => {
     const handleChange = (index: number, field: keyof Condition, newValue: string) => {
         const next: Condition[] = [...conditions];
         next[index] = { ...next[index], [field]: newValue } as Condition;

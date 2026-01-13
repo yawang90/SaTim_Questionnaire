@@ -149,7 +149,7 @@ model questionAnswer {
   questionId       Int
   answerJson       Json?
   createdAt        DateTime  @default(now())
-  solvedTime       DateTime?
+  solvedTime       Float?
   solvingTimeStart DateTime  @default(now())
   solvingTimeEnd   DateTime?
   answer           answer    @relation("BelongsToAnswer", fields: [answerId], references: [id])

@@ -5,7 +5,7 @@ import 'mathlive'
 
 export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
     const mathfieldRef = useRef<any>(null)
-    const [value, setValue] = useState(node.attrs.value || '')
+    const [value, setValue] = useState(node.attrs.value ?? 'y=')
 
     useEffect(() => {
         if (mathfieldRef.current) {
@@ -19,16 +19,17 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                 tooltip: 'Variables and numbers',
                 rows: [
                     ['0','1','2','3','4','5','6','7','8','9','.'],
-                    ['a', 'b', 'c', 'x', 'y', 'z', '\\alpha', '\\beta', '\\gamma'],
-                    ['+', '-', '[*]', ':', '=', '\\sqrt{#0}', '\\frac{#0}{#?}', '#@^{#?}', '(', ')'],
+                    ['x', 'y', 'z'],
+                    ['+', '-', '[*]', ':', '=', '\\frac{#0}{#?}', '(', ')'],
                     [], [], []
                 ]
             }
             document.body.style.setProperty('--keycap-height', '32px')
             document.body.style.setProperty('--keycap-font-size', '15px')
-
-            mf.value = value || ''
-
+            mf.value = "y="
+            if (!node.attrs.value) {
+                updateAttributes({ value })
+            }
             const handleInput = () => {
                 const latex = mf.getValue('latex')
                 setValue(latex)

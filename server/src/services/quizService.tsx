@@ -111,6 +111,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         throw new Error("QUESTION_ALREADY_ANSWERED");
     }
     const now = new Date();
+    const timeSolvedSeconds = Math.round((now.getTime() - questionAnswer.solvingTimeStart.getTime()) / 1000);
     const updatedQA = await prisma.questionAnswer.update({
         where: {
             id: questionAnswer.id,
@@ -118,7 +119,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         data: {
             answerJson,
             solvingTimeEnd: now,
-            solvedTime: now,
+            solvedTime: timeSolvedSeconds
         },
     });
 
@@ -126,7 +127,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
 }
 
 
-async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: Date | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
+async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: number | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
     const answeredQuestionIds = new Set(
         answerRecord.questionsAnswers
             .filter(qa => qa.answerJson !== null)

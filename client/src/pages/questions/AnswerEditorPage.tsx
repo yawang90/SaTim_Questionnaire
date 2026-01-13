@@ -27,7 +27,7 @@ import {Preview} from "../../components/Editor/Preview";
 import type {JSONContent} from "@tiptap/core";
 import {type Block, type Choice, parseContentToBlocks} from "./AnswerUtils.tsx";
 import {NumericAnswer} from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
-import {AlgebraAnswer} from "../../components/Editor/AnswerEditor/AlgebraAnswer.tsx";
+import {LineEquationAnswer} from "../../components/Editor/AnswerEditor/LineEquationAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 
 export default function AnswerEditorPage() {
@@ -316,7 +316,7 @@ export default function AnswerEditorPage() {
                                         {/* LineEquation */}
                                         {answerType.kind === "lineEquation" && (
                                             <FormControl fullWidth>
-                                                <AlgebraAnswer
+                                                <LineEquationAnswer
                                                     conditions={answers[answerType.key] ?? [{ operator: "=", value: "" }]}
                                                     onChange={(val) => handleAnswerChange(answerType.key, val)}
                                                 />

@@ -8,6 +8,7 @@ export const LineEquationEditorComponent: React.FC<NodeViewProps> = () => {
             <TextField
                 variant="outlined"
                 size="small"
+                disabled={true}
                 placeholder="Geradengleichung Eingabe"
                 style={{ width: '15rem', minWidth: '3rem' }}
             />
