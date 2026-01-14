@@ -29,7 +29,11 @@ export interface Quiz {
 export interface AnswerDTO {
     questionId: number;
     instanceId: string;
-    answer: string | string[];
+    answer:  | string
+        | string[]
+        | { id: string; selected: boolean }
+        | { id: string; selected: boolean }[]
+        | (string | { id: string; selected: boolean }[])[];
 }
 
 /**

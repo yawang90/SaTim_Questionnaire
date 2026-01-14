@@ -23,7 +23,7 @@ import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorServi
 import type {JSONContent} from '@tiptap/core';
 import {
     type Block,
-    extractAnswersFromJson, isValidLineEquation,
+    extractAnswersFromJson, extractLinearMC, isValidLineEquation,
     mapQuestionsStatus,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
@@ -92,6 +92,10 @@ export default function AnswerPreviewPage() {
                 return;
             }
         }
+        for (const eq of lineEquations) {
+            console.log(extractLinearMC(eq));
+        }
+
         try {
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
