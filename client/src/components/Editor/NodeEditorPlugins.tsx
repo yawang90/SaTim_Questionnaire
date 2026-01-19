@@ -108,7 +108,8 @@ export const GeoGebra = Node.create({
             materialId: { default: '' },
             width: { default: '800' },
             height: { default: '600' },
-            maxPoints: {default: 1}
+            maxPoints: {default: 0},
+            maxLines: { default: 0 }
         };
     },
 

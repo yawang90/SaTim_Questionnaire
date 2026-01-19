@@ -5,11 +5,14 @@ interface GeoGebraAnswerComponentProps {
     width?: string | number;
     height?: string | number;
     maxPoints?: number;
+    maxLines?: number | "";
 }
 
-export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600, maxPoints = 1}) => {
+export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600, maxPoints = 1, maxLines = 0 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [answerPoints, setAnswerPoints] = React.useState<{ name: string; x: number; y: number }[]>([]);
+    const [answerLines, setAnswerLines] = React.useState<{ name: string; type: string; equation?: string, coefficients?: { a: number; b: number; c: number }}[]>([]);
+
     useEffect(() => {
         if (!materialId || !containerRef.current) return;
 
@@ -23,6 +26,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
             appletOnLoad: (applet: any) => {
                 const initialPoints = new Set<string>();
                 const userPoints: string[] = [];
+                const userLines: string[] = [];
                 let pendingEnforce = false;
                 const DEBUG = false;
                 try {
@@ -39,6 +43,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 }
                 if (DEBUG) console.log('[ggb] initial protected points:', Array.from(initialPoints));
                 const allowed = () => (Number(maxPoints) >= 0 ? Number(maxPoints) : 0);
+                const allowedLines = () => {if (maxLines === "" || maxLines === undefined) return 0;return Number(maxLines);};
                 const enforceMaxUserPoints = () => {
                     if (pendingEnforce) return;
                     pendingEnforce = true;
@@ -51,6 +56,9 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                 if (!toRemove) break;
                                 try {
                                     applet.deleteObject(toRemove);
+                                    setAnswerPoints(prev =>
+                                        prev.filter(p => p.name !== toRemove)
+                                    );
                                     if (DEBUG) console.log('[ggb] deleted user point', toRemove);
                                 } catch (err) {
                                     console.warn('[ggb] failed deleting', toRemove, err);
@@ -61,8 +69,26 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         }
                     }, 0);
                 };
+                const enforceMaxUserLines = () => {
+                    setTimeout(() => {
+                        const allowedCount = allowedLines();
+                        while (userLines.length > allowedCount) {
+                            const toRemove = userLines.shift();
+                            if (!toRemove) break;
 
-                const processPointIfReady = (objName: string, attemptsLeft = 5, delayMs = 60) => {
+                            try {
+                                applet.deleteObject(toRemove);
+                                setAnswerLines(prev =>
+                                    prev.filter(l => l.name !== toRemove)
+                                );
+                            } catch (err) {
+                                console.warn('[ggb] failed deleting line', toRemove, err);
+                            }
+                        }
+                    }, 0);
+                };
+
+                const processPoint = (objName: string, attemptsLeft = 5, delayMs = 60) => {
                     try {
                         const type = applet.getObjectType(objName);
                         if (type !== 'point') return;
@@ -78,12 +104,13 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                             setAnswerPoints(prev => {
                                 const next = prev.filter(p => p.name !== objName);
                                 return [...next, { name: objName, x: Number(x) || 0, y: Number(y) || 0 }];
-                            });                            if (DEBUG) console.log('[ggb] accepted new user point', objName, { x, y });
+                            });
+                            if (DEBUG) console.log('[ggb] accepted new user point', objName, { x, y });
                             enforceMaxUserPoints();
                             return;
                         }
                         if (attemptsLeft > 0) {
-                            setTimeout(() => processPointIfReady(objName, attemptsLeft - 1, delayMs), delayMs);
+                            setTimeout(() => processPoint(objName, attemptsLeft - 1, delayMs), delayMs);
                             return;
                         }
                         userPoints.push(objName);
@@ -99,12 +126,43 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         console.error('[ggb] error in processPointIfReady', err);
                     }
                 };
+                const processLine = (objName: string) => {
+                    const type = applet.getObjectType(objName);
+                    if (!["line", "segment", "ray"].includes(type) || userLines.includes(objName)) return;
+
+                    let equation: string | undefined;
+                    let coefficients: { a: number; b: number; c: number } | undefined;
+
+                    try {
+                        const def = applet.getDefinitionString(objName);
+                        const match = def.match(/\[([^\]]+),([^\]]+)\]/);
+                        if (match) {
+                            const [_, p1, p2] = match;
+                            const x1 = applet.getXcoord(p1);
+                            const y1 = applet.getYcoord(p1);
+                            const x2 = applet.getXcoord(p2);
+                            const y2 = applet.getYcoord(p2);
+
+                            const A = y1 - y2;
+                            const B = x2 - x1;
+                            const C = x1 * y2 - x2 * y1;
+
+                            coefficients = { a: A, b: B, c: C };
+                            equation = `${A.toFixed(3)}x + ${B.toFixed(3)}y + ${C.toFixed(3)} = 0`;
+                        }
+                    } catch { /* empty */ }
+
+                    userLines.push(objName);
+                    setAnswerLines(prev => [...prev.filter(l => l.name !== objName), { name: objName, type, equation, coefficients }]);
+                    enforceMaxUserLines();
+                };
 
                 try {
                     applet.registerAddListener((objName: string) => {
                         try {
                             if (DEBUG) console.log('[ggb] add event for', objName);
-                            processPointIfReady(objName);
+                            processPoint(objName);
+                            processLine(objName);
                         } catch (err) {
                             console.error('[ggb] addListener handler error', err);
                         }
@@ -116,36 +174,14 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
         };
         const ggbApplet = new (window as any).GGBApplet(params, true);
         ggbApplet.inject(containerRef.current);
-    }, [materialId, width, height, maxPoints]);
+    }, [materialId, width, height, maxPoints, maxLines]);
 
     return (
         <div style={{ width: "100%", display: "flex", justifyContent: "center", margin: "16px 0" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-
-                {/* GeoGebra Applet */}
-                <div
-                    ref={containerRef}
-                    style={{
-                        width: Number(width),
-                        height: Number(height),
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                />
-
-                {/* Answer Points Display BELOW Applet */}
+                <div ref={containerRef} style={{width: Number(width), height: Number(height), display: "flex", justifyContent: "center", alignItems: "center",}}/>
                 {answerPoints.length > 0 && (
-                    <div
-                        style={{
-                            marginTop: "12px",
-                            padding: "8px 12px",
-                            border: "1px solid #ccc",
-                            borderRadius: "8px",
-                            width: Number(width),
-                            background: "#fafafa",
-                        }}
-                    >
+                    <div style={{marginTop: "12px", padding: "8px 12px", border: "1px solid #ccc", borderRadius: "8px", width: Number(width), background: "#fafafa",}}>
                         <strong>Erfasste Punkte:</strong>
                         <ul style={{ margin: "8px 0 0 0", padding: 0, listStyle: "none" }}>
                             {answerPoints.map((p) => (
@@ -156,6 +192,19 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         </ul>
                     </div>
                 )}
+                {answerLines.length > 0 && (
+                <div style={{ marginTop: "12px", padding: "8px 12px", border: "1px solid #ccc", borderRadius: "8px", width: Number(width), background: "#f3f6ff" }}>
+                    <strong>Erfasste Linien:</strong>
+                    <ul style={{ margin: "8px 0 0 0", padding: 0, listStyle: "none" }}>
+                        {answerLines.map(l => (
+                            <li key={l.name} style={{ padding: "4px 0" }}>
+                                <div><b>{l.name}</b> — Typ: {l.type}</div>
+                                {l.equation && <div style={{ fontSize: "0.9em" }}>Gleichung: <code>{l.equation}</code></div>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             </div>
         </div>
     );

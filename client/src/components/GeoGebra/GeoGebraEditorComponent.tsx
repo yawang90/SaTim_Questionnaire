@@ -3,20 +3,12 @@ import { NodeViewWrapper } from '@tiptap/react';
 import { TextField } from '@mui/material';
 
 export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
-    const { materialId, width, height, maxPoints } = node.attrs;
+    const { materialId, width, height, maxPoints, maxLines } = node.attrs;
 
     return (
         <NodeViewWrapper
             className="geogebra-node"
-            style={{    border: '1px solid #ddd',
-                padding: '16px',
-                borderRadius: '8px',
-                textAlign: 'center',
-                background: '#fafafa',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '16px'}}>
+            style={{border: '1px solid #ddd', padding: '16px', borderRadius: '8px', textAlign: 'center', background: '#fafafa', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px'}}>
             <p style={{ fontWeight: 'bold' }}>GeoGebra Applet</p>
 
             <TextField
@@ -29,16 +21,48 @@ export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
                 sx={{ maxWidth: 400 }}
             />
 
+            {/* === EXISTING POINT INPUT === */}
             <TextField
                 fullWidth
                 type="number"
                 label="Anzahl Antwortpunkte"
-                value={maxPoints}
+                helperText="Wie viele Punkte sind in der Antwort erlaubt?"
+                value={maxPoints ?? ""}
                 size="small"
                 inputProps={{ min: 0 }}
                 onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    updateAttributes({ maxPoints: val >= 0 ? val : 1 });
+                    const value = e.target.value;
+                    if (value === "") {
+                        updateAttributes({ maxPoints: "" });
+                        return;
+                    }
+                    const val = parseInt(value, 10);
+                    if (!isNaN(val) && val >= 0) {
+                        updateAttributes({ maxPoints: val });
+                    }
+                }}
+                sx={{ maxWidth: 400 }}
+            />
+
+            {/* ✅ NEW INPUT FOR LINES */}
+            <TextField
+                fullWidth
+                type="number"
+                label="Anzahl Antwortlinien"
+                helperText="Wie viele gezeichnete Linien sollen erlaubt sein?"
+                value={maxLines ?? ""}
+                size="small"
+                inputProps={{ min: 0 }}
+                onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                        updateAttributes({ maxLines: "" });
+                        return;
+                    }
+                    const val = parseInt(value, 10);
+                    if (!isNaN(val) && val >= 0) {
+                        updateAttributes({ maxLines: val });
+                    }
                 }}
                 sx={{ maxWidth: 400 }}
             />
@@ -55,3 +79,4 @@ export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
         </NodeViewWrapper>
     );
 };
+

@@ -19,7 +19,7 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                 tooltip: 'Variables and numbers',
                 rows: [
                     ['0','1','2','3','4','5','6','7','8','9','.'],
-                    ['x', 'y', 'z'],
+                    ['x', 'y'],
                     ['+', '-', '[*]', ':', '=', '\\frac{#0}{#?}', '(', ')'],
                     [], [], []
                 ]
