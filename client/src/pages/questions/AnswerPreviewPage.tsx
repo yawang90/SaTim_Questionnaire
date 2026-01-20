@@ -23,13 +23,14 @@ import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorServi
 import type {JSONContent} from '@tiptap/core';
 import {
     type Block,
-    extractAnswersFromJson, extractLinearMC, isValidLineEquation,
+    extractAnswersFromJson,
     mapQuestionsStatus,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
 import PrettyTestResult from "./PrettyTestResult.tsx";
+import {validateLineEquationMathJS} from "./LineEquationValidator.tsx";
 
 export default function AnswerPreviewPage() {
     const {id} = useParams<{ id: string }>();
@@ -83,30 +84,30 @@ export default function AnswerPreviewPage() {
 
         for (const eq of lineEquations) {
             const value = eq.value;
-            if (typeof value !== "string" || !isValidLineEquation(eq)) {
+            if (typeof value !== "string") continue;
+
+            const validation = validateLineEquationMathJS(value);
+
+            if (validation.error) {
                 setSnackbar({
                     open: true,
-                    message: `Ungültige lineare Gleichung: ${value}`,
+                    message: `Ungültige lineare Gleichung: ${validation.error}`,
                     severity: 'error',
                 });
                 return;
             }
+            console.log('m:', validation.m, 'c:', validation.c);
         }
-        for (const eq of lineEquations) {
-            console.log(extractLinearMC(eq));
-        }
-
         try {
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
             setTestDialogOpen(true);
         } catch (err) {
             console.error(err);
-            setTestResult({error: 'Fehler bei der Auswertung.'});
+            setTestResult({ error: 'Fehler bei der Auswertung.' });
             setTestDialogOpen(true);
         }
     };
-
 
     const handleResetAnswers = () => {
         if (!blocks) return;
@@ -140,15 +141,7 @@ export default function AnswerPreviewPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, true]}>
-                <Box sx={{
-                    minHeight: '100vh',
-                    backgroundColor: 'background.default',
-                    py: 3,
-                    px: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    mt: 6
-                }}>
+                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                         <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                             Status setzen

@@ -36,6 +36,7 @@
     "i18next": "^25.3.4",
     "jsxgraph": "^1.11.1",
     "mathjax-full": "^3.2.2",
+    "mathjs": "^15.1.0",
     "mathlive": "^0.107.0",
     "notistack": "^3.0.2",
     "react": "^19.1.1",
