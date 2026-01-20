@@ -4,8 +4,16 @@ import {v4 as uuidv4} from "uuid";
 export type Choice = { id: string; text: string; html?: string; };
 export type Answer =
     | { kind: "mc" | "sc"; key: string; value: { id: string; selected: boolean }[] }
-    | { kind: "freeText" | "freeTextInline" | "numeric" | "lineEquation" | "geoGebra"; key: string; value: string };
+    | { kind: "freeText" | "freeTextInline" | "numeric" | "geoGebra"; key: string; value: string }
+    | LineEquationAnswer;
 
+export type LineEquationAnswer = {
+    kind: 'lineEquation';
+    key: string;
+    value: string;
+    m?: string;
+    c?: string;
+};
 export type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
     | { kind: "sc"; key: string; choices: Choice[] }

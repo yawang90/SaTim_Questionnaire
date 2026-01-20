@@ -11,7 +11,13 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import {Button, Snackbar, Alert, Stack, CircularProgress} from '@mui/material';
-import {type Block, extractAnswersFromJson, parseContentToBlocks} from '../questions/AnswerUtils.tsx';
+import {
+    type Block,
+    extractAnswersFromJson,
+    type LineEquationAnswer,
+    parseContentToBlocks
+} from '../questions/AnswerUtils.tsx';
+import {validateLineEquationMathJS} from "../questions/LineEquationValidator.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -93,13 +99,34 @@ export default function QuizPage() {
             return;
         }
         if (!id) return;
+
+        for (const ans of extractedAnswers) {
+            if (ans.kind === 'lineEquation') {
+                const validation = validateLineEquationMathJS(ans.value);
+                if (validation.error) {
+                    setSnackbarMessage(`Fehler in Gleichung: ${validation.error}`);
+                    setSnackbarOpen(true);
+                    return;
+                }
+                ans.m = validation.m;
+                ans.c = validation.c;
+            }
+        }
+
         const answerDTO: AnswerDTO = {
             questionId: question.id,
-            instanceId: id,
-            answer: extractedAnswers.length === 1
-                ? extractedAnswers[0].value
-                : extractedAnswers.map(a => a.value),
+            instanceId: id!,
+            answer: extractedAnswers.map(a => {
+                if (a.kind === 'lineEquation') {
+                    return {
+                        value: a.value,
+                        m: a.m,
+                        c: a.c
+                    } as LineEquationAnswer;
+                } else {return a.value;}
+            }),
         };
+
 
         try {
             setSubmitting(true);

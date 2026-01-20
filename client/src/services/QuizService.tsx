@@ -25,16 +25,25 @@ export interface Quiz {
     answeredQuestions: number;
 }
 
+export interface LineEquationAnswer {
+    value: string;
+    m?: string;
+    c?: string;
+}
 
 export interface AnswerDTO {
     questionId: number;
     instanceId: string;
-    answer:  | string
+    answer:
+        ( | string
         | string[]
         | { id: string; selected: boolean }
         | { id: string; selected: boolean }[]
-        | (string | { id: string; selected: boolean }[])[];
+        | (string | { id: string; selected: boolean }[])[]
+        | LineEquationAnswer
+        | LineEquationAnswer[])[];
 }
+
 
 /**
  * Fetch a quiz by id
