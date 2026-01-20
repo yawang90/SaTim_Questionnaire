@@ -21,7 +21,6 @@ export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
                 sx={{ maxWidth: 400 }}
             />
 
-            {/* === EXISTING POINT INPUT === */}
             <TextField
                 fullWidth
                 type="number"
@@ -44,7 +43,6 @@ export const GeoGebraEditorComponent = ({ node, updateAttributes }: any) => {
                 sx={{ maxWidth: 400 }}
             />
 
-            {/* ✅ NEW INPUT FOR LINES */}
             <TextField
                 fullWidth
                 type="number"

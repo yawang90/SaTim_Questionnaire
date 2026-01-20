@@ -29,6 +29,7 @@ import {type Block, type Choice, parseContentToBlocks} from "./AnswerUtils.tsx";
 import {NumericAnswer} from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
 import {LineEquationAnswer} from "../../components/Editor/AnswerEditor/LineEquationAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
+import { GeoGebraAnswer } from "../../components/Editor/AnswerEditor/GeogebraAnswer.tsx";
 
 export default function AnswerEditorPage() {
     const { id } = useParams<{ id: string }>();
@@ -66,9 +67,16 @@ export default function AnswerEditorPage() {
                 case "freeTextInline":
                     initial[b.key] = "";
                     break;
-                case "geoGebra":
-                    initial[b.key] = {};
+                case "geoGebra": {
+                    const maxPoints = b.attrs?.maxPoints ?? 0;
+                    const maxLines = b.attrs?.maxLines ?? 0;
+                    initial[b.key] = {
+                        points: Array.from({ length: maxPoints }).map((_, i) => ({name: `P${i + 1}`, x: 0, y: 0,})),
+                        lines: Array.from({ length: maxLines }).map((_, i) => ({name: `L${i + 1}`, m: 0, c: 0,
+                        })),
+                    };
                     break;
+                }
             }
         });
 
@@ -340,16 +348,31 @@ export default function AnswerEditorPage() {
 
                                         {/* GeoGebra */}
                                         {answerType.kind === "geoGebra" && (
-                                            <FormControl fullWidth>
-                                                <TextField
-                                                    label="Erwarteter GeoGebra Zustand (z.B. Variablenwerte)"
-                                                    value={answers[answerType.key] ?? ""}
-                                                    onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
-                                                />
-                                                <Typography variant="caption" color="text.secondary">
-                                                    (Hier kannst du z. B. JSON für erwartete GeoGebra-Objektwerte speichern.)
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>Punkte definieren</Typography>
+                                                {(answers[answerType.key]?.points ?? []).map((p: any, idx: number) => (
+                                                    <GeoGebraAnswer key={p.name} type="point" data={p} onChange={(updated) => handleAnswerChange(answerType.key, {
+                                                        ...answers[answerType.key],
+                                                        points: answers[answerType.key].points.map((pt: any, i:number) => i === idx ? updated : pt
+                                                        ),
+                                                    })}
+                                                    />
+
+                                                ))}
+                                                <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                                                    Linien definieren
                                                 </Typography>
-                                            </FormControl>
+                                                {(answers[answerType.key]?.lines ?? []).map((l: any, idx: number) => (
+                                                    <GeoGebraAnswer key={l.name} type="line" data={l}
+                                                        onChange={(updated) =>
+                                                            handleAnswerChange(answerType.key, {
+                                                                ...answers[answerType.key],
+                                                                lines: answers[answerType.key].lines.map((ln: any, i: number) => (i === idx ? updated : ln)),
+                                                            })
+                                                        }
+                                                    />
+                                                ))}
+                                            </Box>
                                         )}
                                     </AccordionDetails>
                                 </Accordion>
