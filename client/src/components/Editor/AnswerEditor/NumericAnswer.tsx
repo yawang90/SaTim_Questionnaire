@@ -48,7 +48,7 @@ export const NumericAnswer: React.FC<NumericAnswerProps> = ({ conditions, onChan
 
     return (
         <Box>
-            Die Antwort ist:
+            <Typography fontWeight="bold">Die Antwort ist</Typography>
             {conditions.map((cond, idx) => (
                 <Box key={idx} display="flex" alignItems="center" gap={1} mb={1}>
                     {idx > 0 && (

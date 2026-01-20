@@ -25,10 +25,12 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             label: 'Custom',
             tooltip: 'Variables and numbers',
             rows: [
-                ['a', 'b', 'c', 'x', 'y', 'z', '\\alpha', '\\beta', '\\gamma'],
-                ['+', '-', '[*]', '[/]', '=', '\\sqrt{#0}', '#@^{#?}', '(', ')']
+                ['0','1','2','3','4','5','6','7','8','9','.'],
+                ['x', 'y'],
+                ['+', '-', '[*]', ':', '=', '\\frac{#0}{#?}', '(', ')'],
+                [], [], []
             ]
-        };
+        }
 
         document.body.style.setProperty('--keycap-height', '32px');
         document.body.style.setProperty('--keycap-font-size', '15px');

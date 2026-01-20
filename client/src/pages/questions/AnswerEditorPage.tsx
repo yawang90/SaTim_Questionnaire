@@ -54,8 +54,13 @@ export default function AnswerEditorPage() {
                     initial[b.key] = null;
                     break;
                 case "numeric":
-                case "lineEquation":
                     initial[b.key] = [{ operator: "=", value: "" }];
+                    break;
+                case "lineEquation":
+                    initial[b.key] = {
+                        m: [{ operator: "=", value: "" }],
+                        c: [{ operator: "=", value: "" }]
+                    };
                     break;
                 case "freeText":
                 case "freeTextInline":
@@ -146,8 +151,16 @@ export default function AnswerEditorPage() {
                         payload[b.key] = { type: "sc", value: val ?? null };
                         break;
                     case "numeric":
+                        payload[b.key] = { type: "numeric", value: Array.isArray(val) ? val : [{ operator: "=", value: "" }] };
+                        break;
                     case "lineEquation":
-                        payload[b.key] = { type: b.kind, value: val };
+                        payload[b.key] = {
+                            type: "lineEquation",
+                            value: {
+                                m: Array.isArray(val?.m) ? val.m : [{ operator: "=", value: "" }],
+                                c: Array.isArray(val?.c) ? val.c : [{ operator: "=", value: "" }]
+                            }
+                        };
                         break;
                     case "freeText":
                     case "freeTextInline":
@@ -167,50 +180,34 @@ export default function AnswerEditorPage() {
         }
     };
 
-    const hasValidConditions = (conditions: any[], variable: "m" | "c") => {
-        const filtered = conditions.filter(c => c.variable === variable);
-        if (filtered.length === 0) return false;
-
-        return filtered.every(
-            c => typeof c.value === "string" && c.value.trim().length > 0
-        );
-    };
+    const hasValid = (conds: any[]) =>
+        Array.isArray(conds) &&
+        conds.every(c => typeof c.value === "string" && c.value.trim());
 
     const validateAnswersBeforeSave = () => {
         const errors: string[] = [];
-
         blocks.forEach((b) => {
             const val = answers[b.key];
-
             switch (b.kind) {
                 case "mc":
                     if (!val || val.length === 0) {
-                        errors.push(`Multiple Choice (${b.key}) braucht mindestens eine richtige Auswahl.`);
-                    }
+                        errors.push(`Multiple Choice (${b.key}) braucht mindestens eine richtige Auswahl.`);}
                     break;
-
                 case "sc":
                     if (val === null) {
-                        errors.push(`Single Choice (${b.key}) braucht eine richtige Auswahl.`);
-                    }
+                        errors.push(`Single Choice (${b.key}) braucht eine richtige Auswahl.`);}
                     break;
-
                 case "numeric":
-                    if (!Array.isArray(val) || val.length === 0 || !val[0].value?.toString().trim()) {
-                        errors.push(`Numerische Eingabe (${b.key}) braucht einen gültigen Wert.`);
+                    if (!Array.isArray(val) || val.length === 0 || !val.every((c: any) => c.value?.toString().trim())) {
+                        errors.push(`Numerische Eingabe (${b.key}) braucht gültige Werte für alle Bedingungen.`);
                     }
                     break;
                 case "lineEquation":
-                    console.log(b)
-                    if (!Array.isArray(val)) {
-                        errors.push(`Geradengleichung (${b.key}) ist ungültig.`);
-                        break;
+                    if (!val?.m || !hasValid(val.m)) {
+                        errors.push(`Geradengleichung (${b.key}): m braucht eine Bedingung.`);
                     }
-                    if (!hasValidConditions(val, "m")) {
-                        errors.push(`Geradengleichung (${b.key}): Es muss mindestens eine gültige Bedingung für m definiert sein.`);
-                    }
-                    if (!hasValidConditions(val, "c")) {
-                        errors.push(`Geradengleichung (${b.key}): Es muss mindestens eine gültige Bedingung für c definiert sein.`);
+                    if (!val?.c || !hasValid(val.c)) {
+                        errors.push(`Geradengleichung (${b.key}): c braucht eine Bedingung.`);
                     }
                     break;
                 case "freeText":
@@ -325,12 +322,10 @@ export default function AnswerEditorPage() {
 
                                         {/* Numeric */}
                                         {answerType.kind === "numeric" && (
-                                            <FormControl fullWidth>
                                                 <NumericAnswer
                                                     conditions={answers[answerType.key] ?? [{ operator: "=", value: "" }]}
                                                     onChange={(val) => handleAnswerChange(answerType.key, val)}
                                                 />
-                                            </FormControl>
                                         )}
 
                                         {/* LineEquation */}
