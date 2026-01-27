@@ -25,6 +25,8 @@ export type GeoGebraAnswer = {
     key: string;
     points: GeoGebraPoint[];
     lines: GeoGebraLine[];
+    value: {     points: GeoGebraPoint[];
+        lines: GeoGebraLine[]; };
 };
 
 export type Block =
@@ -168,6 +170,16 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                         m: 0,
                         c: 0,
                     })),
+                    value: { points: Array.from({ length: maxPoints }).map((_, i) => ({
+                            name: `P${i + 1}`,
+                            x: 0,
+                            y: 0,
+                        })),
+                        lines: Array.from({ length: maxLines }).map((_, i) => ({
+                            name: `L${i + 1}`,
+                            m: 0,
+                            c: 0,
+                        })),}
                 };
                 return geoAnswer;
             }
