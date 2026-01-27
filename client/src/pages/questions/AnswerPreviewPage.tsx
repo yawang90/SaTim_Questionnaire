@@ -95,8 +95,10 @@ export default function AnswerPreviewPage() {
                     severity: 'error',
                 });
                 return;
+            } else {
+                eq.m = validation.m;
+                eq.c = validation.c;
             }
-            console.log('m:', validation.m, 'c:', validation.c);
         }
         try {
             const response = await evaluateAnswers(id, answers);

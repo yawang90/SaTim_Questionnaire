@@ -1,13 +1,11 @@
 import prisma from "../config/prismaClient.js";
-import type { question } from "@prisma/client";
-import { convertLatexToAsciiMath  } from "mathlive";
-import nerdamer from 'nerdamer';
+import type {question} from "@prisma/client";
 import "nerdamer/Algebra.js";
 import 'nerdamer/Solve.js';
 import 'nerdamer/Calculus.js';
 import 'nerdamer/Extra.js';
 
-type AnswerType = "sc" | "mc" | "numeric" | "algebra" | "freeText" | "geoGebra" | "freeTextInline";
+type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebra" | "freeTextInline" | "lineEquation";
 
 interface CorrectAnswerBase {
     type: AnswerType;
@@ -29,11 +27,6 @@ interface NumericAnswer extends CorrectAnswerBase {
     operator?: "=" | "<" | ">" | "<=" | ">=";
 }
 
-interface AlgebraAnswer extends CorrectAnswerBase {
-    type: "algebra";
-    value: any;
-}
-
 interface FreeTextAnswer extends CorrectAnswerBase {
     type: "freeText" | "freeTextInline";
     value: string;
@@ -44,11 +37,25 @@ interface GeoGebraAnswer extends CorrectAnswerBase {
     value: any;
 }
 
+interface LineEquationAnswer extends CorrectAnswerBase {
+    type: "lineEquation";
+    value: {
+        m: NumericCondition[];
+        c: NumericCondition[];
+    };
+}
+
+type NumericCondition = {
+    value: string;
+    operator: "=" | "<" | ">" | "<=" | ">=";
+    logic?: "and" | "or";
+};
+
 type CorrectAnswer =
     | SingleChoiceAnswer
     | MultipleChoiceAnswer
     | NumericAnswer
-    | AlgebraAnswer
+    | LineEquationAnswer
     | FreeTextAnswer
     | GeoGebraAnswer;
 
@@ -172,55 +179,6 @@ export const evaluateAnswersService = async (
 
                     break;
                 }
-
-                case "algebra": {
-                    const conditions = correctAnswer.value as {
-                        logic: "and" | "or";
-                        value: string;
-                        operator: "<" | ">" | "<=" | ">=" | "=";
-                    }[];
-
-                    const givenLatex = String(userAnswer.value);
-
-                    try {
-                        const givenExpr = nerdamer.factor(nerdamer(convertLatexToAsciiMath(givenLatex)).expand());
-                        let result = conditions[0]?.logic === "and";
-
-                        for (const condition of conditions) {
-                            const expectedExpr = nerdamer.factor(nerdamer(convertLatexToAsciiMath(condition.value)).expand());
-                            let check = false;
-
-                            switch (condition.operator) {
-                                case "=":
-                                    check = givenExpr.eq(expectedExpr);
-                                    break;
-                                case "<":
-                                    check = givenExpr.lt(expectedExpr);
-                                    break;
-                                case "<=":
-                                    check = givenExpr.lte(expectedExpr);
-                                    break;
-                                case ">":
-                                    check = givenExpr.gt(expectedExpr);
-                                    break;
-                                case ">=":
-                                    check = givenExpr.gte(expectedExpr);
-                                    break;
-                            }
-
-                            if (condition.logic === "and") result = result && check;
-                            else result = result || check;
-                        }
-
-                        if (result) {
-                            isCorrect = true;
-                            score += 1;
-                        }
-                    } catch (err) {
-                        console.error("Algebra evaluation failed:", err);
-                    }
-                    break;
-                }
                 case "freeText":
                 case "freeTextInline":
                     if (
@@ -241,7 +199,21 @@ export const evaluateAnswersService = async (
                         score += 1;
                     }
                     break;
-            }
+                case "lineEquation": {
+                        const ua = userAnswer as any;
+                        const userM = Number(ua.m);
+                        const userC = Number(ua.c);
+                        if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
+                        const { m, c } = correctAnswer.value;
+                        const mOk = checkNumericConditions(userM, m);
+                        const cOk = checkNumericConditions(userC, c);
+                        if (mOk && cOk) {
+                            isCorrect = true;
+                            score += 1;
+                        }
+                        break;
+                    }
+                }
         }
         details.push({
             key,
@@ -256,3 +228,35 @@ export const evaluateAnswersService = async (
         details
     };
 };
+
+function checkNumericConditions(value: number, conditions: { value: string; operator: "=" | "<" | ">" | "<=" | ">="; logic?: "and" | "or"; }[]
+): boolean {
+    const EPS = 1e-12;
+    let result = conditions[0]?.logic !== "or";
+
+    for (const cond of conditions) {
+        const target = Number(cond.value);
+        let check = false;
+
+        switch (cond.operator) {
+            case "=":
+                check = Math.abs(value - target) < EPS;
+                break;
+            case "<":
+                check = value < target - EPS;
+                break;
+            case ">":
+                check = value > target + EPS;
+                break;
+            case "<=":
+                check = value <= target + EPS;
+                break;
+            case ">=":
+                check = value >= target - EPS;
+                break;
+        }
+        if (cond.logic === "or") result = result || check;
+        else result = result && check;
+    }
+    return result;
+}

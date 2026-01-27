@@ -86,7 +86,6 @@ export default function AnswerEditorPage() {
                 initial[key] = obj.value ?? initial[key];
             });
         }
-
         setAnswers(initial);
     };
 
@@ -190,7 +189,11 @@ export default function AnswerEditorPage() {
 
     const hasValid = (conds: any[]) =>
         Array.isArray(conds) &&
-        conds.every(c => typeof c.value === "string" && c.value.trim());
+        conds.every(c =>
+            c.value !== undefined &&
+            c.value !== null &&
+            String(c.value).trim() !== ""
+        );
 
     const validateAnswersBeforeSave = () => {
         const errors: string[] = [];
