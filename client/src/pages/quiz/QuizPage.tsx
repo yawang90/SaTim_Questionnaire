@@ -123,6 +123,12 @@ export default function QuizPage() {
                         m: a.m,
                         c: a.c
                     } as LineEquationAnswer;
+                } else if (a.kind === 'geoGebra') {
+                    return {
+                        value: a.value,
+                        points: a.points,
+                        lines: a.lines
+                    }
                 } else {return a.value;}
             }),
         };

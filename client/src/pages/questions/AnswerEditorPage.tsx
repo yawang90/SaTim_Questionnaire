@@ -273,15 +273,16 @@ export default function AnswerEditorPage() {
                     break;
 
                 case "geoGebra": {
-                    console.log(val)
-                    Object.entries(val?.points ?? {}).forEach(([name, conds]: [string, { x: Condition[]; y: Condition[] }]) => {
-                        if (!conds || !hasValidConditions(conds.x) || !hasValidConditions(conds.y)) {
+                    const points = val?.points as Record<string, { x: Condition[]; y: Condition[] }> | undefined;
+                    Object.entries(points ?? {}).forEach(([name, conds]) => {
+                        if (!hasValidConditions(conds.x) || !hasValidConditions(conds.y)) {
                             errors.push(`GeoGebra Punkt ${name} (${b.key}) braucht gültige Bedingungen für x und y.`);
                         }
                     });
 
-                    Object.entries(val?.lines ?? {}).forEach(([name, conds]: [string, { m: Condition[]; c: Condition[] }]) => {
-                        if (!conds || !hasValidConditions(conds.m) || !hasValidConditions(conds.c)) {
+                    const lines = val?.lines as Record<string, { m: Condition[]; c: Condition[] }> | undefined;
+                    Object.entries(lines ?? {}).forEach(([name, conds]) => {
+                        if (!hasValidConditions(conds.m) || !hasValidConditions(conds.c)) {
                             errors.push(`GeoGebra Linie ${name} (${b.key}) braucht gültige Bedingungen für m und c.`);
                         }
                     });
@@ -430,34 +431,36 @@ export default function AnswerEditorPage() {
                                                 <Box>
                                                     <Typography variant="h6" sx={{ mb: 1 }}>Punkte definieren</Typography>
                                                     {/* GeoGebra Points */}
-                                                    {Object.entries(answers.geoGebraPoints ?? {}).map(([name, conds]) => (
-                                                        <GeoGebraPointAnswer
-                                                            key={name}
-                                                            data={{ name }}
-                                                            conditions={conds}
+                                                    {Object.entries(answers.geoGebraPoints as Record<string, PointConditions> ?? {}).map(([name, conds]) => (
+                                                        <GeoGebraPointAnswer key={name} data={{ name }} conditions={conds}
                                                             onChange={(next) =>
                                                                 setAnswers(prev => ({
                                                                     ...prev,
-                                                                    geoGebraPoints: { ...prev.geoGebraPoints, [name]: next }
+                                                                    geoGebraPoints: {
+                                                                        ...prev.geoGebraPoints,
+                                                                        [name]: next
+                                                                    }
                                                                 }))
                                                             }
                                                         />
                                                     ))}
+
                                                     <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Linien definieren</Typography>
                                                     {/* GeoGebra Lines */}
-                                                    {Object.entries(answers.geoGebraLines ?? {}).map(([name, conds]) => (
-                                                        <GeoGebraLineAnswer
-                                                            key={name}
-                                                            data={{ name }}
-                                                            conditions={conds}
+                                                    {Object.entries(answers.geoGebraLines as Record<string, LineConditions> ?? {}).map(([name, conds]) => (
+                                                        <GeoGebraLineAnswer key={name} data={{ name }} conditions={conds}
                                                             onChange={(next) =>
                                                                 setAnswers(prev => ({
                                                                     ...prev,
-                                                                    geoGebraLines: { ...prev.geoGebraLines, [name]: next }
+                                                                    geoGebraLines: {
+                                                                        ...prev.geoGebraLines,
+                                                                        [name]: next
+                                                                    }
                                                                 }))
                                                             }
                                                         />
                                                     ))}
+
                                                 </Box>
                                             )}
 

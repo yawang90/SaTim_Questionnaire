@@ -25,8 +25,7 @@ export type GeoGebraAnswer = {
     key: string;
     points: GeoGebraPoint[];
     lines: GeoGebraLine[];
-    value: {     points: GeoGebraPoint[];
-        lines: GeoGebraLine[]; };
+    value: {points: GeoGebraPoint[]; lines: GeoGebraLine[]};
 };
 
 export type Block =

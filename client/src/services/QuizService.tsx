@@ -1,4 +1,6 @@
 // @ts-expect-error
+import type {GeoGebraLine, GeoGebraPoint} from "../pages/questions/AnswerUtils.tsx";
+
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export interface QuizQuestion {
@@ -31,19 +33,20 @@ export interface LineEquationAnswer {
     c?: string;
 }
 
+export type AnswerValue =
+    | string[]
+    | string
+    | { id: string; selected: boolean }
+    | { id: string; selected: boolean }[]
+    | LineEquationAnswer
+    | LineEquationAnswer[]
+    | { points: GeoGebraPoint[]; lines: GeoGebraLine[] };
+
 export interface AnswerDTO {
     questionId: number;
     instanceId: string;
-    answer:
-        ( | string
-        | string[]
-        | { id: string; selected: boolean }
-        | { id: string; selected: boolean }[]
-        | (string | { id: string; selected: boolean }[])[]
-        | LineEquationAnswer
-        | LineEquationAnswer[])[];
+    answer: AnswerValue[];
 }
-
 
 /**
  * Fetch a quiz by id
