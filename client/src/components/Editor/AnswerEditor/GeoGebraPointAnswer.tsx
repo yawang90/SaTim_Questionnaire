@@ -46,8 +46,7 @@ export const GeoGebraPointAnswer: React.FC<Props> = ({ data, conditions, onChang
                         <FormControl size="small">
                             <Select
                                 value={cond.logic || "and"}
-                                onChange={(e) => update(axis, idx, { logic: e.target.value as "and" | "or" })}
-                            >
+                                onChange={(e) => update(axis, idx, { logic: e.target.value as "and" | "or" })}>
                                 {logics.map((l) => (
                                     <MenuItem key={l} value={l}>
                                         {l.toUpperCase()}
@@ -59,8 +58,7 @@ export const GeoGebraPointAnswer: React.FC<Props> = ({ data, conditions, onChang
                     <FormControl size="small">
                         <Select
                             value={cond.operator}
-                            onChange={(e) => update(axis, idx, { operator: e.target.value as Condition["operator"] })}
-                        >
+                            onChange={(e) => update(axis, idx, { operator: e.target.value as Condition["operator"] })}>
                             {operators.map((op) => (
                                 <MenuItem key={op} value={op}>
                                     {op}

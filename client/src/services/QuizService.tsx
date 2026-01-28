@@ -1,6 +1,5 @@
-// @ts-expect-error
 import type {GeoGebraLine, GeoGebraPoint} from "../pages/questions/AnswerUtils.tsx";
-
+// @ts-ignore
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export interface QuizQuestion {

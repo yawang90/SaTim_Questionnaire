@@ -106,7 +106,7 @@ export default function AnswerEditorPage() {
 
         if (persisted) {
             Object.entries(persisted).forEach(([key, obj]) => {
-                if (key === "geoGebra") {
+                if (obj.type === "geoGebra") {
                     if (obj.value?.points) initial.geoGebraPoints = { ...initial.geoGebraPoints, ...obj.value.points };
                     if (obj.value?.lines) initial.geoGebraLines = { ...initial.geoGebraLines, ...obj.value.lines };
                 } else if (key in initial) {
@@ -298,15 +298,7 @@ export default function AnswerEditorPage() {
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
                 <MathJaxContext>
-                    <Box sx={{
-                        minHeight: "100vh",
-                        backgroundColor: "background.default",
-                        py: 3,
-                        px: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        mt: 6
-                    }}>
+                    <Box sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6}}>
                         <Paper elevation={0} sx={{padding: 3, border: "2px solid #000"}}>
                             <Typography variant="h4" gutterBottom sx={{textAlign: "center", fontWeight: "bold"}}>
                                 Antworten definieren
