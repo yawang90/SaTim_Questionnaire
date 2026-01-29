@@ -7,7 +7,8 @@ export type Answer =
     | { kind: "mc" | "sc"; key: string; value: { id: string; selected: boolean }[] }
     | { kind: "freeText" | "freeTextInline" | "numeric"; key: string; value: string }
     | LineEquationAnswer
-    | GeoGebraAnswer;
+    | GeoGebraPointsAnswer
+    | GeoGebraLinesAnswer;
 
 export type LineEquationAnswer = {
     kind: "lineEquation";
@@ -20,12 +21,18 @@ export type LineEquationAnswer = {
 export type GeoGebraPoint = { name: string; x: number; y: number };
 export type GeoGebraLine = { name: string; m: number; c: number };
 
-export type GeoGebraAnswer = {
-    kind: "geoGebra";
+export type GeoGebraPointsAnswer = {
+    kind: "geoGebraPoints";
     key: string;
     points: GeoGebraPoint[];
+    value: GeoGebraPoint[];
+};
+
+export type GeoGebraLinesAnswer = {
+    kind: "geoGebraLines";
+    key: string;
     lines: GeoGebraLine[];
-    value: {points: GeoGebraPoint[]; lines: GeoGebraLine[]};
+    value: GeoGebraLine[];
 };
 
 export type Block =
@@ -35,8 +42,8 @@ export type Block =
     | { kind: "freeTextInline"; key: string }
     | { kind: "numeric"; key: string }
     | { kind: "lineEquation"; key: string }
-    | { kind: "geoGebra"; key: string; attrs?: { maxPoints?: number; maxLines?: number } };
-
+    | { kind: "geoGebraPoints"; key: string; attrs?: { maxPoints?: number } }
+    | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number } };
 
 export const mapQuestionsStatus = (
     status: string | null | undefined
@@ -116,9 +123,22 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
             if (node.type === "freeTextInline") blockMap[nodeId] = { kind: "freeTextInline", key: nodeId };
             if (node.type === "numericInput") blockMap[nodeId] = { kind: "numeric", key: nodeId };
             if (node.type === "lineEquation") blockMap[nodeId] = { kind: "lineEquation", key: nodeId };
-
             if (node.type === "geoGebra") {
-                blockMap[nodeId] = { kind: "geoGebra", key: nodeId, attrs: node.attrs };
+                const nodeKey = node.attrs?.id || uuidv4();
+                if (node.attrs.variant === "points") {
+                    blockMap[nodeKey] = {
+                        kind: "geoGebraPoints",
+                        key: nodeKey,
+                        attrs: node.attrs,
+                    };
+                }
+                if (node.attrs.variant === "lines") {
+                    blockMap[nodeKey] = {
+                        kind: "geoGebraLines",
+                        key: nodeKey,
+                        attrs: node.attrs,
+                    };
+                }
             }
             if (node.content) walk(node.content);
         });
@@ -151,36 +171,25 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
             case "numeric":
             case "lineEquation":
                 return { kind: block.kind, key: block.key, value: "" };
-
-            case "geoGebra": {
+            case "geoGebraPoints": {
                 const maxPoints = block.attrs?.maxPoints ?? 0;
-                const maxLines = block.attrs?.maxLines ?? 0;
-
-                const geoAnswer: GeoGebraAnswer = {
-                    kind: "geoGebra",
+                const points = Array.from({ length: maxPoints }).map((_, i) => ({name: `P${i + 1}`, x: 0, y: 0,}));
+                return {
+                    kind: "geoGebraPoints",
                     key: block.key,
-                    points: Array.from({ length: maxPoints }).map((_, i) => ({
-                        name: `P${i + 1}`,
-                        x: 0,
-                        y: 0,
-                    })),
-                    lines: Array.from({ length: maxLines }).map((_, i) => ({
-                        name: `L${i + 1}`,
-                        m: 0,
-                        c: 0,
-                    })),
-                    value: { points: Array.from({ length: maxPoints }).map((_, i) => ({
-                            name: `P${i + 1}`,
-                            x: 0,
-                            y: 0,
-                        })),
-                        lines: Array.from({ length: maxLines }).map((_, i) => ({
-                            name: `L${i + 1}`,
-                            m: 0,
-                            c: 0,
-                        })),}
+                    points,
+                    value: points,
                 };
-                return geoAnswer;
+            }
+            case "geoGebraLines": {
+                const maxLines = block.attrs?.maxLines ?? 0;
+                const lines = Array.from({ length: maxLines }).map((_, i) => ({name: `L${i + 1}`, m: 0, c: 0,}));
+                return {
+                    kind: "geoGebraLines",
+                    key: block.key,
+                    lines,
+                    value: lines,
+                };
             }
         }
     });
@@ -223,16 +232,34 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     }
                     break;
                 }
-                case "geoGebra": {
+                case "geoGebraPoints": {
+                    if (answer.kind === "geoGebraPoints") {
+                        answer.points.forEach((point, i) => {
+                            const xInput = document.querySelector<HTMLInputElement>(`#${block.key}-point-${i}-x`);
+                            const yInput = document.querySelector<HTMLInputElement>(`#${block.key}-point-${i}-y`);
+                            if (xInput) point.x = parseFloat(xInput.value) || 0;
+                            if (yInput) point.y = parseFloat(yInput.value) || 0;
+                        });
+                        answer.value = [...answer.points];
+                    }
+                    break;
+                }
+                case "geoGebraLines": {
+                    if (answer.kind === "geoGebraLines") {
+                        answer.lines.forEach((line, i) => {
+                            const mInput = document.querySelector<HTMLInputElement>(`#${block.key}-line-${i}-m`);
+                            const cInput = document.querySelector<HTMLInputElement>(`#${block.key}-line-${i}-c`);
+                            if (mInput) line.m = parseFloat(mInput.value) || 0;
+                            if (cInput) line.c = parseFloat(cInput.value) || 0;
+                        });
+                        answer.value = [...answer.lines];
+                    }
                     break;
                 }
             }
-
             if (node.content) walk(node.content);
         }
     };
-
     if (doc.content) walk(doc.content as TipTapNode[]);
-
     return answers;
 }

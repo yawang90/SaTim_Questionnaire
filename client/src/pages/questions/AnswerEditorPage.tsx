@@ -29,31 +29,47 @@ import type {JSONContent} from "@tiptap/core";
 import {type Block, type Choice, parseContentToBlocks} from "./AnswerUtils.tsx";
 import {NumericAnswer} from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
 import {LineEquationAnswer} from "../../components/Editor/AnswerEditor/LineEquationAnswer.tsx";
-import {MathJax, MathJaxContext} from "better-react-mathjax";
-import type {
-    Condition,
-    LineConditions,
-    PointConditions
-} from "../../components/Editor/AnswerEditor/GeoGebraAnswerTypes.tsx";
 import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebraPointAnswer.tsx";
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
+import {MathJax, MathJaxContext} from "better-react-mathjax";
+import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/GeoGebraAnswerTypes.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
     const [openPreview, setOpenPreview] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
+    const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
 
-    const initAnswersForBlocks = (parsed: Block[], persisted?: Record<string, any>) => {
+    useEffect(() => {
+        if (!id) return;
+        setLoading(true);
+        (async () => {
+            try {
+                const question = await loadQuestionForm(id);
+                const contentJson = typeof question.contentJson === "string"
+                    ? JSON.parse(question.contentJson)
+                    : question.contentJson ?? {type: "doc", content: []};
+                setQuestionContentJson(contentJson);
+                const parsedBlocks = parseContentToBlocks(contentJson);
+                setBlocks(parsedBlocks);
+                const persisted = question.correctAnswers ?? {};
+                initAnswers(parsedBlocks, persisted);
+            } catch (err) {
+                console.error("Failed to load question:", err);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [id]);
+    const initAnswers = (parsedBlocks: Block[], persisted?: Record<string, any>) => {
         const initial: Record<string, any> = {};
-
-        parsed.forEach((b) => {
+        parsedBlocks.forEach((b) => {
             switch (b.kind) {
                 case "mc":
                     initial[b.key] = [];
@@ -65,83 +81,79 @@ export default function AnswerEditorPage() {
                     initial[b.key] = [{operator: "=", value: ""}];
                     break;
                 case "lineEquation":
-                    initial[b.key] = {
-                        m: [{operator: "=", value: ""}],
-                        c: [{operator: "=", value: ""}]
-                    };
+                    initial[b.key] = {m: [{operator: "=", value: ""}], c: [{operator: "=", value: ""}]};
                     break;
                 case "freeText":
                 case "freeTextInline":
                     initial[b.key] = "";
                     break;
-                case "geoGebra": {
-                    const maxPoints = b.attrs?.maxPoints ?? 0;
-                    const maxLines = b.attrs?.maxLines ?? 0;
-
-                    const points: Record<string, PointConditions> = {};
-                    const lines: Record<string, LineConditions> = {};
-
+                case "geoGebraPoints": {
+                    const maxPoints = b.attrs?.maxPoints ?? 1;
                     for (let i = 0; i < maxPoints; i++) {
-                        const name = `P${i + 1}`;
-                        points[name] = {
-                            x: [{ operator: "=", value: "", logic: "and" }],
-                            y: [{ operator: "=", value: "", logic: "and" }]
+                        const pointName = `P${i + 1}`;
+                        initial[pointName] = {
+                            x: [{operator: "=", value: "", logic: "and"}],
+                            y: [{operator: "=", value: "", logic: "and"}]
                         };
                     }
-
+                    break;
+                }
+                case "geoGebraLines": {
+                    const maxLines = b.attrs?.maxLines ?? 0;
                     for (let i = 0; i < maxLines; i++) {
                         const name = `L${i + 1}`;
-                        lines[name] = {
-                            m: [{ operator: "=", value: "", logic: "and" }],
-                            c: [{ operator: "=", value: "", logic: "and" }]
+                        initial[name] = {
+                            m: [{operator: "=", value: "", logic: "and"}],
+                            c: [{operator: "=", value: "", logic: "and"}]
                         };
                     }
-
-                    initial.geoGebraPoints = points;
-                    initial.geoGebraLines = lines;
                     break;
                 }
             }
-        });
 
+        });
         if (persisted) {
             Object.entries(persisted).forEach(([key, obj]) => {
-                if (obj.type === "geoGebra") {
-                    if (obj.value?.points) initial.geoGebraPoints = { ...initial.geoGebraPoints, ...obj.value.points };
-                    if (obj.value?.lines) initial.geoGebraLines = { ...initial.geoGebraLines, ...obj.value.lines };
-                } else if (key in initial) {
+                if (obj.type === "geoGebraPoints" && obj.value) {
+                    Object.entries(obj.value as Record<string, PointConditions>).forEach(([pName, conds]) => {
+                        if (initial[pName]) {
+                            initial[pName] = {
+                                ...initial[pName],
+                                x: conds.x ?? initial[pName].x,
+                                y: conds.y ?? initial[pName].y
+                            };
+                        } else {
+                            initial[pName] = {
+                                x: conds.x ?? [],
+                                y: conds.y ?? []
+                            };
+                        }
+                    });
+                }
+                else if (obj.type === "geoGebraLines" && obj.value) {
+                    Object.entries(obj.value as Record<string, LineConditions>).forEach(([lName, conds]) => {
+                        if (initial[lName]) {
+                            initial[lName] = {
+                                ...initial[lName],
+                                m: conds.m ?? initial[lName].m,
+                                c: conds.c ?? initial[lName].c
+                            };
+                        } else {
+                            initial[lName] = {
+                                m: conds.m ?? [],
+                                c: conds.c ?? []
+                            };
+                        }
+                    });
+                }
+                else if (key in initial) {
                     initial[key] = obj.value ?? initial[key];
                 }
             });
         }
-
         setAnswers(initial);
+
     };
-
-    useEffect(() => {
-        if (!id) return;
-        setLoading(true);
-        (async () => {
-            try {
-                const question = await loadQuestionForm(id);
-                const contentJson =
-                    typeof question.contentJson === "string"
-                        ? JSON.parse(question.contentJson)
-                        : question.contentJson ?? {type: "doc", content: []};
-
-                setQuestionContentJson(contentJson);
-                const parsedBlocks: Block[] = parseContentToBlocks(contentJson);
-                setBlocks(parsedBlocks);
-                const persisted = question.correctAnswers ?? {};
-                initAnswersForBlocks(parsedBlocks, persisted);
-            } catch (err) {
-                console.error("Failed to load question:", err);
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [id]);
-
     const toggleChoice = (blockKey: string, choiceId: string) => {
         setAnswers(prev => {
             const block = blocks.find(b => b.key === blockKey);
@@ -164,7 +176,54 @@ export default function AnswerEditorPage() {
         });
     };
 
-    const handleAnswerChange = (blockKey: string, value: any) => setAnswers((prev) => ({...prev, [blockKey]: value}));
+    const handleAnswerChange = (blockKey: string, value: any) =>
+        setAnswers(prev => ({...prev, [blockKey]: value}));
+
+    const validateAnswersBeforeSave = () => {
+        const errors: string[] = [];
+        const hasValid = (conds: any[]) => conds.every(c => c.value?.toString().trim() !== "");
+        blocks.forEach((b) => {
+            const val = answers[b.key];
+            switch (b.kind) {
+                case "mc":
+                    if (!val || val.length === 0) errors.push(`Multiple Choice (${b.key}) braucht mindestens eine Auswahl.`);
+                    break;
+                case "sc":
+                    if (val === null) errors.push(`Single Choice (${b.key}) braucht eine Auswahl.`);
+                    break;
+                case "numeric":
+                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Numerische Eingabe (${b.key}) braucht gültige Werte.`);
+                    break;
+                case "lineEquation":
+                    if (!val?.m || !hasValid(val.m)) errors.push(`Geradengleichung (${b.key}): m benötigt eine Bedingung.`);
+                    if (!val?.c || !hasValid(val.c)) errors.push(`Geradengleichung (${b.key}): c benötigt eine Bedingung.`);
+                    break;
+                case "freeText":
+                case "freeTextInline":
+                    if (!val || !val.trim()) errors.push(`Freitext (${b.key}) darf nicht leer sein.`);
+                    break;
+                case "geoGebraPoints":
+                    for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
+                        const pointName = `P${i + 1}`;
+                        const conds = answers[pointName];
+                        if (!conds || !hasValid(conds.x) || !hasValid(conds.y)) {
+                            errors.push(`GeoGebra Punkt ${pointName} (${b.key}) benötigt gültige Bedingungen für x und y.`);
+                        }
+                    }
+                    break;
+                case "geoGebraLines":
+                    for (let i = 0; i < (b.attrs?.maxLines ?? 0); i++) {
+                        const lineName = `L${i + 1}`;
+                        const conds = answers[lineName];
+                        if (!conds || !hasValid(conds.m) || !hasValid(conds.c)) {
+                            errors.push(`GeoGebra Linie ${lineName} (${b.key}) benötigt gültige Bedingungen für m und c.`);
+                        }
+                    }
+                    break;
+            }
+        });
+        return errors;
+    };
 
     const handleSaveAnswers = async () => {
         if (!id) return;
@@ -178,43 +237,28 @@ export default function AnswerEditorPage() {
         try {
             const payload: Record<string, any> = {};
             blocks.forEach((b) => {
-                const val = answers[b.key];
+                let value: any;
                 switch (b.kind) {
-                    case "mc":
-                        payload[b.key] = {type: "mc", value: val ?? []};
-                        break;
-                    case "sc":
-                        payload[b.key] = {type: "sc", value: val ?? null};
-                        break;
-                    case "numeric":
-                        payload[b.key] = {
-                            type: "numeric",
-                            value: Array.isArray(val) ? val : [{operator: "=", value: ""}]
-                        };
-                        break;
-                    case "lineEquation":
-                        payload[b.key] = {
-                            type: "lineEquation",
-                            value: {
-                                m: Array.isArray(val?.m) ? val.m : [{operator: "=", value: ""}],
-                                c: Array.isArray(val?.c) ? val.c : [{operator: "=", value: ""}]
-                            }
-                        };
-                        break;
-                    case "freeText":
-                    case "freeTextInline":
-                        payload[b.key] = {type: b.kind, value: val ?? ""};
-                        break;
-                    case "geoGebra":
-                        payload[b.key] = {
-                            type: "geoGebra",
-                            value: {
-                                points: answers.geoGebraPoints,
-                                lines: answers.geoGebraLines
-                            }
-                        };
+                    case "geoGebraPoints": {
+                        value = {};
+                        for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
+                            const pointName = `P${i + 1}`;
+                            if (answers[pointName]) value[pointName] = answers[pointName];
+                        }
                         break;
                     }
+                    case "geoGebraLines": {
+                        value = {};
+                        for (let i = 0; i < (b.attrs?.maxLines ?? 0); i++) {
+                            const lineName = `L${i + 1}`;
+                            if (answers[lineName]) value[lineName] = answers[lineName];
+                        }
+                        break;
+                    }
+                    default:
+                        value = answers[b.key];
+                }
+                payload[b.key] = {type: b.kind, value};
             });
             await updateQuestionAnswers(id, payload);
             navigate(`/preview/${id}`);
@@ -225,158 +269,73 @@ export default function AnswerEditorPage() {
         }
     };
 
-    const hasValid = (conds: any[]) =>
-        Array.isArray(conds) &&
-        conds.every(c =>
-            c.value !== undefined &&
-            c.value !== null &&
-            String(c.value).trim() !== ""
-        );
-
-    const hasValidConditions = (conds: Condition[]) =>
-        Array.isArray(conds) &&
-        conds.every(c => c.value !== undefined && c.value !== null && String(c.value).trim() !== "");
-
-    const validateAnswersBeforeSave = () => {
-        const errors: string[] = [];
-        blocks.forEach((b) => {
-            const val = answers[b.key];
-            switch (b.kind) {
-                case "mc":
-                    if (!val || val.length === 0) {
-                        errors.push(`Multiple Choice (${b.key}) braucht mindestens eine richtige Auswahl.`);
-                    }
-                    break;
-                case "sc":
-                    if (val === null) {
-                        errors.push(`Single Choice (${b.key}) braucht eine richtige Auswahl.`);
-                    }
-                    break;
-                case "numeric":
-                    if (!Array.isArray(val) || val.length === 0 || !val.every((c: any) => c.value?.toString().trim())) {
-                        errors.push(`Numerische Eingabe (${b.key}) braucht gültige Werte für alle Bedingungen.`);
-                    }
-                    break;
-                case "lineEquation":
-                    if (!val?.m || !hasValid(val.m)) {
-                        errors.push(`Geradengleichung (${b.key}): m braucht eine Bedingung.`);
-                    }
-                    if (!val?.c || !hasValid(val.c)) {
-                        errors.push(`Geradengleichung (${b.key}): c braucht eine Bedingung.`);
-                    }
-                    break;
-                case "freeText":
-                case "freeTextInline":
-                    if (!val || !val.trim()) {
-                        errors.push(`Freitext (${b.key}) darf nicht leer sein.`);
-                    }
-                    break;
-
-                case "geoGebra": {
-                    const points = val?.points as Record<string, { x: Condition[]; y: Condition[] }> | undefined;
-                    Object.entries(points ?? {}).forEach(([name, conds]) => {
-                        if (!hasValidConditions(conds.x) || !hasValidConditions(conds.y)) {
-                            errors.push(`GeoGebra Punkt ${name} (${b.key}) braucht gültige Bedingungen für x und y.`);
-                        }
-                    });
-
-                    const lines = val?.lines as Record<string, { m: Condition[]; c: Condition[] }> | undefined;
-                    Object.entries(lines ?? {}).forEach(([name, conds]) => {
-                        if (!hasValidConditions(conds.m) || !hasValidConditions(conds.c)) {
-                            errors.push(`GeoGebra Linie ${name} (${b.key}) braucht gültige Bedingungen für m und c.`);
-                        }
-                    });
-                    break;
-                }
-            }
-        });
-
-        return errors;
-    };
-
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, false]}>
                 <MathJaxContext>
-                    <Box sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6}}>
-                        <Paper elevation={0} sx={{padding: 3, border: "2px solid #000"}}>
-                            <Typography variant="h4" gutterBottom sx={{textAlign: "center", fontWeight: "bold"}}>
+                    <Box sx={{minHeight: "100vh", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6}}>
+                        <Paper elevation={0} sx={{p: 3, border: "2px solid #000"}}>
+                            <Typography variant="h4" gutterBottom textAlign="center" fontWeight="bold">
                                 Antworten definieren
                             </Typography>
 
                             {loading && <Typography>Loading…</Typography>}
-
                             {!loading && blocks.length === 0 && (
-                                <Typography sx={{my: 2}}>Keine Antwort-Blöcke im Frage-Inhalt gefunden.</Typography>
+                                <Typography sx={{my: 2}}>Keine Antwort-Blöcke gefunden.</Typography>
                             )}
+
                             {!loading &&
-                                blocks.map((answerType, idx) => (
-                                    <Accordion key={answerType.key} sx={{mb: 1}}>
+                                blocks.map((b, idx) => (
+                                    <Accordion key={b.key} sx={{mb: 1}}>
                                         <AccordionSummary expandIcon={<ExpandMore/>}>
                                             <Typography variant="subtitle1">
-                                                {answerType.kind === "mc"
-                                                    ? `Multiple Choice (${answerType.key})`
-                                                    : answerType.kind === "sc"
-                                                        ? `Single Choice (${answerType.key})`
-                                                        : answerType.kind === "freeText"
-                                                            ? `Freitext (${idx + 1})`
-                                                            : answerType.kind === "freeTextInline"
-                                                                ? `Freitext Inline (${idx + 1})`
-                                                                : answerType.kind === "numeric"
-                                                                    ? `Numerische Eingabe (${idx + 1})`
-                                                                    : answerType.kind === "lineEquation"
-                                                                        ? `Geradengleichung (${idx + 1})`
-                                                                        : `GeoGebra (${idx + 1})`}
+                                                {b.kind === "mc" ? `Multiple Choice (${b.key})` :
+                                                    b.kind === "sc" ? `Single Choice (${b.key})` :
+                                                        b.kind === "freeText" ? `Freitext (${idx + 1})` :
+                                                            b.kind === "freeTextInline" ? `Freitext Inline (${idx + 1})` :
+                                                                b.kind === "numeric" ? `Numerische Eingabe (${idx + 1})` :
+                                                                    b.kind === "lineEquation" ? `Geradengleichung (${idx + 1})` :
+                                                                        b.kind === "geoGebraPoints" ? `GeoGebra Punkte (${idx + 1})` :
+                                                                            `GeoGebra Linien (${idx + 1})`}
                                             </Typography>
                                         </AccordionSummary>
-
                                         <AccordionDetails>
                                             {/* Multiple Choice */}
-                                            {answerType.kind === "mc" && (
-                                                <FormControl component="fieldset" fullWidth>
+                                            {b.kind === "mc" && (
+                                                <FormControl fullWidth>
                                                     <FormGroup>
-                                                        {(answerType as any).choices.map((choice: Choice) => (
+                                                        {b.choices.map((choice: Choice) => (
                                                             <FormControlLabel
                                                                 key={choice.id}
                                                                 control={
                                                                     <Checkbox
-                                                                        checked={(answers[answerType.key] ?? []).includes(choice.id)}
-                                                                        onChange={() => toggleChoice(answerType.key, choice.id)}/>}
+                                                                        checked={(answers[b.key] ?? []).includes(choice.id)}
+                                                                        onChange={() => toggleChoice(b.key, choice.id)}
+                                                                    />
+                                                                }
                                                                 label={<MathJax dynamic><span
-                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>}/>
+                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}
+                                                            />
                                                         ))}
                                                     </FormGroup>
                                                 </FormControl>
                                             )}
 
                                             {/* Single Choice */}
-                                            {answerType.kind === "sc" && (
-                                                <FormControl component="fieldset" fullWidth>
+                                            {b.kind === "sc" && (
+                                                <FormControl fullWidth>
                                                     <FormGroup>
-                                                        {(answerType as any).choices.map((choice: Choice) => (
+                                                        {b.choices.map((choice: Choice) => (
                                                             <FormControlLabel
                                                                 key={choice.id}
                                                                 control={
                                                                     <Checkbox
-                                                                        checked={(answers[answerType.key] ?? null) === choice.id}
-                                                                        onChange={() => toggleChoice(answerType.key, choice.id)}
-                                                                        icon={<span style={{
-                                                                            borderRadius: "50%",
-                                                                            border: "1px solid gray",
-                                                                            width: 16,
-                                                                            height: 16
-                                                                        }}/>}
-                                                                        checkedIcon={<span style={{
-                                                                            borderRadius: "50%",
-                                                                            backgroundColor: "#1976d2",
-                                                                            width: 16,
-                                                                            height: 16
-                                                                        }}/>}
+                                                                        checked={answers[b.key] === choice.id}
+                                                                        onChange={() => toggleChoice(b.key, choice.id)}
                                                                     />
                                                                 }
                                                                 label={<MathJax dynamic><span
-                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax>
-                                                                }
+                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}
                                                             />
                                                         ))}
                                                     </FormGroup>
@@ -384,85 +343,87 @@ export default function AnswerEditorPage() {
                                             )}
 
                                             {/* Free Text */}
-                                            {(answerType.kind === "freeText" || answerType.kind === "freeTextInline") && (
+                                            {(b.kind === "freeText" || b.kind === "freeTextInline") && (
                                                 <FormControl fullWidth>
                                                     <TextField
                                                         label="Erwartete Textantwort"
-                                                        value={answers[answerType.key] ?? ""}
-                                                        onChange={(e) => handleAnswerChange(answerType.key, e.target.value)}
+                                                        value={answers[b.key] ?? ""}
+                                                        onChange={(e) => handleAnswerChange(b.key, e.target.value)}
                                                     />
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        Lassen Sie das Feld frei, falls keine spezifische Antwort
-                                                        erwartet wird
-                                                    </Typography>
                                                 </FormControl>
                                             )}
 
                                             {/* Numeric */}
-                                            {answerType.kind === "numeric" && (
+                                            {b.kind === "numeric" && (
                                                 <NumericAnswer
-                                                    conditions={answers[answerType.key] ?? [{operator: "=", value: ""}]}
-                                                    onChange={(val) => handleAnswerChange(answerType.key, val)}
+                                                    conditions={answers[b.key] ?? [{operator: "=", value: ""}]}
+                                                    onChange={(val) => handleAnswerChange(b.key, val)}
                                                 />
                                             )}
 
-                                            {/* LineEquation */}
-                                            {answerType.kind === "lineEquation" && (
-                                                <FormControl fullWidth>
-                                                    <LineEquationAnswer
-                                                        conditions={answers[answerType.key] ?? { m: [{ operator: "=", value: "" }], c: [{ operator: "=", value: "" }] }}
-                                                        onChange={(val) => handleAnswerChange(answerType.key, val)}/>
-                                                </FormControl>
+                                            {/* Line Equation */}
+                                            {b.kind === "lineEquation" && (
+                                                <LineEquationAnswer
+                                                    conditions={answers[b.key] ?? {
+                                                        m: [{operator: "=", value: ""}],
+                                                        c: [{operator: "=", value: ""}]
+                                                    }}
+                                                    onChange={(val) => handleAnswerChange(b.key, val)}
+                                                />
                                             )}
 
-                                            {answerType.kind === "geoGebra" && (
-                                                <Box>
-                                                    <Typography variant="h6" sx={{ mb: 1 }}>Punkte definieren</Typography>
-                                                    {/* GeoGebra Points */}
-                                                    {Object.entries(answers.geoGebraPoints as Record<string, PointConditions> ?? {}).map(([name, conds]) => (
-                                                        <GeoGebraPointAnswer key={name} data={{ name }} conditions={conds}
-                                                            onChange={(next) =>
-                                                                setAnswers(prev => ({
-                                                                    ...prev,
-                                                                    geoGebraPoints: {
-                                                                        ...prev.geoGebraPoints,
-                                                                        [name]: next
-                                                                    }
-                                                                }))
-                                                            }
+                                            {b.kind === "geoGebraLines" &&
+                                                Array.from({length: b.attrs?.maxLines ?? 0}).map((_, idx) => {
+                                                    const lineName = `L${idx + 1}`;
+                                                    const conds = answers[lineName] ?? {
+                                                        m: [{
+                                                            operator: "=",
+                                                            value: "",
+                                                            logic: "and"
+                                                        }], c: [{operator: "=", value: "", logic: "and"}]
+                                                    };
+
+                                                    return (
+                                                        <GeoGebraLineAnswer
+                                                            key={lineName}
+                                                            data={{name: lineName}}
+                                                            conditions={conds}
+                                                            onChange={(next) => handleAnswerChange(lineName, next)}
                                                         />
-                                                    ))}
+                                                    );
+                                                })
+                                            }
 
-                                                    <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Linien definieren</Typography>
-                                                    {/* GeoGebra Lines */}
-                                                    {Object.entries(answers.geoGebraLines as Record<string, LineConditions> ?? {}).map(([name, conds]) => (
-                                                        <GeoGebraLineAnswer key={name} data={{ name }} conditions={conds}
-                                                            onChange={(next) =>
-                                                                setAnswers(prev => ({
-                                                                    ...prev,
-                                                                    geoGebraLines: {
-                                                                        ...prev.geoGebraLines,
-                                                                        [name]: next
-                                                                    }
-                                                                }))
-                                                            }
+                                            {b.kind === "geoGebraPoints" &&
+                                                Array.from({length: b.attrs?.maxPoints ?? 0}).map((_, idx) => {
+                                                    const pointName = `P${idx + 1}`;
+                                                    const conds = answers[pointName] ?? {
+                                                        x: [{
+                                                            operator: "=",
+                                                            value: "",
+                                                            logic: "and"
+                                                        }], y: [{operator: "=", value: "", logic: "and"}]
+                                                    };
+
+                                                    return (
+                                                        <GeoGebraPointAnswer
+                                                            key={pointName}
+                                                            data={{name: pointName}}
+                                                            conditions={conds}
+                                                            onChange={(next) => {
+                                                                handleAnswerChange(pointName, next)
+                                                            }}
                                                         />
-                                                    ))}
-
-                                                </Box>
-                                            )}
-
+                                                    );
+                                                })
+                                            }
                                         </AccordionDetails>
                                     </Accordion>
                                 ))}
 
-                            <Box sx={{mt: 3, textAlign: "center", gap: 2, display: "flex", justifyContent: "center"}}>
-                                <Button variant="outlined" onClick={() => navigate(`/editor/${id}`)}>
-                                    Zurück
-                                </Button>
-                                <Button variant="outlined" onClick={() => setOpenPreview(true)}>
-                                    Vorschau
-                                </Button>
+                            <Box sx={{mt: 3, display: "flex", justifyContent: "center", gap: 2}}>
+                                <Button variant="outlined" onClick={() => navigate(`/editor/${id}`)}>Zurück</Button>
+                                <Button variant="outlined" onClick={() => setOpenPreview(true)}>Vorschau</Button>
                                 <Button variant="contained" startIcon={<Save/>} onClick={handleSaveAnswers}
                                         disabled={loading}>
                                     {loading ? "Speichern…" : "Speichern"}
@@ -480,6 +441,7 @@ export default function AnswerEditorPage() {
                             </Dialog>
                         </Paper>
                     </Box>
+
                     <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)}
                               anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
                         <Alert onClose={() => setSnackbarOpen(false)} severity="error" variant="filled"
