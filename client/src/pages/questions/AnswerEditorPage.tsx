@@ -388,7 +388,10 @@ export default function AnswerEditorPage() {
                                                             key={lineName}
                                                             data={{name: lineName}}
                                                             conditions={conds}
-                                                            onChange={(next) => handleAnswerChange(lineName, next)}
+                                                            onChange={(next) => {
+                                                                console.log("next:", next);
+                                                                console.log("Aktuelle Antworten:", conds);
+                                                                handleAnswerChange(lineName, next)}}
                                                         />
                                                     );
                                                 })
@@ -411,6 +414,8 @@ export default function AnswerEditorPage() {
                                                             data={{name: pointName}}
                                                             conditions={conds}
                                                             onChange={(next) => {
+                                                                console.log("next:", next);
+                                                                console.log("Aktuelle Antworten:", conds);
                                                                 handleAnswerChange(pointName, next)
                                                             }}
                                                         />
