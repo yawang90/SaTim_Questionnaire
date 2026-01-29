@@ -1,7 +1,7 @@
 import React from "react";
 import {Box} from "@mui/material";
 import {LineEquationEditor} from "./LineEquationEditor";
-import type {LineConditions} from "./GeoGebraAnswerTypes";
+import type {LineConditions} from "./AnswerTypes.tsx";
 
 interface Props {
     data: { name: string };

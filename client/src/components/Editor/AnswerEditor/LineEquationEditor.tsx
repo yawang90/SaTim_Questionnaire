@@ -2,12 +2,7 @@ import React from "react";
 import { Box, Button, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import { MathInput } from "./MathInput";
-
-export interface Condition {
-    operator: "=" | "<" | ">" | "<=" | ">=";
-    value: string;
-    logic?: "and" | "or";
-}
+import type {Condition} from "./AnswerTypes.tsx";
 
 interface Props {
     label: "m" | "c";

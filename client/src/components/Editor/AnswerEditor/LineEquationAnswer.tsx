@@ -1,6 +1,7 @@
 import React from "react";
 import { Box } from "@mui/material";
-import {type Condition, LineEquationEditor} from "./LineEquationEditor.tsx";
+import { LineEquationEditor} from "./LineEquationEditor.tsx";
+import type {Condition} from "./AnswerTypes.tsx";
 
 interface Props {
     conditions: {

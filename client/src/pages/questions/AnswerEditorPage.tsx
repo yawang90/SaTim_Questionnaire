@@ -32,7 +32,7 @@ import {LineEquationAnswer} from "../../components/Editor/AnswerEditor/LineEquat
 import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebraPointAnswer.tsx";
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
-import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/GeoGebraAnswerTypes.tsx";
+import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();

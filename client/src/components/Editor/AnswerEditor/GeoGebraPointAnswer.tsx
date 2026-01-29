@@ -1,6 +1,6 @@
 import React from "react";
 import {Box, Typography} from "@mui/material";
-import type {PointConditions} from "./GeoGebraAnswerTypes";
+import type {PointConditions} from "./AnswerTypes.tsx";
 import {PointEditor} from "./PointEditor";
 
 interface Props {
