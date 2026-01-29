@@ -68,7 +68,7 @@ export const GeoGebraLineAnswer: React.FC<Props> = ({ data, conditions, onChange
                             ))}
                         </Select>
                     </FormControl>
-                    <MathInput value={cond.value} onChange={(v) => update(axis, idx, { value: v })} />
+                    <MathInput value={cond.value ?? ""} onChange={(v) => update(axis, idx, { value: v })} />
                     <IconButton onClick={() => removeCondition(axis, idx)} disabled={conditions[axis].length === 1}>
                         <Delete />
                     </IconButton>

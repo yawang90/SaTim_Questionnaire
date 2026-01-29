@@ -66,6 +66,11 @@ export const GeoGebra = Node.create({
             height: { default: '600' },
             maxPoints: {default: 0},
             maxLines: { default: 0 },
+            variant: {
+                default: 'points',
+                parseHTML: el => el.getAttribute('data-variant') || 'points',
+                renderHTML: attrs => ({ 'data-variant': attrs.variant }),
+            }
         };
     },
 

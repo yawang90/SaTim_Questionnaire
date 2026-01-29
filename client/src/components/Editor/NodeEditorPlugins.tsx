@@ -108,8 +108,17 @@ export const GeoGebra = Node.create({
             materialId: { default: '' },
             width: { default: '800' },
             height: { default: '600' },
-            maxPoints: {default: 0},
-            maxLines: { default: 0 }
+
+            variant: {
+                default: 'points', // 'points' | 'lines'
+                parseHTML: element => element.getAttribute('data-variant') || 'points',
+                renderHTML: attributes => ({
+                    'data-variant': attributes.variant,
+                }),
+            },
+
+            maxPoints: { default: 0 },
+            maxLines: { default: 0 },
         };
     },
 
@@ -118,7 +127,10 @@ export const GeoGebra = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'geoGebra' })];
+        return [
+            'div',
+            mergeAttributes(HTMLAttributes, { 'data-type': 'geoGebra' }),
+        ];
     },
 
     addNodeView() {

@@ -122,11 +122,33 @@ export default function QuestionEditorPage() {
         }).run();
     };
 
-    const addGeoGebra = () => {
+    const addGeoGebraPoints = () => {
         if (!editor) return;
+
         editor.chain().focus().insertContent({
             type: 'geoGebra',
-            attrs: { id: uuidv4(), materialId: '' },
+            attrs: {
+                id: uuidv4(),
+                variant: 'points',
+                materialId: '',
+                maxPoints: 1,
+                maxLines: 0,
+            },
+        }).run();
+    };
+
+    const addGeoGebraLines = () => {
+        if (!editor) return;
+
+        editor.chain().focus().insertContent({
+            type: 'geoGebra',
+            attrs: {
+                id: uuidv4(),
+                variant: 'lines',
+                materialId: '',
+                maxPoints: 0,
+                maxLines: 1,
+            },
         }).run();
     };
 
@@ -233,7 +255,8 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerisch</MenuItem>
                                 <MenuItem onClick={addLineEquation}>Geradengleichung</MenuItem>
-                                <MenuItem onClick={addGeoGebra}>GeoGebra Applet</MenuItem>
+                                <MenuItem onClick={addGeoGebraPoints}>GeoGebra Applet – Punkte</MenuItem>
+                                <MenuItem onClick={addGeoGebraLines}>GeoGebra Applet – Strecke, Gerade, etc.</MenuItem>
                             </Menu>
                         </Box>
 

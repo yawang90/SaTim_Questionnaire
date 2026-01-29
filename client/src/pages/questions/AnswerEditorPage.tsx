@@ -410,12 +410,8 @@ export default function AnswerEditorPage() {
                                             {answerType.kind === "lineEquation" && (
                                                 <FormControl fullWidth>
                                                     <LineEquationAnswer
-                                                        conditions={answers[answerType.key] ?? [{
-                                                            operator: "=",
-                                                            value: ""
-                                                        }]}
-                                                        onChange={(val) => handleAnswerChange(answerType.key, val)}
-                                                    />
+                                                        conditions={answers[answerType.key] ?? { m: [{ operator: "=", value: "" }], c: [{ operator: "=", value: "" }] }}
+                                                        onChange={(val) => handleAnswerChange(answerType.key, val)}/>
                                                 </FormControl>
                                             )}
 
