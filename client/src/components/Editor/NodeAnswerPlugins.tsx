@@ -70,7 +70,10 @@ export const GeoGebra = Node.create({
                 default: 'points',
                 parseHTML: el => el.getAttribute('data-variant') || 'points',
                 renderHTML: attrs => ({ 'data-variant': attrs.variant }),
-            }
+            },
+            answer: {
+                default: null
+            },
         };
     },
 

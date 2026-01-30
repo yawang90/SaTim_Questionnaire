@@ -124,9 +124,9 @@ export default function QuizPage() {
                         c: a.c
                     } as LineEquationAnswer;
                 }  else if (a.kind === 'geoGebraPoints') {
-                    return { value: a.value, points: a.points } as any;
+                    return { value: a.value } as any;
                 } else if (a.kind === 'geoGebraLines') {
-                    return { value: a.value, lines: a.lines } as any;
+                    return { value: a.value } as any;
                 } else {return a.value;}
             }),
         };

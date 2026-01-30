@@ -2,8 +2,10 @@ import React from 'react';
 import { NodeViewWrapper } from '@tiptap/react';
 import { GeoGebraAnswerComponent } from './GeoGebraAnswerComponent';
 
-export const GeoGebraAnswerNodeView = ({ node }: any) => {
+export const GeoGebraAnswerNodeView = ({ node, editor }: any) => {
     const { materialId, width, height, maxPoints, maxLines, variant } = node.attrs;
+    const geoGebraExtension = editor.extensionManager.extensions.find((ext: any) => ext.name === 'geoGebra');
+    const onAnswerChange = geoGebraExtension?.options?.onAnswerChange;
 
     return (
         <NodeViewWrapper className="geogebra-node">
@@ -14,8 +16,10 @@ export const GeoGebraAnswerNodeView = ({ node }: any) => {
                 maxPoints={maxPoints}
                 maxLines={maxLines}
                 variant={variant}
+                onAnswerChange={(answer) => {
+                    if (onAnswerChange) onAnswerChange({ id: node.attrs.id, ...answer });
+                }}
             />
         </NodeViewWrapper>
     );
 };
-

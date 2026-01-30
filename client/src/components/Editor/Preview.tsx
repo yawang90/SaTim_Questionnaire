@@ -1,7 +1,15 @@
 import React from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import {FreeText, FreeTextInline, GeoGebra, MCChoice, NumericInput, LineEquation, SingleChoice} from './NodeAnswerPlugins.tsx';
+import {
+    FreeText,
+    FreeTextInline,
+    GeoGebra,
+    LineEquation,
+    MCChoice,
+    NumericInput,
+    SingleChoice
+} from './NodeAnswerPlugins.tsx';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
@@ -14,13 +22,21 @@ import type {JSONContent} from '@tiptap/core';
 import {LatexDisplay} from "./NodeEditorPlugins.tsx";
 import {MathJaxContext} from "better-react-mathjax";
 import Underline from '@tiptap/extension-underline';
+import type {GeoGebraLine, GeoGebraPoint} from "../../pages/questions/AnswerUtils.tsx";
 
 interface PreviewProps {
     content: JSONContent | null;
     editorRef?: React.RefObject<ReturnType<typeof useEditor> | null>;
+    onGeoGebraChange?: (answer: GeoGebraAnswer) => void;
 }
 
-export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEditorRef }) => {
+export interface GeoGebraAnswer {
+    id: string;
+    kind: 'points' | 'lines';
+    value: GeoGebraPoint[] | GeoGebraLine[];
+}
+
+export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEditorRef, onGeoGebraChange }) => {
     const previewEditor = useEditor({
         editable: false,
         extensions: [
@@ -36,7 +52,11 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             TableCell,
             TableHeader,
             Image,
-            GeoGebra,
+            GeoGebra.configure({
+                onAnswerChange: (answer: GeoGebraAnswer) => {
+                    if (onGeoGebraChange) onGeoGebraChange(answer);
+                },
+            }),
             FreeText,
             FreeTextInline,
             NumericInput,

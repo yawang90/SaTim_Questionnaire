@@ -18,12 +18,13 @@ import {
 } from '@mui/material';
 import {Save} from '@mui/icons-material';
 import {useNavigate, useParams} from 'react-router-dom';
-import {Preview} from '../../components/Editor/Preview';
+import {type GeoGebraAnswer, Preview} from '../../components/Editor/Preview';
 import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
 import {
+    type Answer,
     type Block,
-    extractAnswersFromJson,
+    extractAnswersFromJson, type GeoGebraLinesAnswer, type GeoGebraPointsAnswer,
     mapQuestionsStatus,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
@@ -52,6 +53,18 @@ export default function AnswerPreviewPage() {
         message: '',
         severity: 'info',
     });
+    const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
+    const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
+        setGeoGebraAnswers(prev => {
+            const idx = prev.findIndex(a => a.id === answer.id);
+            if (idx >= 0) {
+                const updated = [...prev];
+                updated[idx] = answer;
+                return updated;
+            }
+            return [...prev, answer];
+        });
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -76,12 +89,26 @@ export default function AnswerPreviewPage() {
         })();
     }, [id]);
 
+    function mergeGeoGebraAnswers(extractedAnswers: Answer[]): Answer[] {
+        return extractedAnswers.map(ans => {
+            if (ans.kind === "geoGebraPoints") {
+                const match = geoGebraAnswers.find(g => g.id === ans.key);
+                if (match) {return {...ans, value: match.value,} as GeoGebraPointsAnswer;}
+            }
+            if (ans.kind === "geoGebraLines") {
+                const match = geoGebraAnswers.find(g => g.id === ans.key);
+                if (match) {return {...ans, value: match.value,} as GeoGebraLinesAnswer;}
+            }
+            return ans;
+        });
+    }
+
     const handleTestAnswers = async () => {
         if (!id || !editorRef.current) return;
         const json = editorRef.current.getJSON();
-        const answers = extractAnswersFromJson(json, blocks);
+        let  answers = extractAnswersFromJson(json, blocks);
+        answers = mergeGeoGebraAnswers(answers);
         const lineEquations = answers.filter(a => a.kind === 'lineEquation');
-
         for (const eq of lineEquations) {
             const value = eq.value;
             if (typeof value !== "string") continue;
@@ -126,7 +153,6 @@ export default function AnswerPreviewPage() {
         });
     };
 
-
     const handleSaveStatus = async () => {
         if (!id) return;
         setLoading(true);
@@ -166,7 +192,7 @@ export default function AnswerPreviewPage() {
 
                         {!loading && questionContent && (
                             <>
-                                <Preview content={questionContent} editorRef={editorRef}/>
+                                <Preview content={questionContent} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>
                                 <Box sx={{mt: 3, display: 'flex', gap: 2, justifyContent: 'center'}}>
                                     <Button variant="outlined" onClick={() => navigate(-1)}>
                                         Zurück

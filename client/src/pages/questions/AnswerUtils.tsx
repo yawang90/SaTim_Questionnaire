@@ -24,14 +24,12 @@ export type GeoGebraLine = { name: string; m: number; c: number };
 export type GeoGebraPointsAnswer = {
     kind: "geoGebraPoints";
     key: string;
-    points: GeoGebraPoint[];
     value: GeoGebraPoint[];
 };
 
 export type GeoGebraLinesAnswer = {
     kind: "geoGebraLines";
     key: string;
-    lines: GeoGebraLine[];
     value: GeoGebraLine[];
 };
 
@@ -42,8 +40,8 @@ export type Block =
     | { kind: "freeTextInline"; key: string }
     | { kind: "numeric"; key: string }
     | { kind: "lineEquation"; key: string }
-    | { kind: "geoGebraPoints"; key: string; attrs?: { maxPoints?: number } }
-    | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number } };
+    | { kind: "geoGebraPoints"; key: string; attrs?: { maxPoints?: number }}
+    | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number }};
 
 export const mapQuestionsStatus = (
     status: string | null | undefined
@@ -171,32 +169,19 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
             case "numeric":
             case "lineEquation":
                 return {kind: block.kind, key: block.key, value: ""};
-            case "geoGebraPoints": {
-                const points: GeoGebraPoint[] = [];
-                const maxPoints = block.attrs?.maxPoints ?? 0;
-                for (let i = 0; i < maxPoints; i++) {
-                    points.push({name: `P${i + 1}`, x: 0, y: 0});
-                }
-                return ({
+            case "geoGebraPoints":
+               return {
                     kind: "geoGebraPoints",
                     key: block.key,
-                    points: Array.from({length: maxPoints}, (_, i) => ({name: `P${i + 1}`, x: 0, y: 0})),
-                    value: Array.from({length: maxPoints}, (_, i) => ({name: `P${i + 1}`, x: 0, y: 0})),
-                });
-            }
-            case "geoGebraLines": {
-                const lines: GeoGebraLine[] = [];
-                const maxLines = block.attrs?.maxLines ?? 0;
-                for (let i = 0; i < maxLines; i++) {
-                    lines.push({name: `L${i + 1}`, m: 0, c: 0});
-                }
-                return({
-                    kind: "geoGebraLines",
+                    value: [{ name:"",x: 0, y: 0 }]
+                };
+
+            case "geoGebraLines":
+                return {
+                    kind: "geoGebraPoints",
                     key: block.key,
-                    lines: Array.from({length: maxLines}, (_, i) => ({name: `L${i + 1}`, m: 0, c: 0})),
-                    value: Array.from({length: maxLines}, (_, i) => ({name: `L${i + 1}`, m: 0, c: 0})),
-                })
-            }
+                    value: [{ name:"",x: 0, y: 0 }]
+                };
         }
     });
 
@@ -242,8 +227,9 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     const ggbAnswer = answer as GeoGebraPointsAnswer;
                     const maxPoints = block.attrs?.maxPoints ?? 0;
                     for (let i = 0; i < maxPoints; i++) {
-                        const xInput = document.querySelector<HTMLInputElement>(`#${block.key}-point-${i}-x`);
-                        const yInput = document.querySelector<HTMLInputElement>(`#${block.key}-point-${i}-y`);
+                        const escapeCssId = (id: string) => CSS.escape(id);
+                        const xInput = document.querySelector<HTMLInputElement>(`#${escapeCssId(block.key)}-point-${i}-x`);
+                        const yInput = document.querySelector<HTMLInputElement>(`#${escapeCssId(block.key)}-point-${i}-y`);
                         if (xInput) ggbAnswer.value[i].x = Number(xInput.value);
                         if (yInput) ggbAnswer.value[i].y = Number(yInput.value);
                     }
@@ -253,8 +239,9 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     const ggbAnswer = answer as GeoGebraLinesAnswer;
                     const maxLines = block.attrs?.maxLines ?? 0;
                     for (let i = 0; i < maxLines; i++) {
-                        const mInput = document.querySelector<HTMLInputElement>(`#${block.key}-line-${i}-m`);
-                        const cInput = document.querySelector<HTMLInputElement>(`#${block.key}-line-${i}-c`);
+                        const escapeCssId = (id: string) => CSS.escape(id);
+                        const mInput = document.querySelector<HTMLInputElement>(`#${escapeCssId(block.key)}-line-${i}-m`);
+                        const cInput = document.querySelector<HTMLInputElement>(`#${escapeCssId(block.key)}-line-${i}-c`);
                         if (mInput) ggbAnswer.value[i].m = Number(mInput.value);
                         if (cInput) ggbAnswer.value[i].c = Number(cInput.value);
                     }
