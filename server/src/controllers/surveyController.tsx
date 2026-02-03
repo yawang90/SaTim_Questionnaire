@@ -8,7 +8,7 @@ import {
     createSurveyInstance,
     getSurveyInstances,
     updateSurveyInstanceById,
-    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId,
+    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId, getSurveyExport,
 } from "../services/surveyService.js";
 
 /**
@@ -248,5 +248,31 @@ export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
     } catch (err) {
         console.error("Error fetching booklets:", err);
         res.status(500).json({ error: "Failed to fetch booklets" });
+    }
+};
+
+export const getSurveyExportHandler = async (req: Request, res: Response) => {
+    try {
+        const surveyId = Number(req.params.id);
+        const { instanceIds } = req.body as { instanceIds: number[] };
+
+        if (!Array.isArray(instanceIds) || instanceIds.length === 0) {
+            return res.status(400).json({ message: "Keine Durchführungen ausgewählt." });
+        }
+
+        const excelBuffer = await getSurveyExport(surveyId, instanceIds);
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename=Survey_${surveyId}_Export.xlsx`
+        );
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.send(excelBuffer);
+    } catch (err) {
+        console.error("Survey export failed:", err);
+        res.status(500).json({ message: "Export fehlgeschlagen" });
     }
 };

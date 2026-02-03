@@ -274,3 +274,22 @@ export async function updateSurveyInstance(
     return res.json();
 }
 
+export async function getSurveyExport(instanceIds: number[], surveyId: number) {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+
+    const res = await fetch(`${API_BASE}/api/survey/${surveyId}/export`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ instanceIds }),
+    });
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Export failed: ${errorText}`);
+    }
+    return res.blob();
+}

@@ -354,3 +354,61 @@ function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQues
     }
     return bookletMap;
 }
+
+/**
+ * Fetch survey + selected instances and generate Excel
+ */
+export const getSurveyExport = async (surveyId: number, instanceIds: number[]): Promise<Buffer> => {
+    const survey = await prisma.survey.findUnique({
+        where: { id: surveyId },
+        include: {
+            instances: true,
+            booklet: true,
+        },
+    });
+
+    if (!survey) throw new Error("Survey not found");
+    const instances = await prisma.surveyInstance.findMany({
+        where: {
+            id: { in: instanceIds },
+            surveyId,
+        },
+        include: {
+            createdBy: true,
+            updatedBy: true,
+        },
+    });
+
+    if (!instances || instances.length === 0)
+        throw new Error("Keine gültigen Durchführungen gefunden");
+
+    const workbook = XLSX.utils.book_new();
+
+    const summaryData = [
+        ["Instance Name", "Valid From", "Valid To", "Created By", "Updated By"],
+        ...instances.map((inst) => [
+            inst.name,
+            inst.validFrom.toISOString().split("T")[0],
+            inst.validTo.toISOString().split("T")[0],
+            `${inst.createdBy.first_name} ${inst.createdBy.last_name}`,
+            `${inst.updatedBy.first_name} ${inst.updatedBy.last_name}`,
+        ]),
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+
+    for (const inst of instances) {
+        const instanceSheetData = [
+            ["Field", "Value"],
+            ["ID", inst.id],
+            ["Name", inst.name],
+            ["Valid From", inst.validFrom.toISOString()],
+            ["Valid To", inst.validTo.toISOString()],
+            ["Booklet Version", inst.bookletVersion],
+        ];
+        const sheet = XLSX.utils.aoa_to_sheet(instanceSheetData);
+        XLSX.utils.book_append_sheet(workbook, sheet, `Instance_${inst.id}`);
+    }
+
+    return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+};

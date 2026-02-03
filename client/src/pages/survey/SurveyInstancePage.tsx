@@ -3,13 +3,13 @@ import {useParams} from "react-router-dom";
 import {
     Alert,
     Box,
-    Button,
+    Button, Checkbox,
     Chip,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
+    Divider, FormControlLabel, FormGroup,
     Grid,
     LinearProgress,
     Paper,
@@ -20,13 +20,13 @@ import {
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
     createSurveyInstance,
-    getSurveyById,
+    getSurveyById, getSurveyExport,
     getSurveyInstances,
     updateSurveyInstance
 } from "../../services/SurveyService.tsx";
 import dayjs, {Dayjs} from "dayjs";
 import {DatePicker} from "@mui/x-date-pickers/DatePicker";
-import {Add} from "@mui/icons-material";
+import {Add, FileDownload} from "@mui/icons-material";
 import type {surveyStatus} from "./SurveyUpdatePage.tsx";
 
 interface UserRef {
@@ -87,7 +87,8 @@ const SurveyInstancePage = () => {
         validTo: null
     });
     const [instanceFilter, setInstanceFilter] = useState<"ALL" | "ACTIVE" | "FUTURE" | "PAST">("ALL");
-
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [selectedForExport, setSelectedForExport] = useState<number[]>([]);
 
     useEffect(() => {
         fetchSurvey();
@@ -199,6 +200,39 @@ const SurveyInstancePage = () => {
         }
     };
 
+    const handleToggleExport = (id: number) => {
+        setSelectedForExport((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleExport = async () => {
+        if (selectedForExport.length === 0) {
+            setSnackbar({ open: true, message: "Bitte mindestens eine Durchführung auswählen.", severity: "error" });
+            return;
+        }
+        try {
+            setLoading(true);
+            const fileBlob = await getSurveyExport(selectedForExport, survey!.id);
+            const url = window.URL.createObjectURL(fileBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Survey_${survey!.title}_Export.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            setSnackbar({ open: true, message: "Export erfolgreich gestartet!", severity: "success" });
+            setExportDialogOpen(false);
+            setSelectedForExport([]);
+        } catch (err: any) {
+            console.error(err);
+            setSnackbar({ open: true, message: `Export fehlgeschlagen: ${err.message}`, severity: "error" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
 
@@ -206,11 +240,14 @@ const SurveyInstancePage = () => {
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
                 <Paper sx={{ p: 3 }}>
-                    <Typography variant="h5" gutterBottom>Durchführungen</Typography>
+                        <Typography variant="h5" gutterBottom>Durchführungen</Typography>
                     <Divider sx={{ mb: 2 }} />
                     <Tooltip title={!survey.hasBooklet ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden." : survey.status === "FINISHED" ? "Die Erhebung wurde bereits geschlossen, es können keine Durchführungen mehr angelegt werden.": ""} arrow>
                        <span><Button disabled={!survey.hasBooklet || survey.status === "FINISHED"} variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}>Neue Durchführung erstellen</Button></span>
                     </Tooltip>
+                    <Button sx={{ ml: 2 }}  variant="contained" color="primary" startIcon={<FileDownload />} onClick={() => setExportDialogOpen(true)} disabled={instances.length === 0}>
+                        Ergebnisse Exportieren
+                    </Button>
                     <Divider sx={{ my: 2 }} />
                     <Box sx={{ display: "flex", mb: 2 }}>
                         <TextField select label="Status filtern" value={instanceFilter} onChange={(e) => setInstanceFilter(e.target.value as any)} SelectProps={{ native: true }} size="small" sx={{ width: 200 }}>
@@ -346,6 +383,50 @@ const SurveyInstancePage = () => {
                         <Button onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
                         <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo || loading}>
                             {loading ? "Speichern..." : "Aktualisieren"}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} fullWidth maxWidth="sm">
+                    <DialogTitle>Ergebnisse Exportieren</DialogTitle>
+                    <DialogContent>
+                        {instances.length === 0 ? (
+                            <Typography variant="body2">Keine Durchführungen verfügbar.</Typography>
+                        ) : (
+                            <>
+                                <Button
+                                    size="small"
+                                    onClick={() => {
+                                        if (selectedForExport.length === instances.length) {
+                                            setSelectedForExport([]);
+                                        } else {
+                                            setSelectedForExport(instances.map(inst => inst.id));
+                                        }
+                                    }}
+                                    sx={{ mb: 2 }}
+                                    variant="outlined">
+                                    {selectedForExport.length === instances.length ? "Alle abwählen" : "Alle hinzufügen"}
+                                </Button>
+                                <FormGroup>
+                                    {instances.map((inst) => (
+                                        <FormControlLabel
+                                            key={inst.id}
+                                            control={
+                                                <Checkbox
+                                                    checked={selectedForExport.includes(inst.id)}
+                                                    onChange={() => handleToggleExport(inst.id)}
+                                                />
+                                            }
+                                            label={`${inst.name} (${dayjs(inst.validFrom).format("DD.MM.YYYY")} — ${dayjs(inst.validTo).format("DD.MM.YYYY")})`}
+                                        />
+                                    ))}
+                                </FormGroup>
+                            </>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setExportDialogOpen(false)}>Abbrechen</Button>
+                        <Button variant="contained" onClick={handleExport} disabled={selectedForExport.length === 0}>
+                            Exportieren
                         </Button>
                     </DialogActions>
                 </Dialog>

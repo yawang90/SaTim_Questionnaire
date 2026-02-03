@@ -8,7 +8,7 @@ import {
     createSurveyInstanceHandler,
     getSurveyInstancesHandler,
     updateSurveyInstanceHandler,
-    deleteSurveyInstanceHandler, uploadSurveyExcelsHandler, getSurveyBookletsHandler,
+    deleteSurveyInstanceHandler, uploadSurveyExcelsHandler, getSurveyBookletsHandler, getSurveyExportHandler,
 } from "../controllers/surveyController.js";
 import { authenticateToken } from "../auth/authenticate.js";
 import multer from "multer";
@@ -31,6 +31,7 @@ router.put("/instance/:id", updateSurveyInstanceHandler);
 router.delete("/instance/:id", deleteSurveyInstanceHandler);
 
 router.get("/:id/booklets", getSurveyBookletsHandler);
+router.post("/:id/export", getSurveyExportHandler);
 
 router.post(
     "/:id/upload-excels",
