@@ -5,7 +5,7 @@ import 'nerdamer/Solve.js';
 import 'nerdamer/Calculus.js';
 import 'nerdamer/Extra.js';
 
-type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebra" | "freeTextInline" | "lineEquation";
+type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation";
 
 interface CorrectAnswerBase {
     type: AnswerType;
@@ -32,8 +32,13 @@ interface FreeTextAnswer extends CorrectAnswerBase {
     value: string;
 }
 
-interface GeoGebraAnswer extends CorrectAnswerBase {
-    type: "geoGebra";
+interface GeoGebraPointAnswer extends CorrectAnswerBase {
+    type: "geoGebraPoints";
+    value: any;
+}
+
+interface GeoGebraLineAnswer extends CorrectAnswerBase {
+    type: "geoGebraLines";
     value: any;
 }
 
@@ -57,7 +62,8 @@ type CorrectAnswer =
     | NumericAnswer
     | LineEquationAnswer
     | FreeTextAnswer
-    | GeoGebraAnswer;
+    | GeoGebraPointAnswer
+    | GeoGebraLineAnswer;
 
 type CorrectAnswersJson = Record<string, CorrectAnswer>;
 
@@ -190,15 +196,23 @@ export const evaluateAnswersService = async (
                     }
                     break;
 
-                case "geoGebra":
-                    if (
-                        JSON.stringify(correctAnswer.value) ===
-                        JSON.stringify(userAnswer.value)
-                    ) {
+                case "geoGebraPoints": {
+                    const ok = checkGeoGebraPoints(correctAnswer.value, userAnswer.value);
+                    if (ok) {
                         isCorrect = true;
                         score += 1;
                     }
                     break;
+                }
+                case "geoGebraLines": {
+                    const ok = checkGeoGebraLines(correctAnswer.value, userAnswer.value);
+                    if (ok) {
+                        isCorrect = true;
+                        score += 1;
+                    }
+                    break;
+                }
+
                 case "lineEquation": {
                         const ua = userAnswer as any;
                         const userM = Number(ua.m);
@@ -228,6 +242,46 @@ export const evaluateAnswersService = async (
         details
     };
 };
+function matchPoint(
+    userPoint: { x:number; y:number },
+    correctPoint: { x: NumericCondition[]; y: NumericCondition[] }
+) {
+    return (
+        checkNumericConditions(userPoint.x, correctPoint.x) &&
+        checkNumericConditions(userPoint.y, correctPoint.y)
+    );
+}
+function checkGeoGebraPoints(correct: Record<string, any>, user: { name: string; x: number; y: number }[]): boolean {
+    const userUnused = [...user];
+    for (const correctPoint of Object.values(correct)) {
+        const index = userUnused.findIndex(u =>
+            matchPoint(u, correctPoint)
+        );
+        if (index === -1) return false;
+        userUnused.splice(index, 1);
+    }
+    return true;
+}
+
+
+function matchLine(
+    userLine: { m: number; c: number },
+    correctLine: { m: NumericCondition[]; c: NumericCondition[] }
+): boolean {
+    const mOk = checkNumericConditions(userLine.m, correctLine.m);
+    const cOk = checkNumericConditions(userLine.c, correctLine.c);
+    return mOk && cOk;
+}
+
+function checkGeoGebraLines(correct: Record<string, any>, user: { m: number; c: number }[]): boolean {
+    const userUnused = [...user];
+    for (const correctLine of Object.values(correct)) {
+        const index = userUnused.findIndex(u => matchLine(u, correctLine));
+        if (index === -1) {return false;}
+        userUnused.splice(index, 1);
+    }
+    return true;
+}
 
 function checkNumericConditions(value: number, conditions: { value: string; operator: "=" | "<" | ">" | "<=" | ">="; logic?: "and" | "or"; }[]
 ): boolean {
