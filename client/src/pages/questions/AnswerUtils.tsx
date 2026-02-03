@@ -163,7 +163,6 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     key: block.key,
                     value: block.choices.map((choice) => ({id: choice.id, selected: false})),
                 };
-
             case "freeText":
             case "freeTextInline":
             case "numeric":
@@ -214,15 +213,12 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 case "freeText":
                 case "freeTextInline":
                 case "numeric":
-                case "lineEquation": {
-                    if (answer.kind === "lineEquation") {
-                        const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                            `[data-node-view-wrapper] [id="${block.key}"]`
-                        );
+                case "lineEquation":
+                    { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                        `[data-node-view-wrapper] [id="${block.key}"]`
+                    );
                         if (inputEl) answer.value = inputEl.value;
-                    }
-                    break;
-                }
+                        break;}
                 case "geoGebraPoints": {
                     const ggbAnswer = answer as GeoGebraPointsAnswer;
                     const maxPoints = block.attrs?.maxPoints ?? 0;
