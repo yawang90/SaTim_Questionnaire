@@ -33,6 +33,7 @@ import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebra
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
+import {transformLineEquationConditions} from "./LineEquationValidator.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
@@ -129,8 +130,7 @@ export default function AnswerEditorPage() {
                             };
                         }
                     });
-                }
-                else if (obj.type === "geoGebraLines" && obj.value) {
+                } else if (obj.type === "geoGebraLines" && obj.value) {
                     Object.entries(obj.value as Record<string, LineConditions>).forEach(([lName, conds]) => {
                         if (initial[lName]) {
                             initial[lName] = {
@@ -145,8 +145,7 @@ export default function AnswerEditorPage() {
                             };
                         }
                     });
-                }
-                else if (key in initial) {
+                } else if (key in initial) {
                     initial[key] = obj.value ?? initial[key];
                 }
             });
@@ -253,6 +252,15 @@ export default function AnswerEditorPage() {
                             const lineName = `L${i + 1}`;
                             if (answers[lineName]) value[lineName] = answers[lineName];
                         }
+                        break;
+                    }
+                    case "lineEquation": {
+                        const transformed = transformLineEquationConditions(answers[b.key]);
+                        if ("error" in transformed) {
+                            errors.push(`Geradengleichung (${b.key}): ${transformed.error}`);
+                            return;
+                        }
+                        value = transformed;
                         break;
                     }
                     default:
@@ -391,7 +399,8 @@ export default function AnswerEditorPage() {
                                                             onChange={(next) => {
                                                                 console.log("next:", next);
                                                                 console.log("Aktuelle Antworten:", conds);
-                                                                handleAnswerChange(lineName, next)}}
+                                                                handleAnswerChange(lineName, next)
+                                                            }}
                                                         />
                                                     );
                                                 })

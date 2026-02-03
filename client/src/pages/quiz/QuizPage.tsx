@@ -122,8 +122,6 @@ export default function QuizPage() {
                 eq.c = validation.c;
             }
         }
-        console.log(extractedAnswers)
-        console.log(parsedBlocks)
         const isFilled = (ans: any) => {
             if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
                 if (!Array.isArray(ans.value)) return false;
@@ -222,7 +220,7 @@ export default function QuizPage() {
                             <Typography variant="body1">
                                 Vielen Dank für Ihre Teilnahme.
                             </Typography>
-                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/MAB-Demo/?uid=${userId}`}>
+                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/MAB-Demo/?uid=${userId}/?instance=${id}`}>
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                         </Box>

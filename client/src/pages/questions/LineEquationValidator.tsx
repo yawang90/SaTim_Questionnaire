@@ -24,7 +24,53 @@ function enforceExplicitMultiplication(input: string): string | null {
     }
     return null;
 }
+/**
+ * Normalize a single math input string → simplified string value
+ */
+export function normalizeMathInput(input: string): { value?: string; error?: string } {
+    if (!input || !input.trim()) return { error: "Leerer Ausdruck." };
+    const implicitError = enforceExplicitMultiplication(input);
+    if (implicitError) return { error: implicitError };
 
+    const s = preprocessMathLive(input);
+    try {
+        const node: MathNode = parse(s);
+        const simplified = simplify(node);
+        const symbols = new Set<string>();
+        simplified.traverse(n => {
+            if (n.type === "SymbolNode") symbols.add((n as any).name);
+        });
+        if (symbols.size > 0) return { error: "Nur Zahlen erlaubt (keine Variablen)." };
+
+        return { value: simplified.toString() };
+    } catch {
+        return { error: "Ungültiger mathematischer Ausdruck." };
+    }
+}
+
+/**
+ * Transform existing m/c objects → validated & simplified version
+ * Input:
+ * { m: [{operator: "=", value: "3*3"}], c: [{operator: "=", value: "4/2"}] }
+ */
+export function transformLineEquationConditions(val: {
+    m?: { operator: string; value: string }[];
+    c?: { operator: string; value: string }[];
+}) {
+    const mRaw = val?.m?.[0]?.value ?? "";
+    const cRaw = val?.c?.[0]?.value ?? "";
+
+    const mResult = normalizeMathInput(mRaw);
+    if (mResult.error) return { error: `Steigung m: ${mResult.error}` };
+
+    const cResult = normalizeMathInput(cRaw);
+    if (cResult.error) return { error: `Achsenabschnitt c: ${cResult.error}` };
+
+    return {
+        m: [{ operator: "=", value: mResult.value }],
+        c: [{ operator: "=", value: cResult.value }],
+    };
+}
 /**
  * Validate linear equation y = m*x + c
  * using symbolic simplification
