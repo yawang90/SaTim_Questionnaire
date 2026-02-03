@@ -219,12 +219,12 @@ export default function QuizPage() {
                 <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
                     {quizFinished ? (
                         <Box sx={{ textAlign: 'center', py: 6 }}>
-                            <Typography variant="h4" gutterBottom>
-                                Quiz abgeschlossen!
-                            </Typography>
                             <Typography variant="body1">
                                 Vielen Dank für Ihre Teilnahme.
                             </Typography>
+                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/MAB-Demo/?uid=${userId}`}>
+                                Bitte füllen Sie jetzt diese Umfrage aus!
+                            </Button>
                         </Box>
                     ) : (quiz?.question && (
                             <Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
