@@ -13,7 +13,8 @@ import {
     FormControlLabel,
     Paper,
     Radio,
-    RadioGroup, Snackbar,
+    RadioGroup,
+    Snackbar,
     Typography,
 } from '@mui/material';
 import {Save} from '@mui/icons-material';
@@ -22,10 +23,10 @@ import {type GeoGebraAnswer, Preview} from '../../components/Editor/Preview';
 import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
 import {
-    type Answer,
     type Block,
-    extractAnswersFromJson, type GeoGebraLinesAnswer, type GeoGebraPointsAnswer,
+    extractAnswersFromJson,
     mapQuestionsStatus,
+    mergeGeoGebraAnswers,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
@@ -89,25 +90,11 @@ export default function AnswerPreviewPage() {
         })();
     }, [id]);
 
-    function mergeGeoGebraAnswers(extractedAnswers: Answer[]): Answer[] {
-        return extractedAnswers.map(ans => {
-            if (ans.kind === "geoGebraPoints") {
-                const match = geoGebraAnswers.find(g => g.id === ans.key);
-                if (match) {return {...ans, value: match.value,} as GeoGebraPointsAnswer;}
-            }
-            if (ans.kind === "geoGebraLines") {
-                const match = geoGebraAnswers.find(g => g.id === ans.key);
-                if (match) {return {...ans, value: match.value,} as GeoGebraLinesAnswer;}
-            }
-            return ans;
-        });
-    }
-
     const handleTestAnswers = async () => {
         if (!id || !editorRef.current) return;
         const json = editorRef.current.getJSON();
         let  answers = extractAnswersFromJson(json, blocks);
-        answers = mergeGeoGebraAnswers(answers);
+        answers = mergeGeoGebraAnswers(answers, geoGebraAnswers);
         const lineEquations = answers.filter(a => a.kind === 'lineEquation');
         for (const eq of lineEquations) {
             const value = eq.value;

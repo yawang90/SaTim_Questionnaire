@@ -4,7 +4,7 @@ import {v4 as uuidv4} from "uuid";
 import {type AnswerDTO, getQuiz, type Quiz as QuizType, submitAnswer} from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
-import {Preview} from "../../components/Editor/Preview.tsx";
+import {type GeoGebraAnswer, Preview} from "../../components/Editor/Preview.tsx";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
@@ -14,7 +14,7 @@ import {Button, Snackbar, Alert, Stack, CircularProgress} from '@mui/material';
 import {
     type Block,
     extractAnswersFromJson,
-    type LineEquationAnswer,
+    type LineEquationAnswer, mergeGeoGebraAnswers,
     parseContentToBlocks
 } from '../questions/AnswerUtils.tsx';
 import {validateLineEquationMathJS} from "../questions/LineEquationValidator.tsx";
@@ -27,12 +27,31 @@ export default function QuizPage() {
     const [answeredQuestions, setAnsweredQuestions] = useState<number>(0);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
     const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
     const [quizFinished, setQuizFinished] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'error' | 'success' | 'info'
+    }>({
+        open: false,
+        message: '',
+        severity: 'info',
+    });
+    const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
+        setGeoGebraAnswers(prev => {
+            const idx = prev.findIndex(a => a.id === answer.id);
+            if (idx >= 0) {
+                const updated = [...prev];
+                updated[idx] = answer;
+                return updated;
+            }
+            return [...prev, answer];
+        });
+    };
 
     useEffect(() => {
         const key = "quizUserId";
@@ -75,27 +94,52 @@ export default function QuizPage() {
 
     const handleTestAnswers = async () => {
         if (!editorRef.current || !quiz || !quiz.question || !userId) return;
-
         const question = quiz.question;
-
         const parsedBlocks: Block[] = parseContentToBlocks(
             typeof question.contentJson === 'string'
                 ? JSON.parse(question.contentJson)
                 : question.contentJson
         );
-
         const editorJson = editorRef.current.getJSON();
-        const extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
+        let extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
+        extractedAnswers = mergeGeoGebraAnswers(extractedAnswers, geoGebraAnswers);
+        const lineEquations = extractedAnswers.filter(a => a.kind === 'lineEquation');
+        for (const eq of lineEquations) {
+            const value = eq.value;
+            if (typeof value !== "string") continue;
 
-        const allFilled = extractedAnswers.every(a =>
-            a.value !== null &&
-            a.value !== '' &&
-            !(Array.isArray(a.value) && a.value.length === 0)
-        );
+            const validation = validateLineEquationMathJS(value);
+
+            if (validation.error) {
+                setSnackbar({
+                    open: true,
+                    message: `Ungültige lineare Gleichung: ${validation.error}`,
+                    severity: 'error',
+                });
+                return;
+            } else {
+                eq.m = validation.m;
+                eq.c = validation.c;
+            }
+        }
+        console.log(extractedAnswers)
+        console.log(parsedBlocks)
+        const isFilled = (ans: any) => {
+            if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
+                if (!Array.isArray(ans.value)) return false;
+                return ans.value.some((v: any) => v.name?.trim() !== '');
+            }
+            if (ans.kind === 'lineEquation') {
+                return typeof ans.value === 'string' && ans.value.trim() !== '' && ans.value.trim() !== 'y=';
+            }
+            if (Array.isArray(ans.value)) return ans.value.length > 0;
+            return ans.value !== null && ans.value !== '';
+        };
+
+        const allFilled = extractedAnswers.every(isFilled);
 
         if (!allFilled) {
-            setSnackbarMessage("Bitte füllen Sie alle Felder aus.");
-            setSnackbarOpen(true);
+            setSnackbar({open: true, message: `Bitte beantworten Sie die Frage(n).`, severity: 'error',});
             return;
         }
         if (!id) return;
@@ -104,8 +148,7 @@ export default function QuizPage() {
             if (ans.kind === 'lineEquation') {
                 const validation = validateLineEquationMathJS(ans.value);
                 if (validation.error) {
-                    setSnackbarMessage(`Fehler in Gleichung: ${validation.error}`);
-                    setSnackbarOpen(true);
+                    setSnackbar({open: true, message: `Fehler in Gleichung: ${validation.error}`, severity: 'error',});
                     return;
                 }
                 ans.m = validation.m;
@@ -131,15 +174,13 @@ export default function QuizPage() {
             }),
         };
 
-
         try {
             setSubmitting(true);
             await submitAnswer(answerDTO, userId);
             await fetchQuizData();
         } catch (err) {
             console.error(err);
-            setSnackbarMessage("Fehler beim Absenden der Antwort.");
-            setSnackbarOpen(true);
+            setSnackbar({open: true, message: `Fehler beim Absenden der Antwort.`, severity: 'error',});
         } finally {
             setSubmitting(false);
         }
@@ -186,12 +227,7 @@ export default function QuizPage() {
                             </Typography>
                         </Box>
                     ) : (quiz?.question && (
-                            <Preview
-                                content={quiz.question.contentJson}
-                                editorRef={editorRef}
-                            />
-                        )
-                    )}
+                            <Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
                 </Box>
                 <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
                     {quiz?.question && <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} disabled={submitting} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
@@ -199,10 +235,12 @@ export default function QuizPage() {
                     </Button>}
                 </Box>
             </main>
-
-            <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert onClose={() => setSnackbarOpen(false)} severity="warning" sx={{ width: '100%' }}>
-                    {snackbarMessage}
+            <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
+                <Alert
+                    onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
+                    severity={snackbar.severity}
+                    sx={{width: "100%"}}>
+                    {snackbar.message}
                 </Alert>
             </Snackbar>
         </>

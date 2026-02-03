@@ -1,5 +1,6 @@
 import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
+import type {GeoGebraAnswer} from "../../components/Editor/Preview.tsx";
 
 export type Choice = { id: string; text: string; html?: string };
 
@@ -249,4 +250,17 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
     };
     if (doc.content) walk(doc.content as TipTapNode[]);
     return answers;
+}
+ export function mergeGeoGebraAnswers(extractedAnswers: Answer[], geoGebraAnswers: GeoGebraAnswer[]): Answer[] {
+    return extractedAnswers.map(ans => {
+        if (ans.kind === "geoGebraPoints") {
+            const match = geoGebraAnswers.find(g => g.id === ans.key);
+            if (match) {return {...ans, value: match.value,} as GeoGebraPointsAnswer;}
+        }
+        if (ans.kind === "geoGebraLines") {
+            const match = geoGebraAnswers.find(g => g.id === ans.key);
+            if (match) {return {...ans, value: match.value,} as GeoGebraLinesAnswer;}
+        }
+        return ans;
+    });
 }
