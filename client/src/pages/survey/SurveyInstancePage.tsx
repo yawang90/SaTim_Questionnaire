@@ -74,7 +74,6 @@ const SurveyInstancePage = () => {
     });
 
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-    const [selectedInstance, setSelectedInstance] = useState<SurveyInstance | null>(null);
     const [generatedLink, setGeneratedLink] = useState("");
     const [instances, setInstances] = useState<SurveyInstance[]>([]);
     const [instanceDialogOpen, setInstanceDialogOpen] = useState(false);
@@ -123,7 +122,6 @@ const SurveyInstancePage = () => {
     };
 
     const handleOpenLinkDialog = (instance: SurveyInstance) => {
-        setSelectedInstance(instance);
         const url = `${window.location.origin}/quiz/${instance.id}`;
         setGeneratedLink(url);
         setLinkDialogOpen(true);
