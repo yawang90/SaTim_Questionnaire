@@ -211,7 +211,7 @@ export const deleteSurveyInstanceHandler = async (req: Request, res: Response) =
 export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => {
     try {
         const surveyId = Number(req.params.id);
-        if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
+        if (!surveyId) return res.status(400).json({error: "Invalid survey ID"});
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -219,26 +219,35 @@ export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => 
         const bookletSlotFile = files.bookletSlotFile?.[0];
 
         if (!slotQuestionFile || !bookletSlotFile) {
-            return res.status(400).json({ error: "Both files are required" });
+            return res.status(400).json({error: "Both files are required"});
         }
 
         if (!slotQuestionFile || !bookletSlotFile) {
-            return res.status(400).json({ error: "Both files are required" });
+            return res.status(400).json({error: "Both files are required"});
         }
         const createdBy = Number((req as any).user?.id);
         if (!createdBy) {
-            return res.status(401).json({ error: "Unauthorized: user not found in token" });
+            return res.status(401).json({error: "Unauthorized: user not found in token"});
         }
         await processSurveyExcels(surveyId, slotQuestionFile, bookletSlotFile, createdBy);
 
-        res.status(200).json({ message: "Files uploaded and processed successfully" });
-    } catch (err) {
-        console.error("Error uploading survey Excels:", err);
-        res.status(500).json({ error: "Failed to upload Excel files", err });
+        res.status(200).json({message: "Files uploaded and processed successfully"});
+    } catch (err: any) {
+        if (err.statusCode === 400) {
+            return res.status(400).json({
+                message: err.message,
+                details: err.details
+            });
+        }
+        console.error(err);
+        res.status(500).json({
+            message: "Failed to upload Excel files"
+        });
     }
-};
+}
 
-export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
+
+    export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
     try {
         const surveyId = Number(req.params.id);
         if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });

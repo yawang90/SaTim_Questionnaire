@@ -160,7 +160,6 @@ export const uploadSurveyExcels = async (surveyId: string, file1: File, file2: F
     formData.append("bookletSlotFile", file2);
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
-
     const response = await fetch(`${API_BASE}/api/survey/${surveyId}/upload-excels`, {
         method: "POST",
         body: formData,
@@ -168,12 +167,10 @@ export const uploadSurveyExcels = async (surveyId: string, file1: File, file2: F
             "Authorization": `Bearer ${token}`,
         }
     });
-
     if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${errorText}`);
+        const errorData = await response.json();
+        throw errorData;
     }
-
     return await response.json();
 };
 

@@ -117,9 +117,16 @@ const SurveyUpdatePage = () => {
             setSnackbar({ open: true, message: "Dateien erfolgreich hochgeladen.", severity: "success" });
             setUploadDialogOpen(false);
             setSurvey({ ...survey, file1, file2 });
-        } catch (err) {
-            console.error("Failed to upload files:", err);
-            setSnackbar({ open: true, message: "Fehler beim Hochladen der Dateien.", severity: "error" });
+        } catch (err: any) {
+            if (err?.details) {
+                const msg = err.details
+                    .map((e:any) =>
+                        `Booklet ${e.bookletId}: Fehlende Aufgaben -> ${e.missingQuestionIds.join(", ")}`
+                    ).join("\n");
+                setSnackbar({open: true, message: msg, severity: "error"});
+            } else {
+                setSnackbar({open: true, message: "Fehler beim Hochladen der Dateien.", severity: "error"});
+            }
         } finally {
             setSaving(false);
         }
