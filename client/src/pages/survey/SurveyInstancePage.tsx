@@ -336,12 +336,22 @@ const SurveyInstancePage = () => {
                             <DatePicker
                                 label="Gültig von"
                                 value={newInstance.validFrom}
-                                onChange={(date) => setNewInstance({ ...newInstance, validFrom: date })}
+                                onChange={(date) =>
+                                    setNewInstance({
+                                        ...newInstance,
+                                        validFrom: date ? date.startOf("day") : null,
+                                    })
+                                }
                             />
                             <DatePicker
                                 label="Gültig bis"
                                 value={newInstance.validTo}
-                                onChange={(date) => setNewInstance({ ...newInstance, validTo: date })}
+                                onChange={(date) =>
+                                    setNewInstance({
+                                        ...newInstance,
+                                        validTo: date ? date.endOf("day") : null,
+                                    })
+                                }
                             />
                         </Box>
                     </DialogContent>
