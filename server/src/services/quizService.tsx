@@ -24,11 +24,15 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
     const instance = await prisma.surveyInstance.findUnique({
         where: {id: Number(instanceId)},
     });
-    if (!instance) throw new Error("Survey instance not found");
+    if (!instance) throw new Error("Testlauf nicht gefunden.");
+    const now = new Date();
+    if (now < instance.validFrom || now > instance.validTo) {
+        throw new Error("NOT_ACTIVE")
+    }
     const survey = await prisma.survey.findUnique({
         where: {id: instance.surveyId},
     });
-    if (!survey) throw new Error("Survey not found");
+    if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
         where: {
             surveyId: survey.id,

@@ -14,9 +14,12 @@ export const getQuizHandler = async (req: Request, res: Response) => {
         const quiz = await getQuiz(id, userId);
         if (!quiz) return res.status(404).json({ error: "Quiz not found" });
         res.status(200).json(quiz);
-    } catch (err) {
+    } catch (err: any) {
+        if (err.message==="NOT_ACTIVE") {
+            return res.status(403).json({ error: "This survey is not active at the moment." });
+        }
         console.error("Error fetching quiz:", err);
-        res.status(500).json({ error: "Failed to fetch quiz" });
+        res.status(500).json({ error: err });
     }
 };
 

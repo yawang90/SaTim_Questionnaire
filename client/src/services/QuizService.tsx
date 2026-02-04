@@ -60,6 +60,9 @@ export async function getQuiz(id: string, userId: string): Promise<Quiz> {
     });
 
     if (!res.ok) {
+        if (res.status === 403) {
+            throw new Error(`NOT_ACTIVE`);
+        }
         const msg = await res.text();
         throw new Error(`Failed to fetch quiz: ${msg}`);
     }

@@ -10,7 +10,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
-import {Alert, Button, CircularProgress, Snackbar, Stack} from '@mui/material';
+import {Alert, Button, CircularProgress, Paper, Snackbar, Stack} from '@mui/material';
 import {
     type Answer,
     type Block,
@@ -20,6 +20,7 @@ import {
     mergeLineEquationAnswers,
     parseContentToBlocks
 } from '../questions/AnswerUtils.tsx';
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -87,8 +88,12 @@ export default function QuizPage() {
             setQuizFinished(!data.question);
             setAnsweredQuestions(data.answeredQuestions);
             setTotalQuestions(data.totalQuestions);
-        } catch (err: any) {
-            setError(err.message || "Failed to load quiz");
+        } catch (err: any){
+            if (err.message==="NOT_ACTIVE"){
+                setError("Der Testlauf ist nicht aktiv, Sie können den Test nicht durchführen.")
+            } else {
+                setError(err.message || "Failed to load quiz");
+            }
         } finally {
             setLoading(false);
         }
@@ -180,8 +185,23 @@ export default function QuizPage() {
                 </Stack>
             </GeneralLayout>
         );
-    if (error) return <GeneralLayout><h4>Fehler: {error}</h4></GeneralLayout>;
 
+    if (error) {
+        return (
+            <GeneralLayout>
+                <Box sx={{minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center",}}>
+                    <Paper elevation={3} sx={{padding: 6, maxWidth: 500, textAlign: "center", borderRadius: 3,}}>
+                        <ErrorOutlineIcon color="error" sx={{ fontSize: 60, mb: 2 }}></ErrorOutlineIcon>
+                        <Typography variant="h5" fontWeight={600} gutterBottom>Fehler beim Laden des Tests</Typography>
+                        <Typography color="text.secondary" sx={{ mb: 3 }}>{error}</Typography>
+                        <Button variant="contained" onClick={() => window.location.reload()}>
+                            Erneut versuchen
+                        </Button>
+                    </Paper>
+                </Box>
+            </GeneralLayout>
+        );
+    }
     return (
         <>
             <AppBar position="fixed" sx={{width: '100%'}}>
