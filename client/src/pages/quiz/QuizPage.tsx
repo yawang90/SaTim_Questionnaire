@@ -10,14 +10,16 @@ import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
-import {Button, Snackbar, Alert, Stack, CircularProgress} from '@mui/material';
+import {Alert, Button, CircularProgress, Snackbar, Stack} from '@mui/material';
 import {
+    type Answer,
     type Block,
     extractAnswersFromJson,
-    type LineEquationAnswer, mergeGeoGebraAnswers,
+    type LineEquationAnswer,
+    mergeGeoGebraAnswers,
+    mergeLineEquationAnswers,
     parseContentToBlocks
 } from '../questions/AnswerUtils.tsx';
-import {validateLineEquationMathJS} from "../questions/LineEquationValidator.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -92,36 +94,7 @@ export default function QuizPage() {
         }
     };
 
-    const handleTestAnswers = async () => {
-        if (!editorRef.current || !quiz || !quiz.question || !userId) return;
-        const question = quiz.question;
-        const parsedBlocks: Block[] = parseContentToBlocks(
-            typeof question.contentJson === 'string'
-                ? JSON.parse(question.contentJson)
-                : question.contentJson
-        );
-        const editorJson = editorRef.current.getJSON();
-        let extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
-        extractedAnswers = mergeGeoGebraAnswers(extractedAnswers, geoGebraAnswers);
-        const lineEquations = extractedAnswers.filter(a => a.kind === 'lineEquation');
-        for (const eq of lineEquations) {
-            const value = eq.value;
-            if (typeof value !== "string") continue;
-
-            const validation = validateLineEquationMathJS(value);
-
-            if (validation.error) {
-                setSnackbar({
-                    open: true,
-                    message: `Ungültige lineare Gleichung: ${validation.error}`,
-                    severity: 'error',
-                });
-                return;
-            } else {
-                eq.m = validation.m;
-                eq.c = validation.c;
-            }
-        }
+    function validateAnswerExists(extractedAnswers: Answer[]) {
         const isFilled = (ans: any) => {
             if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
                 if (!Array.isArray(ans.value)) return false;
@@ -133,45 +106,53 @@ export default function QuizPage() {
             if (Array.isArray(ans.value)) return ans.value.length > 0;
             return ans.value !== null && ans.value !== '';
         };
-
         const allFilled = extractedAnswers.every(isFilled);
+        return allFilled;
+    }
 
-        if (!allFilled) {
+    const handleTestAnswers = async () => {
+        if (!editorRef.current || !quiz || !quiz.question || !userId) return;
+        const question = quiz.question;
+        const parsedBlocks: Block[] = parseContentToBlocks(
+            typeof question.contentJson === 'string'
+                ? JSON.parse(question.contentJson)
+                : question.contentJson
+        );
+        const editorJson = editorRef.current.getJSON();
+        let extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
+        extractedAnswers = mergeGeoGebraAnswers(extractedAnswers, geoGebraAnswers);
+        try {
+            extractedAnswers = mergeLineEquationAnswers(extractedAnswers);
+        } catch (err: any) {
+            setSnackbar({
+                open: true,
+                message: `Ungültige lineare Gleichung: ${err.message}`,
+                severity: 'error',
+            });
+        }
+        const answerExists = validateAnswerExists(extractedAnswers);
+        if (!answerExists) {
             setSnackbar({open: true, message: `Bitte beantworten Sie die Frage(n).`, severity: 'error',});
             return;
         }
         if (!id) return;
-
-        for (const ans of extractedAnswers) {
-            if (ans.kind === 'lineEquation') {
-                const validation = validateLineEquationMathJS(ans.value);
-                if (validation.error) {
-                    setSnackbar({open: true, message: `Fehler in Gleichung: ${validation.error}`, severity: 'error',});
-                    return;
-                }
-                ans.m = validation.m;
-                ans.c = validation.c;
-            }
-        }
-
         const answerDTO: AnswerDTO = {
             questionId: question.id,
             instanceId: id!,
             answer: extractedAnswers.map(a => {
                 if (a.kind === 'lineEquation') {
                     return {
+                        key: a.key,
+                        kind: a.kind,
                         value: a.value,
                         m: a.m,
                         c: a.c
                     } as LineEquationAnswer;
-                }  else if (a.kind === 'geoGebraPoints') {
-                    return { value: a.value } as any;
-                } else if (a.kind === 'geoGebraLines') {
-                    return { value: a.value } as any;
-                } else {return a.value;}
+                }  else {
+                    return { value: a.value, key: a.key, kind: a.kind } as any;
+                }
             }),
         };
-
         try {
             setSubmitting(true);
             await submitAnswer(answerDTO, userId);

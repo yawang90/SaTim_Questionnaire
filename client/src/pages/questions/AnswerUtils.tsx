@@ -1,6 +1,7 @@
 import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
 import type {GeoGebraAnswer} from "../../components/Editor/Preview.tsx";
+import {validateLineEquationMathJS} from "./LineEquationValidator.tsx";
 
 export type Choice = { id: string; text: string; html?: string };
 
@@ -251,6 +252,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
     if (doc.content) walk(doc.content as TipTapNode[]);
     return answers;
 }
+
  export function mergeGeoGebraAnswers(extractedAnswers: Answer[], geoGebraAnswers: GeoGebraAnswer[]): Answer[] {
     return extractedAnswers.map(ans => {
         if (ans.kind === "geoGebraPoints") {
@@ -263,4 +265,23 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
         }
         return ans;
     });
+}
+
+export function mergeLineEquationAnswers(extractedAnswers: Answer[]): Answer[] {
+        return extractedAnswers.map(ans => {
+            if (ans.kind !== "lineEquation") {
+                return ans;
+            }
+            const validation = validateLineEquationMathJS(ans.value);
+            if (validation.error) {
+                throw new Error(
+                    `Ungültige lineare Gleichung: ${validation.error}`
+                );
+            }
+            return {
+                ...ans,
+                m: validation.m,
+                c: validation.c
+            };
+        });
 }

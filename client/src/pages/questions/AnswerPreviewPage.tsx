@@ -27,12 +27,12 @@ import {
     extractAnswersFromJson,
     mapQuestionsStatus,
     mergeGeoGebraAnswers,
+    mergeLineEquationAnswers,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
 import PrettyTestResult from "./PrettyTestResult.tsx";
-import {validateLineEquationMathJS} from "./LineEquationValidator.tsx";
 
 export default function AnswerPreviewPage() {
     const {id} = useParams<{ id: string }>();
@@ -95,31 +95,18 @@ export default function AnswerPreviewPage() {
         const json = editorRef.current.getJSON();
         let  answers = extractAnswersFromJson(json, blocks);
         answers = mergeGeoGebraAnswers(answers, geoGebraAnswers);
-        const lineEquations = answers.filter(a => a.kind === 'lineEquation');
-        for (const eq of lineEquations) {
-            const value = eq.value;
-            if (typeof value !== "string") continue;
-
-            const validation = validateLineEquationMathJS(value);
-
-            if (validation.error) {
-                setSnackbar({
-                    open: true,
-                    message: `Ungültige lineare Gleichung: ${validation.error}`,
-                    severity: 'error',
-                });
-                return;
-            } else {
-                eq.m = validation.m;
-                eq.c = validation.c;
-            }
-        }
+        answers = mergeLineEquationAnswers(answers);
         try {
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
             setTestDialogOpen(true);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setSnackbar({
+                open: true,
+                message: err.message ?? 'Fehler bei der Verarbeitung.',
+                severity: 'error',
+            });
             setTestResult({ error: 'Fehler bei der Auswertung.' });
             setTestDialogOpen(true);
         }

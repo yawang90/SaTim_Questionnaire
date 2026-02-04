@@ -1,6 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import {type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
 import XLSX from "xlsx";
+import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
 
 /**
  * Interface for creating a new survey
@@ -356,59 +357,76 @@ function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQues
 }
 
 /**
- * Fetch survey + selected instances and generate Excel
+ * Export survey answers for selected instances, including question scores
  */
-export const getSurveyExport = async (surveyId: number, instanceIds: number[]): Promise<Buffer> => {
+export const getSurveyExport = async (
+    surveyId: number,
+    instanceIds: number[]
+): Promise<Buffer> => {
     const survey = await prisma.survey.findUnique({
         where: { id: surveyId },
-        include: {
-            instances: true,
-            booklet: true,
-        },
     });
-
     if (!survey) throw new Error("Survey not found");
     const instances = await prisma.surveyInstance.findMany({
-        where: {
-            id: { in: instanceIds },
-            surveyId,
-        },
+        where: { id: { in: instanceIds }, surveyId },
+    });
+    if (!instances.length) throw new Error("No valid instances found");
+    const answers = await prisma.answer.findMany({
+        where: { surveyId, instanceId: { in: instanceIds } },
         include: {
-            createdBy: true,
-            updatedBy: true,
+            questionsAnswers: true,
         },
     });
+    const rows: any[] = [];
+    for (const answer of answers) {
+        const instance = instances.find((i) => i.id === answer.instanceId);
+        if (!instance) continue;
 
-    if (!instances || instances.length === 0)
-        throw new Error("Keine gültigen Durchführungen gefunden");
+        for (const qa of answer.questionsAnswers) {
+            const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as {
+                key: string;
+                value: any;
+                kind?: string;
+                c?: string;
+                m?: string;
+            }[] : [];
 
-    const workbook = XLSX.utils.book_new();
+            const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({
+                key: a.key,
+                value: a.value,
+                m: a.m,
+                c: a.c
+            }));
 
-    const summaryData = [
-        ["Instance Name", "Valid From", "Valid To", "Created By", "Updated By"],
-        ...instances.map((inst) => [
-            inst.name,
-            inst.validFrom.toISOString().split("T")[0],
-            inst.validTo.toISOString().split("T")[0],
-            `${inst.createdBy.first_name} ${inst.createdBy.last_name}`,
-            `${inst.updatedBy.first_name} ${inst.updatedBy.last_name}`,
-        ]),
-    ];
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
-
-    for (const inst of instances) {
-        const instanceSheetData = [
-            ["Field", "Value"],
-            ["ID", inst.id],
-            ["Name", inst.name],
-            ["Valid From", inst.validFrom.toISOString()],
-            ["Valid To", inst.validTo.toISOString()],
-            ["Booklet Version", inst.bookletVersion],
-        ];
-        const sheet = XLSX.utils.aoa_to_sheet(instanceSheetData);
-        XLSX.utils.book_append_sheet(workbook, sheet, `Instance_${inst.id}`);
+            const result = await evaluateAnswersService(qa.questionId, userAnswerInput);
+            rows.push({
+                user_id: answer.userId,
+                instance_id: instance.id,
+                instance_name: instance.name,
+                booklet_id: answer.bookletId,
+                question_id: qa.questionId,
+                question_answer: JSON.stringify(qa.answerJson ?? []),
+                question_start_time: qa.solvingTimeStart?.toISOString() ?? "",
+                question_end_time: qa.solvingTimeEnd?.toISOString() ?? "",
+                question_score: result.score,
+            });
+        }
     }
 
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows, {
+        header: [
+            "user_id",
+            "instance_id",
+            "instance_name",
+            "booklet_id",
+            "question_id",
+            "question_answer",
+            "question_start_time",
+            "question_end_time",
+            "question_score",
+        ],
+    });
+    XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
     return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 };
