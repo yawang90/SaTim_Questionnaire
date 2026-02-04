@@ -23,6 +23,7 @@ import {LatexDisplay} from "./NodeEditorPlugins.tsx";
 import {MathJaxContext} from "better-react-mathjax";
 import Underline from '@tiptap/extension-underline';
 import type {GeoGebraLine, GeoGebraPoint} from "../../pages/questions/AnswerUtils.tsx";
+import ImageResize from 'tiptap-extension-resize-image';
 
 interface PreviewProps {
     content: JSONContent | null;
@@ -51,7 +52,7 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             TableRow,
             TableCell,
             TableHeader,
-            Image,
+            Image, ImageResize,
             GeoGebra.configure({
                 onAnswerChange: (answer: GeoGebraAnswer) => {
                     if (onGeoGebraChange) onGeoGebraChange(answer);

@@ -44,13 +44,14 @@ import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
 import {MathJaxContext} from 'better-react-mathjax';
 import Underline from '@tiptap/extension-underline';
+import ImageResize from 'tiptap-extension-resize-image';
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
-            Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, Image,
+            Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, Image, ImageResize,
             MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
