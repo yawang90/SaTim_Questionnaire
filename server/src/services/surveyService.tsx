@@ -375,8 +375,10 @@ export const getSurveyExport = async (
         where: { surveyId, instanceId: { in: instanceIds } },
         include: {
             questionsAnswers: true,
+            booklet: true,
         },
     });
+
     const rows: any[] = [];
     for (const answer of answers) {
         const instance = instances.find((i) => i.id === answer.instanceId);
@@ -400,33 +402,35 @@ export const getSurveyExport = async (
 
             const result = await evaluateAnswersService(qa.questionId, userAnswerInput);
             rows.push({
-                user_id: answer.userId,
-                instance_id: instance.id,
-                instance_name: instance.name,
-                booklet_id: answer.bookletId,
-                question_id: qa.questionId,
-                question_answer: JSON.stringify(qa.answerJson ?? []),
-                question_start_time: qa.solvingTimeStart?.toISOString() ?? "",
-                question_end_time: qa.solvingTimeEnd?.toISOString() ?? "",
-                question_score: result.score,
+                SchuelerID_System: answer.userId,
+                GruppenID_ausLink: instance.id,
+                GruppenBezeichnung: instance.name,
+                Booklet_ID: answer.booklet.bookletId,
+                AufgabenID_System: qa.questionId,
+                Aufgabe_RawResponse: JSON.stringify(qa.answerJson ?? []),
+                Aufgabe_Score: result.score,
+                Aufgabe_StartedAt: qa.solvingTimeStart?.toISOString() ?? "",
+                Aufgabe_FinishedAt: qa.solvingTimeEnd?.toISOString() ?? "",
+                Aufgabe_Zeit_MS: qa.solvedTime
             });
+
         }
     }
 
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(rows, {
-        header: [
-            "user_id",
-            "instance_id",
-            "instance_name",
-            "booklet_id",
-            "question_id",
-            "question_answer",
-            "question_start_time",
-            "question_end_time",
-            "question_score",
-        ],
-    });
+    const headers = [
+        "SchuelerID_System",
+        "GruppenID_ausLink",
+        "GruppenBezeichnung",
+        "Booklet_ID",
+        "AufgabenID_System",
+        "Aufgabe_RawResponse",
+        "Aufgabe_Score",
+        "Aufgabe_StartedAt",
+        "Aufgabe_FinishedAt",
+        "Aufgabe_Zeit_MS",
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
     XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
     return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 };
