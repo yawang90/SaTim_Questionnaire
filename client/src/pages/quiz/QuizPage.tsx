@@ -95,13 +95,17 @@ export default function QuizPage() {
     };
 
     function validateAnswerExists(extractedAnswers: Answer[]) {
-        const isFilled = (ans: any) => {
+        const isFilled = (ans: Answer) => {
             if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
                 if (!Array.isArray(ans.value)) return false;
                 return ans.value.some((v: any) => v.name?.trim() !== '');
             }
             if (ans.kind === 'lineEquation') {
-                return typeof ans.value === 'string' && ans.value.trim() !== '' && ans.value.trim() !== 'y=';
+                return ans.value.trim() !== '' && ans.value.trim() !== 'y=';
+            }
+            if (ans.kind === 'sc') {
+                if (!Array.isArray(ans.value)) return false;
+                return ans.value.some(v => v.selected);
             }
             if (Array.isArray(ans.value)) return ans.value.length > 0;
             return ans.value !== null && ans.value !== '';

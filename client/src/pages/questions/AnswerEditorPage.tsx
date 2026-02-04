@@ -315,15 +315,8 @@ export default function AnswerEditorPage() {
                                                         {b.choices.map((choice: Choice) => (
                                                             <FormControlLabel
                                                                 key={choice.id}
-                                                                control={
-                                                                    <Checkbox
-                                                                        checked={(answers[b.key] ?? []).includes(choice.id)}
-                                                                        onChange={() => toggleChoice(b.key, choice.id)}
-                                                                    />
-                                                                }
-                                                                label={<MathJax dynamic><span
-                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}
-                                                            />
+                                                                control={<Checkbox checked={(answers[b.key] ?? []).includes(choice.id)} onChange={() => toggleChoice(b.key, choice.id)}/>}
+                                                                label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}/>
                                                         ))}
                                                     </FormGroup>
                                                 </FormControl>
@@ -336,15 +329,8 @@ export default function AnswerEditorPage() {
                                                         {b.choices.map((choice: Choice) => (
                                                             <FormControlLabel
                                                                 key={choice.id}
-                                                                control={
-                                                                    <Checkbox
-                                                                        checked={answers[b.key] === choice.id}
-                                                                        onChange={() => toggleChoice(b.key, choice.id)}
-                                                                    />
-                                                                }
-                                                                label={<MathJax dynamic><span
-                                                                    dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}
-                                                            />
+                                                                control={<Checkbox checked={answers[b.key] === choice.id} onChange={() => toggleChoice(b.key, choice.id)}/>}
+                                                                label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}/>
                                                         ))}
                                                     </FormGroup>
                                                 </FormControl>

@@ -6,7 +6,7 @@ import {validateLineEquationMathJS} from "./LineEquationValidator.tsx";
 export type Choice = { id: string; text: string; html?: string };
 
 export type Answer =
-    | { kind: "mc" | "sc"; key: string; value: { id: string; selected: boolean }[] }
+    | { kind: "mc" | "sc"; key: string; value: { id: string; selected: boolean; text?: string}[] }
     | { kind: "freeText" | "freeTextInline" | "numeric"; key: string; value: string }
     | LineEquationAnswer
     | GeoGebraPointsAnswer
@@ -102,23 +102,19 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
     const walk = (nodes: any[]) => {
         nodes.forEach((node) => {
             if (!node) return;
-
             const nodeId = node.attrs?.id || uuidv4();
             if (node.type === "mcChoice" || node.type === "singleChoice") {
                 const kind = node.type === "mcChoice" ? "mc" : "sc";
                 const groupId = node.attrs?.groupId || nodeId;
-
                 if (!blockMap[groupId]) {
                     blockMap[groupId] = {kind, key: groupId, choices: []};
                 }
-
                 (node.content || []).forEach((choiceNode: any) => {
                     const html = renderNodeToHTML(choiceNode);
                     const text = html.replace(/<[^>]+>/g, "").trim();
                     (blockMap[groupId] as any).choices.push({id: nodeId, text, html});
                 });
             }
-
             if (node.type === "freeText") blockMap[nodeId] = {kind: "freeText", key: nodeId};
             if (node.type === "freeTextInline") blockMap[nodeId] = {kind: "freeTextInline", key: nodeId};
             if (node.type === "numericInput") blockMap[nodeId] = {kind: "numeric", key: nodeId};
@@ -143,7 +139,6 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
             if (node.content) walk(node.content);
         });
     };
-
     walk(json.content);
     return Object.values(blockMap);
 }
@@ -163,7 +158,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 return {
                     kind: block.kind,
                     key: block.key,
-                    value: block.choices.map((choice) => ({id: choice.id, selected: false})),
+                    value: block.choices.map((choice) => ({id: choice.id, selected: false, choiceText: choice.text})),
                 };
             case "freeText":
             case "freeTextInline":
