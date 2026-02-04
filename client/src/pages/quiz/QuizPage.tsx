@@ -130,9 +130,10 @@ export default function QuizPage() {
         } catch (err: any) {
             setSnackbar({
                 open: true,
-                message: `Ungültige lineare Gleichung: ${err.message}`,
+                message: `${err.message}`,
                 severity: 'error',
             });
+            return;
         }
         const answerExists = validateAnswerExists(extractedAnswers);
         if (!answerExists) {

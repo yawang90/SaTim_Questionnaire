@@ -93,22 +93,16 @@ export default function AnswerPreviewPage() {
     const handleTestAnswers = async () => {
         if (!id || !editorRef.current) return;
         const json = editorRef.current.getJSON();
-        let  answers = extractAnswersFromJson(json, blocks);
-        answers = mergeGeoGebraAnswers(answers, geoGebraAnswers);
-        answers = mergeLineEquationAnswers(answers);
+        let answers = extractAnswersFromJson(json, blocks);
         try {
+            answers = mergeGeoGebraAnswers(answers, geoGebraAnswers);
+            answers = mergeLineEquationAnswers(answers);
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
             setTestDialogOpen(true);
         } catch (err: any) {
-            console.error(err);
-            setSnackbar({
-                open: true,
-                message: err.message ?? 'Fehler bei der Verarbeitung.',
-                severity: 'error',
-            });
-            setTestResult({ error: 'Fehler bei der Auswertung.' });
-            setTestDialogOpen(true);
+            setSnackbar({open: true, message: err.message ?? 'Fehler bei der Verarbeitung.', severity: 'error',});
+            return;
         }
     };
 
@@ -143,7 +137,15 @@ export default function AnswerPreviewPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, true]}>
-                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
+                <Box sx={{
+                    minHeight: '100vh',
+                    backgroundColor: 'background.default',
+                    py: 3,
+                    px: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    mt: 6
+                }}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                         <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                             Status setzen
@@ -166,7 +168,8 @@ export default function AnswerPreviewPage() {
 
                         {!loading && questionContent && (
                             <>
-                                <Preview content={questionContent} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>
+                                <Preview content={questionContent} editorRef={editorRef}
+                                         onGeoGebraChange={handleGeoGebraChange}/>
                                 <Box sx={{mt: 3, display: 'flex', gap: 2, justifyContent: 'center'}}>
                                     <Button variant="outlined" onClick={() => navigate(-1)}>
                                         Zurück
