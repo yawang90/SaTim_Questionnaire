@@ -252,13 +252,9 @@ export const processSurveyExcels = async (
 ) => {
     const slotToQuestionMap = readSlotToQuestionExcel(slotQuestionFile);
     const bookletMap = readBookletToSlotExcel(bookletSlotFile, slotToQuestionMap);
-
-    // Validate that all questions exist
     const errors: any[] = [];
     for (const [bookletName, questionIdsRaw] of Object.entries(bookletMap)) {
         const bookletId = parseInt(bookletName.replace(/\D/g, "")) || 0;
-
-        // Deduplicate question IDs
         const questionIds = [...new Set(questionIdsRaw)];
 
         const validQuestions = await prisma.question.findMany({
@@ -283,27 +279,27 @@ export const processSurveyExcels = async (
         throw error;
     }
 
-    // Transaction: delete old booklets, increment version, create new booklets + questions
     return prisma.$transaction(async (tx) => {
-        // Delete old booklets
+        await tx.bookletQuestion.deleteMany({
+            where: { booklet: { surveyId } },
+        });
+
+        await tx.answer.deleteMany({
+            where: { surveyId },
+        });
+
         await tx.booklet.deleteMany({ where: { surveyId } });
 
-        // Increment survey booklet version
         const updatedSurvey = await tx.survey.update({
             where: { id: surveyId },
             data: { bookletVersion: { increment: 1 } },
             select: { bookletVersion: true },
         });
 
-        // Create new booklets and BookletQuestions
         for (const [bookletName, questionIdsRaw] of Object.entries(bookletMap)) {
             const bookletId = parseInt(bookletName.replace(/\D/g, "")) || 0;
-
-            // Deduplicate questions for the booklet
             const questionIds = [...new Set(questionIdsRaw)];
             if (!questionIds.length) continue;
-
-            // Create the booklet
             const newBooklet = await tx.booklet.create({
                 data: {
                     bookletId,
@@ -313,20 +309,16 @@ export const processSurveyExcels = async (
                     version: updatedSurvey.bookletVersion,
                 },
             });
-
-            // Create BookletQuestion entries
             const bookletQuestionData = questionIds.map((questionId, index) => ({
                 bookletId: newBooklet.id,
-                questionId,             // safe, no duplicates
-                position: index + 1,    // positions unique per booklet
+                questionId,
+                position: index + 1,
             }));
 
             await tx.bookletQuestion.createMany({
                 data: bookletQuestionData,
             });
         }
-
-        // Finally, update survey status & Excel URL
         return tx.survey.update({
             where: { id: surveyId },
             data: {
