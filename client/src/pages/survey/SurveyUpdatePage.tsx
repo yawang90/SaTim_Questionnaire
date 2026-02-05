@@ -138,6 +138,7 @@ const SurveyUpdatePage = () => {
         const fetchBooklets = async () => {
             try {
                 const data = await getSurveyBooklets(survey.id.toString());
+                console.log(data)
                 setBooklets(data);
             } catch (err) {
                 console.log(err);
@@ -167,7 +168,7 @@ const SurveyUpdatePage = () => {
     };
 
     const uniqueQuestionCount = Array.from(
-        new Set(booklets.flatMap(b => b.questions.map(q => q.id)))
+        new Set(booklets.flatMap(b => b.BookletQuestion.map(q => q.id)))
     ).length;
 
     if (loading) return <LinearProgress />;
@@ -280,7 +281,7 @@ const SurveyUpdatePage = () => {
                                 {booklets.map((b) => (
                                     <Box key={b.id} sx={{ mb: 2, p: 1, border: "1px solid #ccc", borderRadius: 1 }}>
                                         <Typography variant="subtitle1">Booklet {b.bookletId}</Typography>
-                                        <Typography variant="body2">Fragen: {b.questions.map(q => `ID: ${q.id}`).join(", ")}</Typography>
+                                        <Typography variant="body2">Fragen: {b.BookletQuestion.map(q => `ID: ${q.questionId}`).join(", ")}</Typography>
                                         <Typography variant="body2">Erstellt am: {new Date(b.createdAt).toLocaleDateString()}</Typography>
                                         {b.excelFileUrl && (
                                             <Button variant="text" href={b.excelFileUrl} target="_blank">Excel herunterladen</Button>

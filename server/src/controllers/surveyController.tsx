@@ -233,13 +233,13 @@ export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => 
 
         res.status(200).json({message: "Files uploaded and processed successfully"});
     } catch (err: any) {
+        console.error(err);
         if (err.statusCode === 400) {
             return res.status(400).json({
                 message: err.message,
                 details: err.details
             });
         }
-        console.error(err);
         res.status(500).json({
             message: "Failed to upload Excel files"
         });

@@ -53,7 +53,7 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
                 instanceId: instance.id,
                 bookletId: booklet.id,
                 userId,
-                questionIds: booklet.questions.map(q => q.id),
+                questionIds: booklet.BookletQuestion.map(bq => bq.question.id)
             },
             include: {
                 questionsAnswers: true,
@@ -166,7 +166,14 @@ async function assignBookletToUser(surveyId: number) {
     return prisma.$transaction(async tx => {
         const booklets = await tx.booklet.findMany({
             where: { surveyId },
-            include: { questions: true },
+            include: {
+                BookletQuestion: {
+                    orderBy: { position: "asc" },
+                    include: {
+                        question: true,
+                    },
+                },
+            },
         });
 
         if (booklets.length === 0) {

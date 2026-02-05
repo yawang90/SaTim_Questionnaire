@@ -45,10 +45,21 @@ model question {
   createdById Int
   updatedById Int
 
-  createdBy users @relation("CreatedQuestions", fields: [createdById], references: [id])
-  updatedBy users @relation("UpdatedQuestions", fields: [updatedById], references: [id])
+  createdBy       users             @relation("CreatedQuestions", fields: [createdById], references: [id])
+  updatedBy       users             @relation("UpdatedQuestions", fields: [updatedById], references: [id])
+  bookletQuestion BookletQuestion[]
+}
 
-  booklet booklet[] @relation("BookletQuestions")
+model BookletQuestion {
+  bookletId  Int
+  questionId Int
+  position   Int
+
+  booklet  booklet  @relation(fields: [bookletId], references: [id])
+  question question @relation(fields: [questionId], references: [id])
+
+  @@id([bookletId, questionId])
+  @@unique([bookletId, position])
 }
 
 enum question_status {
@@ -108,19 +119,19 @@ enum survey_mode {
 }
 
 model booklet {
-  id            Int        @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   bookletId     Int
   surveyId      Int
-  questions     question[] @relation("BookletQuestions")
   excelFileUrl  String
-  assignedCount Int        @default(0)
-  createdAt     DateTime   @default(now())
+  assignedCount Int      @default(0)
+  createdAt     DateTime @default(now())
   createdById   Int
-  version       Int        @default(0)
+  version       Int      @default(0)
 
-  survey    survey   @relation(fields: [surveyId], references: [id])
-  createdBy users    @relation("CreatedBooklets", fields: [createdById], references: [id])
-  answer    answer[] @relation("BelongsToBooklet")
+  survey          survey            @relation(fields: [surveyId], references: [id])
+  createdBy       users             @relation("CreatedBooklets", fields: [createdById], references: [id])
+  answer          answer[]          @relation("BelongsToBooklet")
+  BookletQuestion BookletQuestion[]
 
   @@index([surveyId])
 }
