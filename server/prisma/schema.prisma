@@ -163,6 +163,7 @@ model questionAnswer {
   solvedTime       Float?
   solvingTimeStart DateTime  @default(now())
   solvingTimeEnd   DateTime?
+  skipped          Boolean   @default(false)
   answer           answer    @relation("BelongsToAnswer", fields: [answerId], references: [id])
 
   @@unique([answerId, questionId])

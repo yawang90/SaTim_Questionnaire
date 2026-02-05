@@ -1,9 +1,10 @@
 import express from 'express';
-import {getQuizHandler, submitAnswerHandler} from "../controllers/quizController.js";
+import {getQuizHandler, skipQuestionHandler, submitAnswerHandler} from "../controllers/quizController.js";
 
 const router = express.Router();
 
-router.get('/:id', getQuizHandler);
-router.post('/:id/answer', submitAnswerHandler);
+router.get('/instance/:id', getQuizHandler);
+router.post('/question/:questionId/answer', submitAnswerHandler);
+router.post('/question/:questionId/skip', skipQuestionHandler);
 
 export default router;

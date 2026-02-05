@@ -26,6 +26,9 @@ export interface Quiz {
     answeredQuestions: number;
     questionIds: number[];
     answeredQuestionIds: number[];
+    previousAnswer?: any;
+    skipped: boolean;
+    skippedQuestions: number[];
 }
 
 export interface LineEquationAnswer {
@@ -56,12 +59,11 @@ export interface AnswerDTO {
  * @returns Quiz object
  */
 export async function getQuiz(id: string, userId: string, questionId?: number): Promise<Quiz> {
-    const url = new URL(`${API_BASE}/api/quiz/${id}`);
+    const url = new URL(`${API_BASE}/api/quiz/instance/${id}`);
     url.searchParams.set("userId", userId);
     if (questionId) {
         url.searchParams.set("questionId", questionId.toString());
     }
-
     const res = await fetch(url.toString(), {
         headers: {
             "Content-Type": "application/json"
@@ -84,7 +86,7 @@ export async function getQuiz(id: string, userId: string, questionId?: number): 
  * @returns Confirmation or saved answer
  */
 export async function submitAnswer(answer: AnswerDTO, userId: string) {
-    const res = await fetch(`${API_BASE}/api/quiz/${answer.questionId}/answer?userId=${userId}`, {
+    const res = await fetch(`${API_BASE}/api/quiz/question/${answer.questionId}/answer?userId=${userId}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"},
@@ -96,5 +98,19 @@ export async function submitAnswer(answer: AnswerDTO, userId: string) {
         throw new Error(`Failed to submit answer: ${msg}`);
     }
 
+    return res.json();
+}
+
+export async function skipQuestion(questionId: number, instanceId: string, userId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/question/${questionId}/skip?instanceId=${instanceId}&userId=${userId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"},
+        }
+    );
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to skip question");
+    }
     return res.json();
 }

@@ -1,7 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {useParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
-import {type AnswerDTO, getQuiz, type Quiz, type Quiz as QuizType, submitAnswer} from "../../services/QuizService.tsx";
+import {
+    type AnswerDTO,
+    getQuiz,
+    type Quiz,
+    type Quiz as QuizType,
+    skipQuestion,
+    submitAnswer
+} from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
 import {type GeoGebraAnswer, Preview} from "../../components/Editor/Preview.tsx";
@@ -9,7 +16,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import {Alert, Button, CircularProgress, Paper, Snackbar, Stack} from '@mui/material';
+import {Alert, Button, CircularProgress, Paper, Snackbar, Stack, Tooltip} from '@mui/material';
 import {
     type Answer,
     type Block,
@@ -161,13 +168,7 @@ export default function QuizPage() {
             instanceId: id!,
             answer: extractedAnswers.map(a => {
                 if (a.kind === 'lineEquation') {
-                    return {
-                        key: a.key,
-                        kind: a.kind,
-                        value: a.value,
-                        m: a.m,
-                        c: a.c
-                    } as LineEquationAnswer;
+                    return {key: a.key, kind: a.kind, value: a.value, m: a.m, c: a.c} as LineEquationAnswer;
                 }  else {
                     return { value: a.value, key: a.key, kind: a.kind } as any;
                 }
@@ -180,6 +181,20 @@ export default function QuizPage() {
         } catch (err) {
             console.error(err);
             setSnackbar({open: true, message: `Fehler beim Absenden der Antwort.`, severity: 'error',});
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleSkip = async () => {
+        if (!quiz?.question || !userId || !id) return;
+        try {
+            setSubmitting(true);
+            await skipQuestion(quiz.question.id, id, userId);
+            await fetchQuizData();
+        } catch (err) {
+            console.error(err);
+            setSnackbar({open: true, message: "Fehler beim Überspringen der Frage.", severity: "error",});
         } finally {
             setSubmitting(false);
         }
@@ -220,29 +235,25 @@ export default function QuizPage() {
                         {questionIds.map((qid, index) => {
                             const isCurrent = quiz?.question?.id === qid;
                             const isAnswered = quiz?.answeredQuestionIds?.includes(qid);
-
+                            const isSkipped = quiz?.skippedQuestions?.includes(qid);
+                            let title = "";
+                            if (isAnswered && !isSkipped) {
+                                    title = "Die Antwort ist gespeichert.";
+                            }
+                            if (isSkipped) {
+                                title = "Die Antwort ist übersprungen.";
+                            }
                             return (
-                                <Button
-                                    key={qid}
-                                    size="small"
-                                    variant={isCurrent ? "contained" : "outlined"}
-                                    onClick={() => fetchQuizData(qid)}
-                                    sx={{
-                                        color: "white",
-                                        borderColor: "white",
-                                        backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent",
-                                        minWidth: 36,
-                                        position: "relative",
-                                        "&:hover": {
-                                            backgroundColor: "rgba(255,255,255,0.1)",
-                                            borderColor: "white",
-                                        },
-                                    }}>
+                                <Tooltip title={title} arrow>
+                                <Button key={qid} size="small" variant={isCurrent ? "contained" : "outlined"} onClick={() => fetchQuizData(qid)} sx={{color: "white", borderColor: "white", backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent", minWidth: 36, position: "relative", "&:hover": {backgroundColor: "rgba(255,255,255,0.1)", borderColor: "white",},}}>
                                     Aufgabe {index + 1}
-                                    {isAnswered && (
-                                        <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "green", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontSize: 12, fontWeight: "bold",}}>✓</Box>
-                                    )}
-                                </Button>
+                                    {isAnswered && !isSkipped &&(
+                                        <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "green", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontSize: 12, fontWeight: "bold",
+                                        }}>✓</Box>)}
+                                    {isSkipped && (
+                                        <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "#fbc02d", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "black", fontSize: 12, fontWeight: "bold",}}>
+                                            ⏭</Box>)}
+                                </Button></Tooltip>
                             );
                         })}
                     </Box>
@@ -275,11 +286,14 @@ export default function QuizPage() {
                             disabled={currentIndex === 0}>
                             Zurück
                         </Button>
+                        <Button variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
+                            Überspringen
+                        </Button>
                         <Button
                             variant="contained"
                             color="primary"
                             onClick={handleTestAnswers}
-                            disabled={submitting}>
+                            disabled={submitting || loading}>
                             {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort abschicken"}
                         </Button>
                     </Box>
