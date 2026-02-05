@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
-import {type AnswerDTO, getQuiz, type Quiz as QuizType, submitAnswer} from "../../services/QuizService.tsx";
+import {type AnswerDTO, getQuiz, type Quiz, type Quiz as QuizType, submitAnswer} from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
 import {type GeoGebraAnswer, Preview} from "../../components/Editor/Preview.tsx";
@@ -9,7 +9,6 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import LinearProgress from "@mui/material/LinearProgress";
 import {Alert, Button, CircularProgress, Paper, Snackbar, Stack} from '@mui/material';
 import {
     type Answer,
@@ -26,12 +25,9 @@ export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [totalQuestions, setTotalQuestions] = useState<number>(0);
-    const [answeredQuestions, setAnsweredQuestions] = useState<number>(0);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
     const [error, setError] = useState<string | null>(null);
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
-    const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
     const [quizFinished, setQuizFinished] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
@@ -44,6 +40,9 @@ export default function QuizPage() {
         message: '',
         severity: 'info',
     });
+    const [questionIds, setQuestionIds] = useState<number[]>([]);
+    const [currentIndex, setCurrentIndex] = useState<number>(0);
+
     const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
         setGeoGebraAnswers(prev => {
             const idx = prev.findIndex(a => a.id === answer.id);
@@ -78,16 +77,27 @@ export default function QuizPage() {
         fetchQuizData();
     }, [userId, id]);
 
-    const fetchQuizData = async () => {
+    const fetchQuizData = async (qid?: number) => {
         if (!userId || !id) return;
         setLoading(true);
         setError(null);
         try {
-            const data = await getQuiz(id, userId);
+            let data: Quiz;
+            if (qid) {
+                data = await getQuiz(id, userId, qid);
+            } else {
+                data = await getQuiz(id, userId);
+            }
             setQuiz(data);
             setQuizFinished(!data.question);
-            setAnsweredQuestions(data.answeredQuestions);
-            setTotalQuestions(data.totalQuestions);
+            if (!questionIds.length && data.questionIds) {
+                setQuestionIds(data.questionIds);
+            }
+            if (data.question && data.questionIds) {
+                const idx = data.questionIds.indexOf(data.question.id);
+                setCurrentIndex(idx >= 0 ? idx : 0);
+            }
+            setGeoGebraAnswers([]);
         } catch (err: any){
             if (err.message==="NOT_ACTIVE"){
                 setError("Der Testlauf ist nicht aktiv, Sie können den Test nicht durchführen.")
@@ -204,21 +214,41 @@ export default function QuizPage() {
     }
     return (
         <>
-            <AppBar position="fixed" sx={{width: '100%'}}>
-                <Toolbar sx={{width: '100%', maxWidth: '100%', px: 2, boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', gap: 2}}>
-                    <Box sx={{flexGrow: 1}}>
-                        <Typography variant="body2" color="inherit" gutterBottom>
-                            Frage {answeredQuestions} von {totalQuestions}
-                        </Typography>
-                        <LinearProgress color="secondary" variant="determinate" value={progress} sx={{height: 10, width: 1000, borderRadius: 5}}/>
-                    </Box>
-                    <Box>
-                        <Typography variant="body1" color="inherit">
-                            UserId: {userId}
-                        </Typography>
+            <AppBar position="fixed" sx={{ width: '100%' }}>
+                <Toolbar sx={{ flexDirection: "column", alignItems: "stretch", py: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+                        {questionIds.map((qid, index) => {
+                            const isCurrent = quiz?.question?.id === qid;
+                            const isAnswered = quiz?.answeredQuestionIds?.includes(qid);
+
+                            return (
+                                <Button
+                                    key={qid}
+                                    size="small"
+                                    variant={isCurrent ? "contained" : "outlined"}
+                                    onClick={() => fetchQuizData(qid)}
+                                    sx={{
+                                        color: "white",
+                                        borderColor: "white",
+                                        backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent",
+                                        minWidth: 36,
+                                        position: "relative",
+                                        "&:hover": {
+                                            backgroundColor: "rgba(255,255,255,0.1)",
+                                            borderColor: "white",
+                                        },
+                                    }}>
+                                    Aufgabe {index + 1}
+                                    {isAnswered && (
+                                        <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "green", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontSize: 12, fontWeight: "bold",}}>✓</Box>
+                                    )}
+                                </Button>
+                            );
+                        })}
                     </Box>
                 </Toolbar>
             </AppBar>
+
             <main style={{padding: '2rem', marginTop: 80}}>
                 <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
                     {quizFinished ? (
@@ -231,13 +261,29 @@ export default function QuizPage() {
                             </Button>
                         </Box>
                     ) : (quiz?.question && (
-                            <Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
+                        <Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
                 </Box>
-                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                    {quiz?.question && <Button variant="contained" color="primary" size="small" onClick={handleTestAnswers} disabled={submitting} sx={{ px: 6, py: 2, fontSize: '1.25rem', fontWeight: 'bold' }}>
-                        {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort abschicken"}
-                    </Button>}
-                </Box>
+                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto' }}>
+                        <Button
+                            variant="outlined"
+                            onClick={async () => {
+                                if (currentIndex > 0) {
+                                    const prevQuestionId = questionIds[currentIndex - 1];
+                                    await fetchQuizData(prevQuestionId);
+                                }
+                            }}
+                            disabled={currentIndex === 0}>
+                            Zurück
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleTestAnswers}
+                            disabled={submitting}>
+                            {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort abschicken"}
+                        </Button>
+                    </Box>
+                ) : (<></>)}
             </main>
             <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
                 <Alert

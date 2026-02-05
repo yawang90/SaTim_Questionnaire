@@ -24,6 +24,8 @@ export interface Quiz {
     answerId: number;
     totalQuestions: number;
     answeredQuestions: number;
+    questionIds: number[];
+    answeredQuestionIds: number[];
 }
 
 export interface LineEquationAnswer {
@@ -53,23 +55,28 @@ export interface AnswerDTO {
  * @param userId Cookie Session ID
  * @returns Quiz object
  */
-export async function getQuiz(id: string, userId: string): Promise<Quiz> {
-    const res = await fetch(`${API_BASE}/api/quiz/${id}?userId=${userId}`, {
+export async function getQuiz(id: string, userId: string, questionId?: number): Promise<Quiz> {
+    const url = new URL(`${API_BASE}/api/quiz/${id}`);
+    url.searchParams.set("userId", userId);
+    if (questionId) {
+        url.searchParams.set("questionId", questionId.toString());
+    }
+
+    const res = await fetch(url.toString(), {
         headers: {
-            "Content-Type": "application/json"},
+            "Content-Type": "application/json"
+        },
     });
 
     if (!res.ok) {
         if (res.status === 403) {
-            throw new Error(`NOT_ACTIVE`);
+            throw new Error("NOT_ACTIVE");
         }
         const msg = await res.text();
         throw new Error(`Failed to fetch quiz: ${msg}`);
     }
-
     return res.json();
 }
-
 /**
  * Submit an answer for a quiz question
  * @param answer Answer object

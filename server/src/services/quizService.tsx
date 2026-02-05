@@ -18,9 +18,11 @@ export interface NextQuestion {
     answerId: number;
     totalQuestions: number;
     answeredQuestions: number;
+    questionIds: number[];
+    answeredQuestionIds: number[];
 }
 
-export async function getQuiz(instanceId: string, userId: string): Promise<NextQuestion> {
+export async function getQuiz(instanceId: string, userId: string, questionId?: number): Promise<NextQuestion> {
     const instance = await prisma.surveyInstance.findUnique({
         where: {id: Number(instanceId)},
     });
@@ -34,53 +36,48 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
     });
     if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
-        where: {
-            surveyId: survey.id,
-            instanceId: instance.id,
-            userId,
-        },
-        include: {
-            questionsAnswers: true,
-        },
+        where: { surveyId: survey.id, instanceId: instance.id, userId },
+        include: { questionsAnswers: true, booklet: { include: { BookletQuestion: { orderBy: { position: "asc" } } } } },
     });
-
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
-
         answerRecord = await prisma.answer.create({
             data: {
                 surveyId: survey.id,
                 instanceId: instance.id,
                 bookletId: booklet.id,
                 userId,
-                questionIds: booklet.BookletQuestion.map(bq => bq.question.id)
+                questionIds: booklet.BookletQuestion.map(bq => bq.question.id),
             },
-            include: {
-                questionsAnswers: true,
-            },
+            include: { questionsAnswers: true, booklet: { include: { BookletQuestion: true } } },
         });
     }
-    const nextQuestion = await getNextUnansweredQuestion(answerRecord);
+    let nextQuestion: QuizQuestion | null = null;
+    if (questionId !== undefined) {
+        const qa = answerRecord.questionsAnswers.find(q => q.questionId === questionId);
+        if (!qa) throw new Error("QUESTION_NOT_FOUND_IN_ANSWER_RECORD");
+        nextQuestion = await prisma.question.findUnique({ where: { id: questionId } });
+    } else {
+        nextQuestion = await getNextUnansweredQuestion(answerRecord);
+    }
 
     if (nextQuestion) {
-        await prisma.questionAnswer.upsert({
-            where: {
-                answerId_questionId: {
+        const exists = answerRecord.questionsAnswers.some(qa => qa.questionId === nextQuestion.id);
+        if (!exists) {
+            await prisma.questionAnswer.create({
+                data: {
                     answerId: answerRecord.id,
                     questionId: nextQuestion.id,
                 },
-            },
-            create: {
-                answerId: answerRecord.id,
-                questionId: nextQuestion.id,
-            },
-            update: {},
-        });
+            });
+        }
     }
+    const answeredQuestionIds = answerRecord.questionsAnswers
+        .filter(qa => qa.answerJson !== null)
+        .map(qa => qa.questionId);
+
     const totalQuestions = answerRecord.questionIds.length;
-    const answeredQuestions = answerRecord.questionsAnswers.filter(
-        qa => qa.answerJson !== null
-    ).length;
+    const answeredQuestions = answeredQuestionIds.length;
 
     return {
         surveyId: survey.id,
@@ -90,7 +87,9 @@ export async function getQuiz(instanceId: string, userId: string): Promise<NextQ
         question: nextQuestion,
         answerId: answerRecord.id,
         totalQuestions,
-        answeredQuestions
+        answeredQuestions,
+        questionIds: answerRecord.questionIds,
+        answeredQuestionIds:answeredQuestionIds
     };
 }
 /**
@@ -110,9 +109,6 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
     );
     if (!questionAnswer) {
         throw new Error("ANSWER_QUESTIONS_RECORD_NOT_FOUND");
-    }
-    if (questionAnswer.answerJson !== null) {
-        throw new Error("QUESTION_ALREADY_ANSWERED");
     }
     const now = new Date();
     const timeSolvedSeconds = Math.round((now.getTime() - questionAnswer.solvingTimeStart.getTime()) / 1000);

@@ -8,14 +8,16 @@ export const getQuizHandler = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
         const userId = req.query.userId as string;
+        const questionId = req.query.questionId ? Number(req.query.questionId) : undefined;
+
         if (!id) return res.status(400).json({ error: "Quiz ID is required" });
         if (!userId) return res.status(400).json({ error: "User ID is required" });
 
-        const quiz = await getQuiz(id, userId);
+        const quiz = await getQuiz(id, userId, questionId);
         if (!quiz) return res.status(404).json({ error: "Quiz not found" });
         res.status(200).json(quiz);
     } catch (err: any) {
-        if (err.message==="NOT_ACTIVE") {
+        if (err.message === "NOT_ACTIVE") {
             return res.status(403).json({ error: "This survey is not active at the moment." });
         }
         console.error("Error fetching quiz:", err);
