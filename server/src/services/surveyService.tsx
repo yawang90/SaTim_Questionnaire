@@ -225,13 +225,19 @@ export const deleteSurveyInstanceById = async (id: number): Promise<surveyInstan
  * Get all booklets for a survey
  */
 export const getBookletsBySurveyId = async (surveyId: number) => {
-    return prisma.booklet.findMany({
+    const result = await prisma.booklet.aggregate({
         where: { surveyId },
+        _max: { version: true },
+    });
+
+    const maxVersion = result._max.version ?? 0;
+    if (maxVersion === 0) return [];
+
+    return prisma.booklet.findMany({
+        where: { surveyId, version: maxVersion },
         include: {
             BookletQuestion: {
-                include: {
-                    question: true,
-                },
+                include: { question: true },
                 orderBy: { position: "asc" },
             },
         },
@@ -280,16 +286,6 @@ export const processSurveyExcels = async (
     }
 
     return prisma.$transaction(async (tx) => {
-        await tx.bookletQuestion.deleteMany({
-            where: { booklet: { surveyId } },
-        });
-
-        await tx.answer.deleteMany({
-            where: { surveyId },
-        });
-
-        await tx.booklet.deleteMany({ where: { surveyId } });
-
         const updatedSurvey = await tx.survey.update({
             where: { id: surveyId },
             data: { bookletVersion: { increment: 1 } },
@@ -309,6 +305,7 @@ export const processSurveyExcels = async (
                     version: updatedSurvey.bookletVersion,
                 },
             });
+
             const bookletQuestionData = questionIds.map((questionId, index) => ({
                 bookletId: newBooklet.id,
                 questionId,
@@ -415,7 +412,11 @@ export const getSurveyExport = async (
         where: { surveyId, instanceId: { in: instanceIds } },
         include: {
             questionsAnswers: true,
-            booklet: true,
+            booklet: {
+                include: {
+                    BookletQuestion: true,
+                },
+            },
         },
     });
 
@@ -441,12 +442,16 @@ export const getSurveyExport = async (
             }));
 
             const result = await evaluateAnswersService(qa.questionId, userAnswerInput);
+            const bq = answer.booklet.BookletQuestion.find(bq => bq.questionId === qa.questionId);
+            const position = bq?.position ?? null;
             rows.push({
                 SchuelerID_System: answer.userId,
                 GruppenID_ausLink: instance.id,
                 GruppenBezeichnung: instance.name,
                 Booklet_ID: answer.booklet.bookletId,
-                AufgabenID_System: qa.questionId,
+                Booklet_Version: answer.booklet.version,
+                AufgabeID_System: qa.questionId,
+                Aufgabe_Position: position,
                 Aufgabe_RawResponse: JSON.stringify(qa.answerJson ?? []),
                 Aufgabe_Score: result.score,
                 Aufgabe_StartedAt: qa.solvingTimeStart?.toISOString() ?? "",
@@ -463,7 +468,9 @@ export const getSurveyExport = async (
         "GruppenID_ausLink",
         "GruppenBezeichnung",
         "Booklet_ID",
-        "AufgabenID_System",
+        "Booklet_Version",
+        "AufgabeID_System",
+        "Aufgabe_Position",
         "Aufgabe_RawResponse",
         "Aufgabe_Score",
         "Aufgabe_StartedAt",
