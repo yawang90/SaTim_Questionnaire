@@ -66,11 +66,7 @@ export const LineEquationEditor: React.FC<Props> = ({label, conditions, onChange
                         </Select>
                     </FormControl>
 
-                    <MathInput
-                        value={cond.value ?? ""}
-                        onChange={v => update(idx, { value: v })}
-                    />
-
+                    <MathInput value={cond.value ?? ""} onChange={(v) => update(idx, { value: v })}/>
                     <Button onClick={() => removeCondition(idx)} disabled={conditions.length === 1}>
                         <RemoveCircleIcon />
                     </Button>

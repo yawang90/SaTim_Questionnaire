@@ -1,11 +1,10 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useRef} from 'react'
 import {type NodeViewProps, NodeViewWrapper} from '@tiptap/react'
 import {Box} from '@mui/material'
 import 'mathlive'
 
 export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
     const mathfieldRef = useRef<any>(null)
-    const [value, setValue] = useState(node.attrs.value ?? 'y=')
 
     useEffect(() => {
         if (mathfieldRef.current) {
@@ -29,11 +28,9 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
             if (!mf.getValue()) {
                 mf.value = 'y='
             }
-
             const handleInput = () => {
                 const latex = mf.getValue('latex')
-                setValue(latex)
-                updateAttributes({ value: latex })
+                updateAttributes({ value: latex });
             }
 
             mf.addEventListener('input', handleInput)
@@ -44,8 +41,7 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                 mf.removeEventListener('input', handleInput)
             }
         }
-    })
-
+    }, [updateAttributes]);
 
     return (
         <NodeViewWrapper as="span" className="numeric-input" style={{display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 0', margin: '0 2px',}}>

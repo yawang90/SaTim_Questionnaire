@@ -1,7 +1,8 @@
 import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
 import type {GeoGebraAnswer} from "../../components/Editor/Preview.tsx";
-import {validateLineEquationMathJS} from "./LineEquationValidator.tsx";
+import {validateLineEquation} from "./LineEquationValidator.tsx";
+import {ce} from "../../main.tsx";
 
 export type Choice = { id: string; text: string; html?: string };
 
@@ -162,8 +163,8 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 };
             case "freeText":
             case "freeTextInline":
-            case "numeric":
             case "lineEquation":
+            case "numeric":
                 return {kind: block.kind, key: block.key, value: ""};
             case "geoGebraPoints":
                return {
@@ -171,7 +172,6 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     key: block.key,
                     value: [{ name:"",x: 0, y: 0 }]
                 };
-
             case "geoGebraLines":
                 return {
                     kind: "geoGebraPoints",
@@ -212,8 +212,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 case "numeric":
                 case "lineEquation":
                     { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                        `[data-node-view-wrapper] [id="${block.key}"]`
-                    );
+                        `[data-node-view-wrapper] [id="${block.key}"]`);
                         if (inputEl) answer.value = inputEl.value;
                         break;}
                 case "geoGebraPoints": {
@@ -262,21 +261,18 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
     });
 }
 
-export function mergeLineEquationAnswers(extractedAnswers: Answer[]): Answer[] {
-        return extractedAnswers.map(ans => {
-            if (ans.kind !== "lineEquation") {
-                return ans;
-            }
-            const validation = validateLineEquationMathJS(ans.value);
-            if (validation.error) {
-                throw new Error(
-                    `Ungültige lineare Gleichung: ${validation.error}`
-                );
-            }
-            return {
-                ...ans,
-                m: validation.m,
-                c: validation.c
-            };
-        });
+export function mergeLineEquationAnswers(answers: Answer[]) {
+    return answers.map(answer => {
+        if (answer.kind !== "lineEquation") return answer;
+        const latex = answer.value;
+        if (!latex) {
+            return { ...answer, error: "Keine Gleichung eingegeben." };
+        }
+        const expr = ce.parse(latex);
+        const result = validateLineEquation(expr);
+        return {
+            ...answer,
+            parsed: result
+        };
+    });
 }

@@ -1,119 +1,87 @@
-import {parse, simplify, derivative, type MathNode,} from 'mathjs';
-import type { SymbolNode } from 'mathjs';
-
+import type {BoxedExpression} from "@cortex-js/compute-engine";
+import {ce} from "../../main.tsx";
 /**
- * Preprocess MathLive LaTeX → JS expression
+ * Normalize a single math input string
  */
-function preprocessMathLive(input: string): string {
-    let s = input.replace(/\s+/g, '');
-    s = s.replace(/\\cdot/g, '*');
-    s = s.replace(/\\frac(\d)(\d)/g, '\\frac{$1}{$2}');
-    s = s.replace(/\\frac{([^{}]+)}{([^{}]+)}/g, '($1/$2)');
-    s = s.replace(/:/g, '/');
-
-    return s;
-}
-
-/**
- * Enforce explicit multiplication (reject 3x)
- */
-function enforceExplicitMultiplication(input: string): string | null {
-    const match = input.match(/\d[a-zA-Z]/);
-    if (match) {
-        return `Implizite Multiplikation gefunden bei "${match[0]}". Bitte verwende * für Multiplikationen.`;
-    }
-    return null;
-}
-/**
- * Normalize a single math input string → simplified string value
- */
-export function normalizeMathInput(input: string): { value?: string; error?: string } {
-    if (!input || !input.trim()) return { error: "Leerer Ausdruck." };
-    const implicitError = enforceExplicitMultiplication(input);
-    if (implicitError) return { error: implicitError };
-
-    const s = preprocessMathLive(input);
+export function normalizeMathInput(expr?: BoxedExpression): { value?: string; error?: string } {
+    if (!expr) {return { error: "Leerer Ausdruck." };}
     try {
-        const node: MathNode = parse(s);
-        const simplified = simplify(node);
-        const symbols = new Set<string>();
-        simplified.traverse(n => {
-            if (n.type === "SymbolNode") symbols.add((n as any).name);
-        });
-        if (symbols.size > 0) return { error: "Nur Zahlen erlaubt (keine Variablen)." };
-
-        return { value: simplified.toString() };
-    } catch {
+        const simplified = expr.simplify();
+        if (!simplified.isNumber) {
+            return { error: "Nur Zahlen erlaubt (keine Variablen)." };
+        }
+        const val = simplified.N();
+        if (!val.isNumber) {
+            return { error: "Ungültiger mathematischer Ausdruck." };
+        }
+        return { value: val.toLatex() };
+    } catch(err) {
+        console.log(err)
         return { error: "Ungültiger mathematischer Ausdruck." };
     }
 }
 
 /**
- * Transform existing m/c objects → validated & simplified version
- * Input:
- * { m: [{operator: "=", value: "3*3"}], c: [{operator: "=", value: "4/2"}] }
+ * Transform existing m/c objects
  */
-export function transformLineEquationConditions(val: {
-    m?: { operator: string; value: string }[];
-    c?: { operator: string; value: string }[];
-}) {
-    const mRaw = val?.m?.[0]?.value ?? "";
-    const cRaw = val?.c?.[0]?.value ?? "";
-
-    const mResult = normalizeMathInput(mRaw);
-    if (mResult.error) return { error: `Steigung m: ${mResult.error}` };
-
-    const cResult = normalizeMathInput(cRaw);
-    if (cResult.error) return { error: `Achsenabschnitt c: ${cResult.error}` };
-
+export function transformLineEquationConditions(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
+    const mExpr = val?.m?.[0]?.value;
+    const cExpr = val?.c?.[0]?.value;
+    let mResult;
+    let cResult;
+    if (mExpr) {
+        const boxedMexpr = ce.parse(mExpr);
+        mResult = normalizeMathInput(boxedMexpr);
+        if (mResult.error) return { error: `Steigung m: ${mResult.error}` };
+    }
+    if (cExpr) {
+        const boxedCexpr = ce.parse(cExpr);
+        cResult = normalizeMathInput(boxedCexpr);
+        if (cResult.error) return { error: `Achsenabschnitt c: ${cResult.error}` };
+    }
     return {
-        m: [{ operator: "=", value: mResult.value }],
-        c: [{ operator: "=", value: cResult.value }],
+        m: [{ operator: "=", value: mResult?.value }],
+        c: [{ operator: "=", value: cResult?.value }],
     };
 }
 /**
  * Validate linear equation y = m*x + c
  * using symbolic simplification
  */
-export function validateLineEquationMathJS(eq: string): { m?: string; c?: string; error?: string } {
-    if (!eq.startsWith('y=')) {
-        return { error: 'Gleichung muss mit "y=" beginnen.' };
+export function validateLineEquation(expr: BoxedExpression) {
+    if (!expr.isEqual) {
+        return { error: 'Gleichung muss ein "=" enthalten.' };
     }
+    let [lhs, rhs] = expr.ops ?? [];
 
-    const rhs = eq.slice(2);
-    const implicitError = enforceExplicitMultiplication(rhs);
-    if (implicitError) return { error: implicitError };
-
-    const rhsStr = preprocessMathLive(rhs);
-    let node: MathNode;
-    try {
-        node = parse(rhsStr);
-    } catch {
-        return { error: 'Ungültiger Ausdruck.' };
+    if (rhs?.symbol === "y") {
+        [lhs, rhs] = [rhs, lhs];
     }
-    const variables = new Set<string>();
-    node.traverse(n => {if (n.type === 'SymbolNode') {variables.add((n as SymbolNode).name);}});
-
-
-    if (variables.size > 1 || (variables.size === 1 && !variables.has('x'))) {
-        return { error: 'Nur die Variable x ist erlaubt.' };
+    if (lhs?.symbol !== "y") {
+        return { error: 'Gleichung muss mit "y =" beginnen.' };
     }
-    const simplified = simplify(node);
-    const deriv = simplify(derivative(simplified, 'x'));
-    let hasX = false;
-    deriv.traverse(n => {if (n.type === 'SymbolNode' && (n as SymbolNode).name === 'x') {hasX = true;}});
-
-    if (hasX) {
-        return { error: 'Gleichung ist nicht linear.' };
+    const poly = ceEval("Expand", rhs);
+    const vars = ceEval("Variables", poly)
+        .ops?.map(v => v.symbol)
+        .filter(Boolean) ?? [];
+    if (vars.some(v => v !== "x")) {
+        return { error: "Nur die Variable x ist erlaubt." };
     }
-    const m = deriv.toString();
-    let c: string | undefined;
-    const cValue = simplified.evaluate({ x: 0 });
-    if (cValue !== null && cValue !== undefined) {
-        c = cValue.toString();
-    } else {
-        c = undefined;
-    }
+    const degree =
+        ceEval("PolynomialDegree", poly, "x").numericValue ?? 0;
 
-    return { m, c };
+    if (degree as number > 1) {
+        return { error: "Gleichung ist nicht linear." };
+    }
+    const coeffs = ceEval("CoefficientList", poly, "x").ops ?? [];
+    const c = coeffs[0] ?? ce.number(0);
+    const m = coeffs[1] ?? ce.number(0);
+    return {
+        m: m.toLatex(),
+        c: c.toLatex(),
+    };
+}
+
+function ceEval(fn: string, ...args: any[]): BoxedExpression {
+    return ce.function(fn, args).evaluate().simplify();
 }

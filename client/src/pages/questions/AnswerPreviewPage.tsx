@@ -79,7 +79,6 @@ export default function AnswerPreviewPage() {
                         : question.contentJson ?? {type: 'doc', content: []};
                 setQuestionContent(content);
                 setQuizStatus(mapQuestionsStatus(question.status));
-
                 const parsedBlocks: Block[] = parseContentToBlocks(content);
                 setBlocks(parsedBlocks);
             } catch (err) {
@@ -137,15 +136,7 @@ export default function AnswerPreviewPage() {
     return (
         <MainLayout>
             <QuestionLayout allowedSteps={[true, true, true, true]}>
-                <Box sx={{
-                    minHeight: '100vh',
-                    backgroundColor: 'background.default',
-                    py: 3,
-                    px: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    mt: 6
-                }}>
+                <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                         <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
                             Status setzen

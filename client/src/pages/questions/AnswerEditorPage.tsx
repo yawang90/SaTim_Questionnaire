@@ -227,11 +227,6 @@ export default function AnswerEditorPage() {
     const handleSaveAnswers = async () => {
         if (!id) return;
         const errors = validateAnswersBeforeSave();
-        if (errors.length > 0) {
-            setSnackbarMessage(errors.join("\n"));
-            setSnackbarOpen(true);
-            return;
-        }
         setLoading(true);
         try {
             const payload: Record<string, any> = {};
@@ -268,6 +263,11 @@ export default function AnswerEditorPage() {
                 }
                 payload[b.key] = {type: b.kind, value};
             });
+            if (errors.length > 0) {
+                setSnackbarMessage(errors.join("\n"));
+                setSnackbarOpen(true);
+                return;
+            }
             await updateQuestionAnswers(id, payload);
             navigate(`/preview/${id}`);
         } catch (err) {
@@ -383,8 +383,6 @@ export default function AnswerEditorPage() {
                                                             data={{name: lineName}}
                                                             conditions={conds}
                                                             onChange={(next) => {
-                                                                console.log("next:", next);
-                                                                console.log("Aktuelle Antworten:", conds);
                                                                 handleAnswerChange(lineName, next)
                                                             }}
                                                         />
@@ -409,8 +407,6 @@ export default function AnswerEditorPage() {
                                                             data={{name: pointName}}
                                                             conditions={conds}
                                                             onChange={(next) => {
-                                                                console.log("next:", next);
-                                                                console.log("Aktuelle Antworten:", conds);
                                                                 handleAnswerChange(pointName, next)
                                                             }}
                                                         />

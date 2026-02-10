@@ -7,6 +7,7 @@ export interface Condition {
     operator: "=" | "<" | ">" | "<=" | ">=";
     value: string;
     logic?: "and" | "or";
+    latex?: string;
 }
 
 interface Props {
@@ -43,8 +44,7 @@ export const PointEditor: React.FC<Props> = ({ label, conditions, onChange }) =>
                         <FormControl size="small">
                             <Select
                                 value={cond.logic || "and"}
-                                onChange={e => updateCondition(idx, { logic: e.target.value as "and" | "or" })}
-                            >
+                                onChange={e => updateCondition(idx, { logic: e.target.value as "and" | "or" })}>
                                 {logics.map(l => <MenuItem key={l} value={l}>{l.toUpperCase()}</MenuItem>)}
                             </Select>
                         </FormControl>
@@ -52,12 +52,11 @@ export const PointEditor: React.FC<Props> = ({ label, conditions, onChange }) =>
                     <FormControl size="small">
                         <Select
                             value={cond.operator}
-                            onChange={e => updateCondition(idx, { operator: e.target.value as Condition["operator"] })}
-                        >
+                            onChange={e => updateCondition(idx, { operator: e.target.value as Condition["operator"] })}>
                             {operators.map(op => <MenuItem key={op} value={op}>{op}</MenuItem>)}
                         </Select>
                     </FormControl>
-                    <MathInput value={cond.value} onChange={v => updateCondition(idx, { value: v })} />
+                    <MathInput value={cond.value} onChange={(v) => updateCondition(idx, { value: v})} />
                     <Button onClick={() => removeCondition(idx)} disabled={conditions.length === 1}>
                         <RemoveCircleIcon />
                     </Button>

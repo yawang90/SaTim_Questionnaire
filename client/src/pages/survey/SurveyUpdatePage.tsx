@@ -138,7 +138,6 @@ const SurveyUpdatePage = () => {
         const fetchBooklets = async () => {
             try {
                 const data = await getSurveyBooklets(survey.id.toString());
-                console.log(data)
                 setBooklets(data);
             } catch (err) {
                 console.log(err);

@@ -1,7 +1,8 @@
 export interface Condition {
     operator: "=" | "<" | ">" | "<=" | ">=";
-    value: string;
+    value: any;
     logic?: "and" | "or";
+    latex?: string;
 }
 
 export type PointConditions = {

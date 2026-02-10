@@ -215,8 +215,8 @@ export const evaluateAnswersService = async (
 
                 case "lineEquation": {
                         const ua = userAnswer as any;
-                        const userM = Number(ua.m);
-                        const userC = Number(ua.c);
+                        const userM = Number(ua.parsed.m);
+                        const userC = Number(ua.parsed.c);
                         if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
                         const { m, c } = correctAnswer.value;
                         const mOk = checkNumericConditions(userM, m);
