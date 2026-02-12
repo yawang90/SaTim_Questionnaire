@@ -24,7 +24,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             rows: [
                 ['0','1','2','3','4','5','6','7','8','9','.', { label: '⌫', command: 'deleteBackward' }],
                 ['x', 'y'],
-                ['+', '-', '[*]', ':', '=', '\\frac{#0}{#?}', '(', ')'],
+                ['+', '-', '[*]', ':', '=', "\\frac{#@}{#?}", '(', ')'],
                 [], [], []
             ]
         }
@@ -32,7 +32,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
         document.body.style.setProperty('--keycap-font-size', '15px');
         mf.value = value || '';
         const handleInput = () => {
-            const latex = mf.getValue('latex');
+            const latex = mf.getValue('latex-expanded');
             onChange(latex);
         };
         mf.addEventListener('input', handleInput);
@@ -41,7 +41,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
         return () => {
             mf.removeEventListener('input', handleInput);
         };
-    }, [mathfieldRef.current]);
+    }, []);
 
     return (
         <Box>

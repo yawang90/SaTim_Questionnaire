@@ -9,9 +9,9 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
     useEffect(() => {
         if (mathfieldRef.current) {
             const mf = mathfieldRef.current
-
+            mf.smartMode = true;
+            mf.implicitMode = "auto";
             mf.menuBar = false
-            mf.smartMode = false
             mf.mathVirtualKeyboardPolicy = 'manual'
             window.mathVirtualKeyboard.layouts = {
                 label: 'Custom',
@@ -19,7 +19,7 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                 rows: [
                     ['0','1','2','3','4','5','6','7','8','9','.', { label: '⌫', command: 'deleteBackward' }],
                     ['x', 'y'],
-                    ['+', '-', '[*]', ':', '=', '\\frac{#0}{#?}', '(', ')'],
+                    ['+', '-', '[*]', ':', '=', "\\frac{#@}{#?}", '(', ')'],
                     [], [], []
                 ]
             }
@@ -29,7 +29,7 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                 mf.value = 'y='
             }
             const handleInput = () => {
-                const latex = mf.getValue('latex')
+                const latex = mf.getValue('latex-expanded');
                 updateAttributes({ value: latex });
             }
 
