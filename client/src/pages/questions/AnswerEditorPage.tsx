@@ -194,8 +194,8 @@ export default function AnswerEditorPage() {
                     if (!Array.isArray(val) || !hasValid(val)) errors.push(`Numerische Eingabe (${b.key}) braucht gültige Werte.`);
                     break;
                 case "lineEquation":
-                    if (!val?.m || !hasValid(val.m)) errors.push(`Geradengleichung (${b.key}): m benötigt eine Bedingung.`);
-                    if (!val?.c || !hasValid(val.c)) errors.push(`Geradengleichung (${b.key}): c benötigt eine Bedingung.`);
+                    if (!val?.m || !hasValid(val.m)) errors.push(`Geradengleichung : m benötigt eine Bedingung.`);
+                    if (!val?.c || !hasValid(val.c)) errors.push(`Geradengleichung : c benötigt eine Bedingung.`);
                     break;
                 case "freeText":
                 case "freeTextInline":

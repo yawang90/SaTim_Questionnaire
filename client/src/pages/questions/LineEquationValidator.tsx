@@ -1,20 +1,47 @@
 import type {BoxedExpression} from "@cortex-js/compute-engine";
 import {ce} from "../../main.tsx";
 
-export function normalizeMathInput(expr?: BoxedExpression): { value?: string; error?: string } {
+export function normalizeMathInput(expr: BoxedExpression, mc: string): { value?: string; error?: string } {
     if (!expr) {
         return { error: "Leerer Ausdruck." };
     }
     try {
         const simplified = expr.simplify();
         const val = simplified.N();
+        const symbols = [...simplified.symbols];
+        const filtered = symbols.filter(s =>
+            !["Pi", "ExponentialE", "ImaginaryUnit"].includes(s)
+        );
         if (!val.isReal) {
-            return { error: "Ungültiger mathematischer Ausdruck." };
+            if (filtered.some(s => s !== mc)) {
+                return {
+                    error: `Nur die Variable "${mc}" ist erlaubt.`
+                };
+            } else {
+                if (!evaluatesToReal(simplified, mc)) {
+                    return { error: "Ungültiger mathematischer Ausdruck." };
+                } else {
+                    return {value: "HAS_MC"}
+                }
+            }
         }
         return {};
     } catch (err) {
         console.log(err);
         return { error: "Ungültiger mathematischer Ausdruck." };
+    }
+}
+
+function evaluatesToReal(expr: BoxedExpression, variable?: string): boolean {
+    try {
+        let testExpr = expr;
+        if (variable) {
+            testExpr = expr.subs({ [variable]: 2 });
+        }
+        const val = testExpr.N();
+        return val.isNumber && Number.isFinite(val.valueOf()) || false;
+    } catch {
+        return false;
     }
 }
 
@@ -33,17 +60,20 @@ export function checkLineEquationHasErrors(val: { m?: { operator: string; value:
     let cResult;
     if (mExpr) {
         const boxedMexpr = ce.parse(mExpr);
-        mResult = normalizeMathInput(boxedMexpr);
+        mResult = normalizeMathInput(boxedMexpr, "c");
         if (mResult.error) {
             return { error: `Steigung m: ${mResult.error}` };
         }
     }
     if (cExpr) {
         const boxedCexpr = ce.parse(cExpr);
-        cResult = normalizeMathInput(boxedCexpr);
+        cResult = normalizeMathInput(boxedCexpr, "m");
         if (cResult.error) {
             return { error: `Achsenabschnitt c: ${cResult.error}` };
         }
+    }
+    if (mResult?.value === "HAS_MC" && cResult?.value === "HAS_MC") {
+        return { error: `Nur jeweils eine Variable "m" oder "c" erlaubt. Bitte entfernen Sie ein "m" oder "c".` };
     }
     return {};
 }

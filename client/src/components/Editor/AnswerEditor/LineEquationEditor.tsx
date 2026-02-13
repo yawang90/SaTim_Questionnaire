@@ -38,10 +38,8 @@ export const LineEquationEditor: React.FC<Props> = ({label, conditions, onChange
     return (
         <Box>
             <Typography fontWeight="bold">Bedingungen für {label}</Typography>
-
             {conditions.map((cond, idx) => (
                 <Box key={idx} display="flex" gap={1} mb={1} alignItems="center">
-
                     {idx > 0 && (
                         <FormControl size="small">
                             <Select
@@ -55,7 +53,6 @@ export const LineEquationEditor: React.FC<Props> = ({label, conditions, onChange
                             </Select>
                         </FormControl>
                     )}
-
                     <FormControl size="small">
                         <Select
                             value={cond.operator}
