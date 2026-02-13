@@ -70,10 +70,18 @@ function normalizePointInput(expr: BoxedExpression): { value?: string; error?: s
 export function getInterpretedValue(val: string): { value: string, error: boolean } {
     const expression = sanitizeMathInput(val);
     if (expression) {
-        const boxedExpr = ce.parse(expression);
-        return {value: boxedExpr.canonical.toLatex(), error: false};
+        const boxedExpr = ce.parse(val);
+        return { value: toExplicitMultiplicationLatex(boxedExpr.toLatex()), error: false };
     }
     return {value: "", error: true};
+}
+
+function toExplicitMultiplicationLatex(latex: string): string {
+    if (!latex) return "";
+    latex = latex.replace(/(\d)([a-zA-Z])/g, "$1 \\cdot $2");
+    latex = latex.replace(/(\d)\(/g, "$1 \\cdot (");
+    latex = latex.replace(/\)(\d|[a-zA-Z])/g, ") \\cdot $1");
+    return latex;
 }
 
 export function checkLineEquationHasErrors(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
@@ -145,46 +153,4 @@ export function checkPointHasErrors(val: { x?: { operator: string; value: string
         }
     }
     return {};
-}
-
-/**
- * Validate linear equation y = m*x + c
- * using symbolic simplification
- */
-export function validateLineEquation(expr: BoxedExpression) {
-    if (!expr.isEqual) {
-        return { error: 'Gleichung muss ein "=" enthalten.' };
-    }
-    let [lhs, rhs] = expr.ops ?? [];
-
-    if (rhs?.symbol === "y") {
-        [lhs, rhs] = [rhs, lhs];
-    }
-    if (lhs?.symbol !== "y") {
-        return { error: 'Gleichung muss mit "y =" beginnen.' };
-    }
-    const poly = ceEval("Expand", rhs);
-    const vars = ceEval("Variables", poly)
-        .ops?.map(v => v.symbol)
-        .filter(Boolean) ?? [];
-    if (vars.some(v => v !== "x")) {
-        return { error: "Nur die Variable x ist erlaubt." };
-    }
-    const degree =
-        ceEval("PolynomialDegree", poly, "x").numericValue ?? 0;
-
-    if (degree as number > 1) {
-        return { error: "Gleichung ist nicht linear." };
-    }
-    const coeffs = ceEval("CoefficientList", poly, "x").ops ?? [];
-    const c = coeffs[0] ?? ce.number(0);
-    const m = coeffs[1] ?? ce.number(0);
-    return {
-        m: m.toLatex(),
-        c: c.toLatex(),
-    };
-}
-
-function ceEval(fn: string, ...args: any[]): BoxedExpression {
-    return ce.function(fn, args).evaluate().simplify();
 }

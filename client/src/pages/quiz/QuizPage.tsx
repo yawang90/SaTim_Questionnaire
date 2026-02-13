@@ -23,7 +23,6 @@ import {
     extractAnswersFromJson,
     type LineEquationAnswer,
     mergeGeoGebraAnswers,
-    mergeLineEquationAnswers,
     parseContentToBlocks
 } from '../questions/AnswerUtils.tsx';
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
@@ -147,16 +146,6 @@ export default function QuizPage() {
         const editorJson = editorRef.current.getJSON();
         let extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
         extractedAnswers = mergeGeoGebraAnswers(extractedAnswers, geoGebraAnswers);
-        try {
-            extractedAnswers = mergeLineEquationAnswers(extractedAnswers);
-        } catch (err: any) {
-            setSnackbar({
-                open: true,
-                message: `${err.message}`,
-                severity: 'error',
-            });
-            return;
-        }
         const answerExists = validateAnswerExists(extractedAnswers);
         if (!answerExists) {
             setSnackbar({open: true, message: `Bitte beantworten Sie die Frage(n).`, severity: 'error',});
@@ -168,7 +157,7 @@ export default function QuizPage() {
             instanceId: id!,
             answer: extractedAnswers.map(a => {
                 if (a.kind === 'lineEquation') {
-                    return {key: a.key, kind: a.kind, value: a.value, m: a.m, c: a.c} as LineEquationAnswer;
+                    return {key: a.key, kind: a.kind, value: a.value} as LineEquationAnswer;
                 }  else {
                     return { value: a.value, key: a.key, kind: a.kind } as any;
                 }

@@ -1,8 +1,6 @@
 import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
 import type {GeoGebraAnswer} from "../../components/Editor/Preview.tsx";
-import {validateLineEquation} from "./LineEquationValidator.tsx";
-import {ce} from "../../main.tsx";
 
 export type Choice = { id: string; text: string; html?: string };
 
@@ -17,8 +15,6 @@ export type LineEquationAnswer = {
     kind: "lineEquation";
     key: string;
     value: string;
-    m?: string;
-    c?: string;
 };
 
 export type GeoGebraPoint = { name: string; x: number; y: number };
@@ -258,21 +254,5 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
             if (match) {return {...ans, value: match.value,} as GeoGebraLinesAnswer;}
         }
         return ans;
-    });
-}
-
-export function mergeLineEquationAnswers(answers: Answer[]) {
-    return answers.map(answer => {
-        if (answer.kind !== "lineEquation") return answer;
-        const latex = answer.value;
-        if (!latex) {
-            return { ...answer, error: "Keine Gleichung eingegeben." };
-        }
-        const expr = ce.parse(latex);
-        const result = validateLineEquation(expr);
-        return {
-            ...answer,
-            parsed: result
-        };
     });
 }

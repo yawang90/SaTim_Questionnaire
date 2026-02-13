@@ -27,7 +27,6 @@ import {
     extractAnswersFromJson,
     mapQuestionsStatus,
     mergeGeoGebraAnswers,
-    mergeLineEquationAnswers,
     parseContentToBlocks,
 } from "./AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
@@ -95,7 +94,6 @@ export default function AnswerPreviewPage() {
         let answers = extractAnswersFromJson(json, blocks);
         try {
             answers = mergeGeoGebraAnswers(answers, geoGebraAnswers);
-            answers = mergeLineEquationAnswers(answers);
             const response = await evaluateAnswers(id, answers);
             setTestResult(response);
             setTestDialogOpen(true);

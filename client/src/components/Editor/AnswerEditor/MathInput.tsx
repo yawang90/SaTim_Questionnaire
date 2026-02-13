@@ -2,7 +2,6 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box} from '@mui/material';
 import 'mathlive';
 import {getInterpretedValue} from "../../../pages/questions/LineEquationValidator.tsx";
-import {convertLatexToMarkup} from "mathlive";
 
 interface MathInputProps {
     value: string;
@@ -73,8 +72,12 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
                 {interpretation?.value && !interpretation.error && (
                     <>
                         <span>Interpretiert als: </span>
-                        <span dangerouslySetInnerHTML={{__html: convertLatexToMarkup(interpretation.value)}}/>
-                    </>
+                        {/*// @ts-ignore*/}
+                        <math-field
+                            read-only
+                            value={interpretation.value}
+                            style={{ fontSize: "0.85rem", minWidth: 100 }}
+                        />                                </>
                 )}
                 {interpretation?.error && (
                     <>
