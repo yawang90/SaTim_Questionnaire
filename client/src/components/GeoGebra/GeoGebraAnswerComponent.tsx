@@ -91,7 +91,6 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         }
                     }, 0);
                 };
-
                 const processPoint = (objName: string, attemptsLeft = 5, delayMs = 60) => {
                     try {
                         if (variant !== 'points') return;
@@ -127,6 +126,15 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         console.error('[ggb] error in processPointIfReady', err);
                     }
                 };
+                const isPointUsedInOtherLines = (pointName: string, excludeLine?: string) => {
+                    return userLines.some(lineName => {
+                        if (lineName === excludeLine) return false;
+                        const cmd = applet.getCommandString(lineName);
+                        const points = cmd.match(/[A-Za-z0-9_]+/g);
+                        if (!points) return false;
+                        return points.includes(pointName);
+                    });
+                };
                 const processLine = (objName: string) => {
                     const type = applet.getObjectType(objName);
                     if (variant !== 'lines') return;
@@ -140,8 +148,8 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                             setTimeout(() => {
                                 try {
                                     applet.deleteObject(objName);
-                                    applet.deleteObject(p1);
-                                    applet.deleteObject(p2);
+                                    if (!isPointUsedInOtherLines(p1, objName)) applet.deleteObject(p1);
+                                    if (!isPointUsedInOtherLines(p2, objName)) applet.deleteObject(p2);
                                 } catch (err){ console.log(err) }
                             }, 0);
                             applet.setMode(0);
@@ -174,6 +182,12 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     }
                 };
                 try {
+                    applet.registerClearListener(() => {
+                        userLines.length = 0;
+                        userPoints.length = 0;
+                        setAnswerLines([]);
+                        setAnswerPoints([]);
+                    });
                     applet.registerAddListener((objName: string) => {
                         processPoint(objName);
                         processLine(objName);
