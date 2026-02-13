@@ -33,7 +33,7 @@ import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebra
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
-import {transformLineEquationConditions} from "./LineEquationValidator.tsx";
+import {checkLineEquationHasErrors} from "./LineEquationValidator.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
@@ -180,7 +180,7 @@ export default function AnswerEditorPage() {
 
     const validateAnswersBeforeSave = () => {
         const errors: string[] = [];
-        const hasValid = (conds: any[]) => conds.every(c => c.value?.toString().trim() !== "");
+        const hasValid = (conds: any[]) => conds.every(c => {return c.value?.toString().trim() !== "";});
         blocks.forEach((b) => {
             const val = answers[b.key];
             switch (b.kind) {
@@ -250,12 +250,16 @@ export default function AnswerEditorPage() {
                         break;
                     }
                     case "lineEquation": {
-                        const transformed = transformLineEquationConditions(answers[b.key]);
+                        const rawAnswer = answers[b.key];
+                        const transformed = checkLineEquationHasErrors(rawAnswer);
                         if ("error" in transformed) {
                             errors.push(`Geradengleichung (${b.key}): ${transformed.error}`);
                             return;
                         }
-                        value = transformed;
+                        value = {
+                                m: [{ operator: "=", value: rawAnswer?.m?.[0]?.value}],
+                                c: [{ operator: "=", value: rawAnswer?.c?.[0]?.value}],
+                        };
                         break;
                     }
                     default:
@@ -362,7 +366,7 @@ export default function AnswerEditorPage() {
                                                         m: [{operator: "=", value: ""}],
                                                         c: [{operator: "=", value: ""}]
                                                     }}
-                                                    onChange={(val) => handleAnswerChange(b.key, val)}
+                                                    onChange={(val) =>{handleAnswerChange(b.key, val)}}
                                                 />
                                             )}
 

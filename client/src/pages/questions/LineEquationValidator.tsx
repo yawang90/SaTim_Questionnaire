@@ -1,48 +1,51 @@
 import type {BoxedExpression} from "@cortex-js/compute-engine";
 import {ce} from "../../main.tsx";
-/**
- * Normalize a single math input string
- */
+
 export function normalizeMathInput(expr?: BoxedExpression): { value?: string; error?: string } {
-    if (!expr) {return { error: "Leerer Ausdruck." };}
+    if (!expr) {
+        return { error: "Leerer Ausdruck." };
+    }
     try {
         const simplified = expr.simplify();
-        if (!simplified.isNumber) {
-            return { error: "Nur Zahlen erlaubt (keine Variablen)." };
-        }
         const val = simplified.N();
-        if (!val.isNumber) {
+        if (!val.isReal) {
             return { error: "Ungültiger mathematischer Ausdruck." };
         }
-        return { value: val.toLatex() };
-    } catch(err) {
-        console.log(err)
+        return {};
+    } catch (err) {
+        console.log(err);
         return { error: "Ungültiger mathematischer Ausdruck." };
     }
+}
+
+function sanitizeMathInput(input: string): string {
+    if (!input) return "";
+    return input.replace(/:/g, '\\cdot');
 }
 
 /**
  * Transform existing m/c objects
  */
-export function transformLineEquationConditions(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
-    const mExpr = val?.m?.[0]?.value;
-    const cExpr = val?.c?.[0]?.value;
+export function checkLineEquationHasErrors(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
+    const mExpr = sanitizeMathInput(val?.m?.[0]?.value ? val?.m?.[0]?.value : "");
+    const cExpr = sanitizeMathInput(val?.c?.[0]?.value ? val?.c?.[0]?.value : "");
     let mResult;
     let cResult;
     if (mExpr) {
         const boxedMexpr = ce.parse(mExpr);
         mResult = normalizeMathInput(boxedMexpr);
-        if (mResult.error) return { error: `Steigung m: ${mResult.error}` };
+        if (mResult.error) {
+            return { error: `Steigung m: ${mResult.error}` };
+        }
     }
     if (cExpr) {
         const boxedCexpr = ce.parse(cExpr);
         cResult = normalizeMathInput(boxedCexpr);
-        if (cResult.error) return { error: `Achsenabschnitt c: ${cResult.error}` };
+        if (cResult.error) {
+            return { error: `Achsenabschnitt c: ${cResult.error}` };
+        }
     }
-    return {
-        m: [{ operator: "=", value: mResult?.value }],
-        c: [{ operator: "=", value: cResult?.value }],
-    };
+    return {};
 }
 /**
  * Validate linear equation y = m*x + c

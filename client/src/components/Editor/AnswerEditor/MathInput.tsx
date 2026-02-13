@@ -7,23 +7,24 @@ interface MathInputProps {
     onChange: (val: string) => void;
     placeholder?: string;
     width?: number;
+    variables?: string[];
 }
 
-export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placeholder, width = 380 }) => {
+export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placeholder, width = 380, variables = []}) => {
     const mathfieldRef = useRef<any>(null);
     useEffect(() => {
         if (!mathfieldRef.current) return;
         const mf = mathfieldRef.current;
-
         mf.menuBar = false;
         mf.smartMode = false;
         mf.virtualKeyboardMode = 'manual';
+        const variableRow = variables.length ? variables : [];
         window.mathVirtualKeyboard.layouts = {
             label: 'Custom',
             tooltip: 'Variables and numbers',
             rows: [
                 ['0','1','2','3','4','5','6','7','8','9','.', { label: '⌫', command: 'deleteBackward' }],
-                ['x', 'y'],
+                variableRow,
                 ['+', '-', '[*]', ':', '=', "\\frac{#@}{#?}", '(', ')'],
                 [], [], []
             ]
@@ -41,7 +42,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
         return () => {
             mf.removeEventListener('input', handleInput);
         };
-    }, []);
+    }, [onChange, value, variables]);
 
     return (
         <Box>
