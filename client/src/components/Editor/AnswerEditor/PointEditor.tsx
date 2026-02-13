@@ -56,7 +56,7 @@ export const PointEditor: React.FC<Props> = ({ label, conditions, onChange }) =>
                             {operators.map(op => <MenuItem key={op} value={op}>{op}</MenuItem>)}
                         </Select>
                     </FormControl>
-                    <MathInput value={cond.value} onChange={(v) => updateCondition(idx, { value: v})} />
+                    <MathInput value={cond.value} variables={[]} onChange={(v) => updateCondition(idx, { value: v})} />
                     <Button onClick={() => removeCondition(idx)} disabled={conditions.length === 1}>
                         <RemoveCircleIcon />
                     </Button>

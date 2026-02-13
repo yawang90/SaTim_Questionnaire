@@ -33,7 +33,7 @@ import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebra
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
-import {checkLineEquationHasErrors} from "./LineEquationValidator.tsx";
+import {checkLineEquationHasErrors, checkPointHasErrors} from "./LineEquationValidator.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
@@ -237,7 +237,16 @@ export default function AnswerEditorPage() {
                         value = {};
                         for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
                             const pointName = `P${i + 1}`;
-                            if (answers[pointName]) value[pointName] = answers[pointName];
+                            if (answers[pointName]) {
+                                const transformed = checkPointHasErrors(answers[pointName]);
+                                if ("error" in transformed) {
+                                    errors.push(`Geogebra Punkt (${b.key}): ${transformed.error}`);
+                                    return;
+                                }
+                                value[pointName] = {
+                                        x: [{ operator: answers[pointName]?.x?.[0]?.operator, value: answers[pointName]?.x?.[0]?.value, logic: answers[pointName]?.x?.[0]?.logic}],
+                                        y: [{ operator: answers[pointName]?.y?.[0]?.operator, value: answers[pointName]?.y?.[0]?.value, logic: answers[pointName]?.y?.[0]?.logic}],};
+                            }
                         }
                         break;
                     }
@@ -245,7 +254,17 @@ export default function AnswerEditorPage() {
                         value = {};
                         for (let i = 0; i < (b.attrs?.maxLines ?? 0); i++) {
                             const lineName = `L${i + 1}`;
-                            if (answers[lineName]) value[lineName] = answers[lineName];
+                            if (answers[lineName]) {
+                                const transformed = checkLineEquationHasErrors(answers[lineName]);
+                                if ("error" in transformed) {
+                                    errors.push(`Geogebra Linie (${b.key}): ${transformed.error}`);
+                                    return;
+                                }
+                                value[lineName] = {
+                                    m: [{ operator: answers[lineName]?.m?.[0]?.operator, value: answers[lineName]?.m?.[0]?.value, logic: answers[lineName]?.m?.[0]?.logic}],
+                                    c: [{ operator: answers[lineName]?.c?.[0]?.operator, value: answers[lineName]?.c?.[0]?.value, logic: answers[lineName]?.c?.[0]?.logic}],
+                                };
+                            }
                         }
                         break;
                     }
@@ -257,8 +276,8 @@ export default function AnswerEditorPage() {
                             return;
                         }
                         value = {
-                                m: [{ operator: "=", value: rawAnswer?.m?.[0]?.value}],
-                                c: [{ operator: "=", value: rawAnswer?.c?.[0]?.value}],
+                                m: [{ operator: rawAnswer?.m?.[0]?.operator, value: rawAnswer?.m?.[0]?.value, logic: rawAnswer?.m?.[0]?.logic}],
+                                c: [{ operator: rawAnswer?.c?.[0]?.operator, value: rawAnswer?.c?.[0]?.value, logic: rawAnswer?.c?.[0]?.logic}],
                         };
                         break;
                     }
@@ -382,10 +401,7 @@ export default function AnswerEditorPage() {
                                                     };
 
                                                     return (
-                                                        <GeoGebraLineAnswer
-                                                            key={lineName}
-                                                            data={{name: lineName}}
-                                                            conditions={conds}
+                                                        <GeoGebraLineAnswer key={lineName} data={{name: lineName}} conditions={conds}
                                                             onChange={(next) => {
                                                                 handleAnswerChange(lineName, next)
                                                             }}
@@ -404,12 +420,8 @@ export default function AnswerEditorPage() {
                                                             logic: "and"
                                                         }], y: [{operator: "=", value: "", logic: "and"}]
                                                     };
-
                                                     return (
-                                                        <GeoGebraPointAnswer
-                                                            key={pointName}
-                                                            data={{name: pointName}}
-                                                            conditions={conds}
+                                                        <GeoGebraPointAnswer key={pointName} data={{name: pointName}} conditions={conds}
                                                             onChange={(next) => {
                                                                 handleAnswerChange(pointName, next)
                                                             }}

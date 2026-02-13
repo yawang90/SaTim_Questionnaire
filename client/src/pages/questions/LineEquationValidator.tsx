@@ -1,7 +1,7 @@
 import type {BoxedExpression} from "@cortex-js/compute-engine";
 import {ce} from "../../main.tsx";
 
-export function normalizeMathInput(expr: BoxedExpression, mc: string): { value?: string; error?: string } {
+function normalizeLineEquationInput(expr: BoxedExpression, mc: string): { value?: string; error?: string } {
     if (!expr) {
         return { error: "Leerer Ausdruck." };
     }
@@ -54,28 +54,91 @@ function sanitizeMathInput(input: string): string {
  * Transform existing m/c objects
  */
 export function checkLineEquationHasErrors(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
-    const mExpr = sanitizeMathInput(val?.m?.[0]?.value ? val?.m?.[0]?.value : "");
-    const cExpr = sanitizeMathInput(val?.c?.[0]?.value ? val?.c?.[0]?.value : "");
-    let mResult;
-    let cResult;
-    if (mExpr) {
-        const boxedMexpr = ce.parse(mExpr);
-        mResult = normalizeMathInput(boxedMexpr, "c");
-        if (mResult.error) {
-            return { error: `Steigung m: ${mResult.error}` };
+    let hasM = false;
+    let hasC = false;
+    if (val?.m) {
+        for (let i = 0; i < val?.m?.length; i++) {
+            const mExpr = sanitizeMathInput(val?.m?.[i]?.value ? val?.m?.[i]?.value : "");
+            let mResult;
+            if (mExpr) {
+                const boxedMexpr = ce.parse(mExpr);
+                mResult = normalizeLineEquationInput(boxedMexpr, "c");
+                if (mResult.error) {
+                    return { error: `Steigung m: ${mResult.error}` };
+                }
+            }
+            if (mResult?.value === "HAS_MC") {
+                hasC = true;
+            }
         }
     }
-    if (cExpr) {
-        const boxedCexpr = ce.parse(cExpr);
-        cResult = normalizeMathInput(boxedCexpr, "m");
-        if (cResult.error) {
-            return { error: `Achsenabschnitt c: ${cResult.error}` };
+    if (val?.c) {
+        for (let i = 0; i < val?.c?.length; i++) {
+            const cExpr = sanitizeMathInput(val?.c?.[i]?.value ? val?.c?.[i]?.value : "");
+            let cResult;
+            if (cExpr) {
+                const boxedCexpr = ce.parse(cExpr);
+                cResult = normalizeLineEquationInput(boxedCexpr, "m");
+                if (cResult.error) {
+                    return { error: `Achsenabschnitt c: ${cResult.error}` };
+                }
+            }
+            if (cResult?.value === "HAS_MC") {
+                hasM = true;
+            }
         }
     }
-    if (mResult?.value === "HAS_MC" && cResult?.value === "HAS_MC") {
+    if (hasM && hasC) {
         return { error: `Nur jeweils eine Variable "m" oder "c" erlaubt. Bitte entfernen Sie ein "m" oder "c".` };
     }
     return {};
+}
+
+export function checkPointHasErrors(val: { x?: { operator: string; value: string }[]; y?: { operator: string; value: string }[]; }) {
+    if (val?.x) {
+        for (let i = 0; i < val?.x?.length; i++) {
+            const xExpr = sanitizeMathInput(val?.x?.[i]?.value ? val?.x?.[i]?.value : "");
+            let xResult;
+            if (xExpr) {
+                const boxedXexpr = ce.parse(xExpr);
+                xResult = normalizePointInput(boxedXexpr);
+                if (xResult.error) {
+                    return { error: `Punkt x: ${xResult.error}` };
+                }
+            }
+        }
+    }
+    if (val?.y) {
+        for (let i = 0; i < val?.y?.length; i++) {
+            const yExpr = sanitizeMathInput(val?.y?.[i]?.value ? val?.y?.[i]?.value : "");
+            let yResult;
+            if (yExpr) {
+                const boxedYexpr = ce.parse(yExpr);
+                yResult = normalizePointInput(boxedYexpr);
+                if (yResult.error) {
+                    return { error: `Punkt y: ${yResult.error}` };
+                }
+            }
+        }
+    }
+    return {};
+}
+
+function normalizePointInput(expr: BoxedExpression): { value?: string; error?: string } {
+    if (!expr) {
+        return { error: "Leerer Ausdruck." };
+    }
+    try {
+        const simplified = expr.simplify();
+        const val = simplified.N();
+        if (!val.isReal) {
+            return { error: "Ungültiger mathematischer Ausdruck." };
+        }
+        return {};
+    } catch (err) {
+        console.log(err);
+        return { error: "Ungültiger mathematischer Ausdruck." };
+    }
 }
 /**
  * Validate linear equation y = m*x + c
