@@ -1,5 +1,6 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import type {GeoGebraLine, GeoGebraPoint} from "../../pages/questions/AnswerUtils.tsx";
+import {Alert, Snackbar} from "@mui/material";
 
 interface GeoGebraAnswerComponentProps {
     materialId: string;
@@ -29,7 +30,8 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
         m: number;
         c: number;
     }[]>([]);
-
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
     useEffect(() => {
         if (variant === 'points') {
             onAnswerChange?.({ kind: 'points', value: answerPoints });
@@ -89,25 +91,6 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         }
                     }, 0);
                 };
-                const enforceMaxUserLines = () => {
-                    if (variant !== 'lines') return;
-                    setTimeout(() => {
-                        const allowedCount = allowedLines();
-                        while (userLines.length > allowedCount) {
-                            const toRemove = userLines.shift();
-                            if (!toRemove) break;
-
-                            try {
-                                applet.deleteObject(toRemove);
-                                setAnswerLines(prev =>
-                                    prev.filter(l => l.name !== toRemove)
-                                );
-                            } catch (err) {
-                                console.warn('[ggb] failed deleting line', toRemove, err);
-                            }
-                        }
-                    }, 0);
-                };
 
                 const processPoint = (objName: string, attemptsLeft = 5, delayMs = 60) => {
                     try {
@@ -148,30 +131,47 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     const type = applet.getObjectType(objName);
                     if (variant !== 'lines') return;
                     if (!["line", "segment", "ray"].includes(type) || userLines.includes(objName)) return;
-                    let m = 0;
-                    let c = 0;
-                    try {
-                        const def = applet.getDefinitionString(objName);
+                    if (userLines.length >= allowedLines()) {
+                        const def = applet.getCommandString(objName);
                         const points = def.match(/[A-Za-z0-9_]+/g);
-                        if (points && points.length >= 3) {
+                        if (points) {
                             const p1 = points[1];
                             const p2 = points[2];
-                            const x1 = applet.getXcoord(p1);
-                            const y1 = applet.getYcoord(p1);
-                            const x2 = applet.getXcoord(p2);
-                            const y2 = applet.getYcoord(p2);
-                            m = Math.abs(x2 - x1) > 1e-8 ? (y2 - y1) / (x2 - x1) : Infinity;
-                            c = m === Infinity ? x1 : y1 - m * x1;
+                            setTimeout(() => {
+                                try {
+                                    applet.deleteObject(objName);
+                                    applet.deleteObject(p1);
+                                    applet.deleteObject(p2);
+                                } catch (err){ console.log(err) }
+                            }, 0);
+                            applet.setMode(0);
+                            setSnackbarMessage("Bitte verwende das Verschiebetool, du hast bereits die maximale Anzahl Linien eingezeichnet.");
+                            setSnackbarOpen(true);
                         }
-
-                    } catch(e) { console.log(e)}
-                    userLines.push(objName);
-                    setAnswerLines(prev => [...prev.filter(l => l.name !== objName), {
-                        name: objName,
-                        m,
-                        c,
-                    }]);
-                    enforceMaxUserLines();
+                    } else {
+                        let m = 0;
+                        let c = 0;
+                        try {
+                            const def = applet.getCommandString(objName);
+                            const points = def.match(/[A-Za-z0-9_]+/g);
+                            if (points && points.length >= 3) {
+                                const p1 = points[1];
+                                const p2 = points[2];
+                                const x1 = applet.getXcoord(p1);
+                                const y1 = applet.getYcoord(p1);
+                                const x2 = applet.getXcoord(p2);
+                                const y2 = applet.getYcoord(p2);
+                                m = Math.abs(x2 - x1) > 1e-8 ? (y2 - y1) / (x2 - x1) : Infinity;
+                                c = m === Infinity ? x1 : y1 - m * x1;
+                            }
+                        } catch(e) { console.log(e)}
+                        userLines.push(objName);
+                        setAnswerLines(prev => [...prev.filter(l => l.name !== objName), {
+                            name: objName,
+                            m,
+                            c,
+                        }]);
+                    }
                 };
                 try {
                     applet.registerAddListener((objName: string) => {
@@ -270,6 +270,13 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 )}
 
             </div>
+            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)}
+                      anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
+                <Alert onClose={() => setSnackbarOpen(false)} severity="warning" variant="filled"
+                       sx={{whiteSpace: "pre-line"}}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </div>
     );
 
