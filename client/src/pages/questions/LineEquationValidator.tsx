@@ -50,9 +50,32 @@ function sanitizeMathInput(input: string): string {
     return input.replace(/:/g, '\\cdot');
 }
 
-/**
- * Transform existing m/c objects
- */
+function normalizePointInput(expr: BoxedExpression): { value?: string; error?: string } {
+    if (!expr) {
+        return { error: "Leerer Ausdruck." };
+    }
+    try {
+        const simplified = expr.simplify();
+        const val = simplified.N();
+        if (!val.isReal) {
+            return { error: "Ungültiger mathematischer Ausdruck." };
+        }
+        return {};
+    } catch (err) {
+        console.log(err);
+        return { error: "Ungültiger mathematischer Ausdruck." };
+    }
+}
+
+export function getInterpretedValue(val: string): { value: string, error: boolean } {
+    const expression = sanitizeMathInput(val);
+    if (expression) {
+        const boxedExpr = ce.parse(expression);
+        return {value: boxedExpr.canonical.toLatex(), error: false};
+    }
+    return {value: "", error: true};
+}
+
 export function checkLineEquationHasErrors(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
     let hasM = false;
     let hasC = false;
@@ -124,22 +147,6 @@ export function checkPointHasErrors(val: { x?: { operator: string; value: string
     return {};
 }
 
-function normalizePointInput(expr: BoxedExpression): { value?: string; error?: string } {
-    if (!expr) {
-        return { error: "Leerer Ausdruck." };
-    }
-    try {
-        const simplified = expr.simplify();
-        const val = simplified.N();
-        if (!val.isReal) {
-            return { error: "Ungültiger mathematischer Ausdruck." };
-        }
-        return {};
-    } catch (err) {
-        console.log(err);
-        return { error: "Ungültiger mathematischer Ausdruck." };
-    }
-}
 /**
  * Validate linear equation y = m*x + c
  * using symbolic simplification

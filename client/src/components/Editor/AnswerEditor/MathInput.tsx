@@ -1,6 +1,8 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Box} from '@mui/material';
 import 'mathlive';
+import {getInterpretedValue} from "../../../pages/questions/LineEquationValidator.tsx";
+import {convertLatexToMarkup} from "mathlive";
 
 interface MathInputProps {
     value: string;
@@ -12,6 +14,8 @@ interface MathInputProps {
 
 export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placeholder, width = 380, variables = []}) => {
     const mathfieldRef = useRef<any>(null);
+    const [interpretation, setInterpretation] = useState<{ value: string, error: boolean }>({value: "", error: false});
+
     useEffect(() => {
         if (!mathfieldRef.current) return;
         const mf = mathfieldRef.current;
@@ -23,9 +27,9 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             label: 'Custom',
             tooltip: 'Variables and numbers',
             rows: [
-                ['0','1','2','3','4','5','6','7','8','9','.', { label: '⌫', command: 'deleteBackward' }],
+                ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', {label: '⌫', command: 'deleteBackward'}],
                 variableRow,
-                ['+', '-', '[*]', ':', '=', "\\frac{#@}{#?}", '(', ')'],
+                ['+', '-', '[*]', { label: ':', command: ['insert', '/'] }, '=', "\\frac{#@}{#?}", '(', ')'],
                 [], [], []
             ]
         }
@@ -43,6 +47,17 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             mf.removeEventListener('input', handleInput);
         };
     }, [onChange, value, variables]);
+    useEffect(() => {
+        const id = setTimeout(() => {
+            if (!value) {
+                setInterpretation({value: "", error: false});
+                return;
+            }
+            const result = getInterpretedValue(value);
+            setInterpretation(result);
+        }, 120);
+        return () => clearTimeout(id);
+    }, [value]);
 
     return (
         <Box>
@@ -54,6 +69,19 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
                 virtual-keyboard-mode="manual"
                 virtual-keyboards="custom"
             />
+            <Box sx={{mt: 0.5, fontSize: "0.75rem", color: interpretation?.error ? "warning.main" : "text.secondary", transition: "opacity 0.15s ease",}}>
+                {interpretation?.value && !interpretation.error && (
+                    <>
+                        <span>Interpretiert als: </span>
+                        <span dangerouslySetInnerHTML={{__html: convertLatexToMarkup(interpretation.value)}}/>
+                    </>
+                )}
+                {interpretation?.error && (
+                    <>
+                        <span>Bitte einen korrekten Ausdruck eingeben.</span>
+                    </>
+                )}
+            </Box>
         </Box>
     );
 };
