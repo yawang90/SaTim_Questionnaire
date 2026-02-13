@@ -58,6 +58,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     const [withHeaderRow, setWithHeaderRow] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
     const [showError, setShowError] = useState(false);
+    const [imageWidth, setImageWidth] = useState<number>(300);
+    const [imageHeight, setImageHeight] = useState<number>(200);
 
     useEffect(() => {
         if (!editor) return;
@@ -72,7 +74,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     if (!editor) return null;
 
     const handleInsertImage = async (url: string) => {
-        editor.chain().focus().setImage({ src: url }).run();
+        editor.chain().focus().setImage({ src: url, width: imageWidth,height: imageHeight }).run();
         setImageUrl('');
         setOpen(false);
     };
@@ -274,6 +276,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         Fügen Sie eine Bild-URL ein oder laden Sie eine Datei hoch.
                     </Typography>
                     <TextField fullWidth label="Bild URL" size="small" value={imageUrl} onChange={e => setImageUrl(e.target.value)} sx={{ mb: 2 }}/>
+                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <TextField label="Breite (px)" type="number" size="small" value={imageWidth} onChange={e => setImageWidth(Number(e.target.value))}/>
+                        <TextField label="Höhe (px)" type="number" size="small" value={imageHeight} onChange={e => setImageHeight(Number(e.target.value))}/>
+                    </Box>
                     <Box textAlign="center" sx={{ position: 'relative', display: 'inline-block' }}>
                         <Button variant="outlined" component="label" disabled={uploading} sx={{ minWidth: 160 }}>
                             {uploading ? 'Wird hochgeladen...' : 'Datei auswählen'}
