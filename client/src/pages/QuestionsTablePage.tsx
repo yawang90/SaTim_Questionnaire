@@ -196,19 +196,20 @@ export default function QuestionsTablePage() {
                         </Select>
                     </FormControl>
                 </Box>
-                <Box sx={{ height: 500, width: "100%" }}>
+                <Box sx={{ flex: 1, width: "100%", display: "flex", flexDirection: "column" }}>
                     {(!loading) &&
                     <DataGrid
                         rows={filteredRows}
                         columns={columns}
-                        pageSizeOptions={[5, 10, 20]}
-                        initialState={{ pagination: { paginationModel: { pageSize: 5 } } }}
+                        pageSizeOptions={[20, 60, 100]}
+                        initialState={{ pagination: { paginationModel: { pageSize: 20 } } }}
                         showToolbar
                         loading={loading}
                         onRowClick={(params) => handleRowClick(params.id)}
                         slotProps={{
                             toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 200 } },
                         }}
+                        sx={{ flex: 1 }}
                     />}
                 </Box>
                 {/* --- Question Details Dialog --- */}
