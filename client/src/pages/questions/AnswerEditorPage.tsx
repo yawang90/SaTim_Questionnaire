@@ -243,9 +243,7 @@ export default function AnswerEditorPage() {
                                     errors.push(`Geogebra Punkt (${b.key}): ${transformed.error}`);
                                     return;
                                 }
-                                value[pointName] = {
-                                        x: [{ operator: answers[pointName]?.x?.[0]?.operator, value: answers[pointName]?.x?.[0]?.value, logic: answers[pointName]?.x?.[0]?.logic}],
-                                        y: [{ operator: answers[pointName]?.y?.[0]?.operator, value: answers[pointName]?.y?.[0]?.value, logic: answers[pointName]?.y?.[0]?.logic}],};
+                                value[pointName] = {x: answers[pointName]?.x?.map((e: any) => ({ ...e })) ?? [], y: answers[pointName]?.y?.map((e: any) => ({ ...e })) ?? [],};
                             }
                         }
                         break;
@@ -260,10 +258,7 @@ export default function AnswerEditorPage() {
                                     errors.push(`Geogebra Linie (${b.key}): ${transformed.error}`);
                                     return;
                                 }
-                                value[lineName] = {
-                                    m: [{ operator: answers[lineName]?.m?.[0]?.operator, value: answers[lineName]?.m?.[0]?.value, logic: answers[lineName]?.m?.[0]?.logic}],
-                                    c: [{ operator: answers[lineName]?.c?.[0]?.operator, value: answers[lineName]?.c?.[0]?.value, logic: answers[lineName]?.c?.[0]?.logic}],
-                                };
+                                value[lineName] = {m: answers[lineName]?.m?.map((e: any) => ({ ...e })) ?? [], c: answers[lineName]?.c?.map((e: any) => ({ ...e })) ?? [],};
                             }
                         }
                         break;
@@ -275,10 +270,7 @@ export default function AnswerEditorPage() {
                             errors.push(`Geradengleichung (${b.key}): ${transformed.error}`);
                             return;
                         }
-                        value = {
-                                m: [{ operator: rawAnswer?.m?.[0]?.operator, value: rawAnswer?.m?.[0]?.value, logic: rawAnswer?.m?.[0]?.logic}],
-                                c: [{ operator: rawAnswer?.c?.[0]?.operator, value: rawAnswer?.c?.[0]?.value, logic: rawAnswer?.c?.[0]?.logic}],
-                        };
+                        value = {m: rawAnswer?.m?.map((e: any) => ({ ...e })) ?? [], c: rawAnswer?.c?.map((e: any) => ({ ...e })) ?? [],};
                         break;
                     }
                     default:
