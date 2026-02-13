@@ -32,6 +32,10 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
     }[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
+    const userLinesRef = useRef<string[]>([]);
+    const userPointsRef = useRef<string[]>([]);
+    const existingObjectsRef = useRef(new Set<string>());
+
     useEffect(() => {
         if (variant === 'points') {
             onAnswerChange?.({ kind: 'points', value: answerPoints });
@@ -49,11 +53,16 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
             height: Number(height),
             maxPoints: maxPoints,
             appletOnLoad: (applet: any) => {
+                userLinesRef.current = [];
+                userPointsRef.current = [];
+                setSnackbarOpen(false);
+                setSnackbarMessage("");
+                setAnswerPoints([]);
+                setAnswerLines([]);
                 const initialPoints = new Set<string>();
-                const userPoints: string[] = [];
-                const userLines: string[] = [];
                 try {
                     const allObjects = applet.getAllObjectNames();
+                    existingObjectsRef.current = new Set(allObjects);
                     allObjects.forEach((name: string) => {
                         try {
                             if (applet.getObjectType(name) === 'point') initialPoints.add(name);
@@ -64,21 +73,14 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 } catch (err) {
                     console.warn('[ggb] failed to list objects on load', err);
                 }
-                const allowedPoints = () =>
-                    variant === 'points' ? Number(maxPoints) || 0 : 0;
-
-                const allowedLines = () =>
-                    variant === 'lines'
-                        ? maxLines === "" || maxLines === undefined
-                            ? 0
-                            : Number(maxLines)
-                        : 0;
+                const allowedPoints = () => variant === 'points' ? Number(maxPoints) || 0 : 0;
+                const allowedLines = () => variant === 'lines' ? maxLines === "" || maxLines === undefined ? 0 : Number(maxLines) : 0;
                 const enforceMaxUserPoints = () => {
                     if (variant !== 'points') return;
                     setTimeout(() => {
                         const allowedCount = allowedPoints();
-                        while (userPoints.length > allowedCount) {
-                            const toRemove = userPoints.shift();
+                        while (userPointsRef.current.length > allowedCount) {
+                            const toRemove = userPointsRef.current.shift();
                             if (!toRemove) break;
                             try {
                                 applet.deleteObject(toRemove);
@@ -92,17 +94,18 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     }, 0);
                 };
                 const processPoint = (objName: string, attemptsLeft = 5, delayMs = 60) => {
+                    if (existingObjectsRef.current.has(objName)) return;
                     try {
                         if (variant !== 'points') return;
                         if (initialPoints.has(objName)) return;
                         if (objName.startsWith('_') || objName.startsWith('AUX') || objName.includes('temp')) return;
-                        if (userPoints.includes(objName)) return;
+                        if (userPointsRef.current.includes(objName)) return;
 
                         const x = applet.getXcoord(objName);
                         const y = applet.getYcoord(objName);
 
                         if (Number.isFinite(x) && Number.isFinite(y)) {
-                            userPoints.push(objName);
+                            userPointsRef.current.push(objName);
                             setAnswerPoints(prev => {
                                 const next = prev.filter(p => p.name !== objName);
                                 return [...next, {name: objName, x: Number(x) || 0, y: Number(y) || 0}];
@@ -114,12 +117,11 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                             setTimeout(() => processPoint(objName, attemptsLeft - 1, delayMs), delayMs);
                             return;
                         }
-                        userPoints.push(objName);
+                        userPointsRef.current.push(objName);
                         setAnswerPoints(prev => {
                             const next = prev.filter(p => p.name !== objName);
                             return [...next, {name: objName, x, y}];
                         });
-
                         enforceMaxUserPoints();
                         return;
                     } catch (err) {
@@ -127,7 +129,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     }
                 };
                 const isPointUsedInOtherLines = (pointName: string, excludeLine?: string) => {
-                    return userLines.some(lineName => {
+                    return userLinesRef.current.some(lineName => {
                         if (lineName === excludeLine) return false;
                         const cmd = applet.getCommandString(lineName);
                         const points = cmd.match(/[A-Za-z0-9_]+/g);
@@ -136,10 +138,11 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     });
                 };
                 const processLine = (objName: string) => {
+                    if (existingObjectsRef.current.has(objName)) return;
                     const type = applet.getObjectType(objName);
                     if (variant !== 'lines') return;
-                    if (!["line", "segment", "ray"].includes(type) || userLines.includes(objName)) return;
-                    if (userLines.length >= allowedLines()) {
+                    if (!["line", "segment", "ray"].includes(type) || userLinesRef.current.includes(objName)) return;
+                    if (userLinesRef.current.length >= allowedLines()) {
                         const def = applet.getCommandString(objName);
                         const points = def.match(/[A-Za-z0-9_]+/g);
                         if (points) {
@@ -173,7 +176,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                 c = m === Infinity ? x1 : y1 - m * x1;
                             }
                         } catch(e) { console.log(e)}
-                        userLines.push(objName);
+                        userLinesRef.current.push(objName);
                         setAnswerLines(prev => [...prev.filter(l => l.name !== objName), {
                             name: objName,
                             m,
@@ -183,8 +186,8 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 };
                 try {
                     applet.registerClearListener(() => {
-                        userLines.length = 0;
-                        userPoints.length = 0;
+                        userLinesRef.current.length = 0;
+                        userPointsRef.current.length = 0;
                         setAnswerLines([]);
                         setAnswerPoints([]);
                     });
