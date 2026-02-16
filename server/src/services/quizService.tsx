@@ -142,6 +142,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         },
         data: {
             answerJson,
+            skipped: false,
             solvingTimeEnd: now,
             solvedTime: timeSolvedSeconds
         },
