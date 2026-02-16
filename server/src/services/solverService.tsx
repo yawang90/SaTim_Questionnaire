@@ -245,15 +245,62 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
         details
     };
 };
-function matchPoint(
-    userPoint: { x:number; y:number },
-    correctPoint: { x: NumericCondition[]; y: NumericCondition[] }
-) {
+function matchPoint(userPoint: { x:number; y:number }, correctPoint: { x: NumericCondition[]; y: NumericCondition[] }) {
     return (
-        checkNumericConditions(userPoint.x, correctPoint.x) &&
-        checkNumericConditions(userPoint.y, correctPoint.y)
+        checkPointConditions(userPoint.x, correctPoint.x) &&
+        checkPointConditions(userPoint.y, correctPoint.y)
     );
 }
+
+function checkPointConditions(value: number, conditions: NumericCondition[]): boolean {
+    const EPS = 1e-12;
+    let result = conditions[0]?.logic !== "or";
+
+    for (const cond of conditions) {
+        const target = evaluateNumericCondition(cond);
+        let check = false;
+        switch (cond.operator) {
+            case "=":
+                check = Math.abs(value - target) < EPS;
+                break;
+            case "<":
+                check = value < target - EPS;
+                break;
+            case ">":
+                check = value > target + EPS;
+                break;
+            case "<=":
+                check = value <= target + EPS;
+                break;
+            case ">=":
+                check = value >= target - EPS;
+                break;
+        }
+        if (cond.logic === "or") result = result || check;
+        else result = result && check;
+    }
+
+    return result;
+}
+
+function checkGeoGebraPoints(correct: Record<string, any>, user: { name: string; x: number; y: number }[]): boolean {
+    const userUnused = [...user];
+    for (const correctPoint of Object.values(correct)) {
+        const index = userUnused.findIndex(u =>
+            matchPoint(u, correctPoint)
+        );
+        if (index === -1) return false;
+        userUnused.splice(index, 1);
+    }
+    return true;
+}
+
+function matchLine(userLine: { m: number; c: number }, correctLine: { m: NumericCondition[]; c: NumericCondition[] }): boolean {
+    const mOk = checkLineEquationConditions(userLine.m, correctLine.m);
+    const cOk = checkLineEquationConditions(userLine.c, correctLine.c);
+    return mOk && cOk;
+}
+
 function checkLineEquationConditions(value: number, conditions: NumericCondition[]): boolean {
     const EPS = 1e-12;
     let result = conditions[0]?.logic !== "or";
@@ -285,29 +332,6 @@ function checkLineEquationConditions(value: number, conditions: NumericCondition
     return result;
 }
 
-
-function checkGeoGebraPoints(correct: Record<string, any>, user: { name: string; x: number; y: number }[]): boolean {
-    const userUnused = [...user];
-    for (const correctPoint of Object.values(correct)) {
-        const index = userUnused.findIndex(u =>
-            matchPoint(u, correctPoint)
-        );
-        if (index === -1) return false;
-        userUnused.splice(index, 1);
-    }
-    return true;
-}
-
-
-function matchLine(
-    userLine: { m: number; c: number },
-    correctLine: { m: NumericCondition[]; c: NumericCondition[] }
-): boolean {
-    const mOk = checkNumericConditions(userLine.m, correctLine.m);
-    const cOk = checkNumericConditions(userLine.c, correctLine.c);
-    return mOk && cOk;
-}
-
 function checkGeoGebraLines(correct: Record<string, any>, user: { m: number; c: number }[]): boolean {
     const userUnused = [...user];
     for (const correctLine of Object.values(correct)) {
@@ -316,38 +340,6 @@ function checkGeoGebraLines(correct: Record<string, any>, user: { m: number; c: 
         userUnused.splice(index, 1);
     }
     return true;
-}
-
-function checkNumericConditions(value: number, conditions: { value: string; operator: "=" | "<" | ">" | "<=" | ">="; logic?: "and" | "or"; }[]
-): boolean {
-    const EPS = 1e-12;
-    let result = conditions[0]?.logic !== "or";
-
-    for (const cond of conditions) {
-        const target = Number(cond.value);
-        let check = false;
-
-        switch (cond.operator) {
-            case "=":
-                check = Math.abs(value - target) < EPS;
-                break;
-            case "<":
-                check = value < target - EPS;
-                break;
-            case ">":
-                check = value > target + EPS;
-                break;
-            case "<=":
-                check = value <= target + EPS;
-                break;
-            case ">=":
-                check = value >= target - EPS;
-                break;
-        }
-        if (cond.logic === "or") result = result || check;
-        else result = result && check;
-    }
-    return result;
 }
 
 function parseLineEquation(input: string): { m: number; c: number } {
@@ -364,7 +356,7 @@ function parseLineEquation(input: string): { m: number; c: number } {
     return { m, c };
 }
 
-    function extractRHS(equation: string): string {
+function extractRHS(equation: string): string {
     const parts = equation.split('=');
     if (parts.length < 2) {
         throw new Error("Equation must contain '='");
