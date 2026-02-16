@@ -4,6 +4,7 @@ import "nerdamer/Algebra.js";
 import 'nerdamer/Solve.js';
 import 'nerdamer/Calculus.js';
 import 'nerdamer/Extra.js';
+import nerdamer from "nerdamer";
 
 type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation";
 
@@ -85,10 +86,7 @@ export interface EvaluateResult {
     details: EvaluateDetail[];
 }
 
-export const evaluateAnswersService = async (
-    questionId: number,
-    userAnswers: UserAnswerInput[]
-): Promise<EvaluateResult> => {
+export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult> => {
     const questionEntry: Pick<question, "id" | "correctAnswers"> | null =
         await prisma.question.findUnique({
             where: { id: questionId },
@@ -126,7 +124,6 @@ export const evaluateAnswersService = async (
                     }
                     break;
                 }
-
                 case "mc": {
                     const selectedIds = (userAnswer.value as { id: string; selected: boolean }[])
                         .filter(a => a.selected)
@@ -214,20 +211,21 @@ export const evaluateAnswersService = async (
                 }
 
                 case "lineEquation": {
-                        const ua = userAnswer as any;
-                        const userM = Number(ua.parsed.m);
-                        const userC = Number(ua.parsed.c);
-                        if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
-                        const { m, c } = correctAnswer.value;
-                        const mOk = checkNumericConditions(userM, m);
-                        const cOk = checkNumericConditions(userC, c);
-                        if (mOk && cOk) {
-                            isCorrect = true;
-                            score += 1;
-                        }
-                        break;
+                    const ua = userAnswer as any;
+                    const answer = parseLineEquation(ua.value);
+                    const userM = Number(answer.m);
+                    const userC = Number(answer.c);
+                    if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
+                    const { m, c } = correctAnswer.value;
+                    const mOk = checkLineEquationConditions(userM, m);
+                    const cOk = checkLineEquationConditions(userC, c);
+                    if (mOk && cOk) {
+                        isCorrect = true;
+                        score += 1;
                     }
+                    break;
                 }
+            }
         }
         details.push({
             key,
@@ -251,6 +249,38 @@ function matchPoint(
         checkNumericConditions(userPoint.y, correctPoint.y)
     );
 }
+function checkLineEquationConditions(value: number, conditions: NumericCondition[]): boolean {
+    const EPS = 1e-12;
+    let result = conditions[0]?.logic !== "or";
+
+    for (const cond of conditions) {
+        const target = evaluateNumericCondition(cond);
+        let check = false;
+        switch (cond.operator) {
+            case "=":
+                check = Math.abs(value - target) < EPS;
+                break;
+            case "<":
+                check = value < target - EPS;
+                break;
+            case ">":
+                check = value > target + EPS;
+                break;
+            case "<=":
+                check = value <= target + EPS;
+                break;
+            case ">=":
+                check = value >= target - EPS;
+                break;
+        }
+        if (cond.logic === "or") result = result || check;
+        else result = result && check;
+    }
+
+    return result;
+}
+
+
 function checkGeoGebraPoints(correct: Record<string, any>, user: { name: string; x: number; y: number }[]): boolean {
     const userUnused = [...user];
     for (const correctPoint of Object.values(correct)) {
@@ -314,3 +344,62 @@ function checkNumericConditions(value: number, conditions: { value: string; oper
     }
     return result;
 }
+
+function parseLineEquation(input: string): { m: number; c: number } {
+    const sanitized = sanitizeMathInput(input);
+    const rhs = extractRHS(sanitized);
+    if (!rhs.trim()) throw new Error("Equation RHS is empty");
+    const expr = nerdamer(rhs).expand();
+    const c = Number(expr.sub('x', '0').evaluate().text());
+    const y1 = Number(expr.sub('x', '1').evaluate().text());
+    const m = y1 - c;
+    if (!Number.isFinite(m) || !Number.isFinite(c)) {
+        throw new Error("Could not parse line equation correctly");
+    }
+    return { m, c };
+}
+
+    function extractRHS(equation: string): string {
+    const parts = equation.split('=');
+    if (parts.length < 2) {
+        throw new Error("Equation must contain '='");
+    }
+    return parts.slice(1).join('=').trim();
+}
+
+function evaluateNumericCondition(cond: { value: string; operator: string }): number {
+    const sanitized = sanitizeMathInput(cond.value);
+    const expr = nerdamer(sanitized).evaluate();
+    const num = Number(expr.text());
+    if (!Number.isFinite(num)) {
+        throw new Error(`Invalid numeric value: ${cond.value}`);
+    }
+    return num;
+}
+
+function sanitizeMathInput(latex: string): string {
+    if (!latex) return "";
+
+    // Remove \left and \right
+    latex = latex.replace(/\\left/g, "").replace(/\\right/g, "");
+    // Add multiplication between number and fraction: 2\frac{a}{b} → 2*\frac{a}{b}
+    latex = latex.replace(/(\d)\\frac/g, "$1*\\frac");
+    // Convert \frac{a}{b} → (a/b)
+    latex = latex.replace(/\\frac\s*{([^}]*)}\s*{([^}]*)}/g, "($1/$2)");
+    // Add multiplication between variable and fraction: x(a/b) → x*(a/b)
+    latex = latex.replace(/([a-zA-Z])(\([^\)]+\))/g, "$1*$2");
+    // Convert \cdot → *
+    latex = latex.replace(/\\cdot/g, "*");
+    // Add multiplication between number and variable (2x → 2*x)
+    latex = latex.replace(/(\d)([a-zA-Z])/g, "$1*$2");
+    // Add multiplication between number and '(' (2( → 2*()
+    latex = latex.replace(/(\d)\(/g, "$1*(");
+    // Add multiplication between ')' and number or variable )2 → )*2, )x → )*x
+    latex = latex.replace(/\)(\d|[a-zA-Z])/g, ")*$1");
+    // Add multiplication between ')' and '(' )(... → )*(...
+    latex = latex.replace(/\)\(/g, ")*(");
+    // Add multiplication between fraction/parentheses and number/variable.(a/b)2 → (a/b)*2
+    latex = latex.replace(/(\([^\)]+\))(\d|[a-zA-Z])/g, "$1*$2");
+    return latex;
+}
+
