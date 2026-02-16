@@ -212,16 +212,21 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
 
                 case "lineEquation": {
                     const ua = userAnswer as any;
-                    const answer = parseLineEquation(ua.value);
-                    const userM = Number(answer.m);
-                    const userC = Number(answer.c);
-                    if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
-                    const { m, c } = correctAnswer.value;
-                    const mOk = checkLineEquationConditions(userM, m);
-                    const cOk = checkLineEquationConditions(userC, c);
-                    if (mOk && cOk) {
-                        isCorrect = true;
-                        score += 1;
+                    try {
+                        const answer = parseLineEquation(ua.value);
+                        const userM = Number(answer.m);
+                        const userC = Number(answer.c);
+                        if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
+                        const { m, c } = correctAnswer.value;
+                        const mOk = checkLineEquationConditions(userM, m);
+                        const cOk = checkLineEquationConditions(userC, c);
+                        if (mOk && cOk) {
+                            isCorrect = true;
+                            score += 1;
+                        }
+                    } catch (err) {
+                        console.log(err);
+                        break;
                     }
                     break;
                 }
