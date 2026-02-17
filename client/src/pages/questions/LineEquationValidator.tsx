@@ -68,20 +68,17 @@ function normalizePointInput(expr: BoxedExpression): { value?: string; error?: s
 }
 
 export function getInterpretedValue(val: string): { value: string, error: boolean } {
-    const expression = sanitizeMathInput(val);
-    if (expression) {
-        const boxedExpr = ce.parse(val);
-        return { value: toExplicitMultiplicationLatex(boxedExpr.toLatex()), error: false };
+    try {
+        val = val.replace(/\\left|\\right/g, "")
+        const expr = ce.parse(val);
+        const normalized = expr.simplify();
+        return {
+            value: normalized.canonical.toLatex(),
+            error: false
+        };
+    } catch {
+        return { value: "", error: true };
     }
-    return {value: "", error: true};
-}
-
-function toExplicitMultiplicationLatex(latex: string): string {
-    if (!latex) return "";
-    latex = latex.replace(/(\d)([a-zA-Z])/g, "$1 \\cdot $2");
-    latex = latex.replace(/(\d)\(/g, "$1 \\cdot (");
-    latex = latex.replace(/\)(\d|[a-zA-Z])/g, ") \\cdot $1");
-    return latex;
 }
 
 export function checkLineEquationHasErrors(val: { m?: { operator: string; value: string }[]; c?: { operator: string; value: string }[]; }) {
