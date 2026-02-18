@@ -69,9 +69,25 @@ export const NumericAnswer: React.FC<NumericAnswerProps> = ({ conditions, onChan
 
                     <TextField
                         value={cond.value}
-                        onChange={(e) => {
-                            const cleaned = e.target.value.replace(/[^0-9.,-]/g, "");
-                            handleChange(idx, "value", cleaned);
+                        onChange={e => {
+                            let input = e.target.value;
+                            input = input.replace(',', '.');
+                            input = input.replace(/[^0-9.-]/g, '');
+                            if ((input.match(/-/g) || []).length > 1) {
+                                input = input.replace(/-/g, '');
+                                input = '-' + input;
+                            } else if (input.indexOf('-') > 0) {
+                                input = input.replace(/-/g, '');
+                                input = '-' + input;
+                            }
+                            const parts = input.split('.');
+                            if (parts.length > 2) {
+                                input = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            if (parts[1]?.length > 5) {
+                                input = parts[0] + '.' + parts[1].slice(0, 5);
+                            }
+                            handleChange(idx, "value", input);
                         }}
                         placeholder="Zahl eingeben"
                         size="small"
