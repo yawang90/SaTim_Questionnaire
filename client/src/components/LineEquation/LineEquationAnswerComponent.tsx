@@ -43,6 +43,9 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
             if (!mf.getValue()) {
                 mf.value = 'y='
             }
+            if (value) {
+                mf.value = value;
+            }
             const handleInput = () => {
                 const latex = mf.getValue('latex-expanded');
                 updateAttributes({ value: latex });
