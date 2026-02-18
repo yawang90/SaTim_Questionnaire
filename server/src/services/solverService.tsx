@@ -1,9 +1,5 @@
 import prisma from "../config/prismaClient.js";
 import type {question} from "@prisma/client";
-import "nerdamer/Algebra.js";
-import 'nerdamer/Solve.js';
-import 'nerdamer/Calculus.js';
-import 'nerdamer/Extra.js';
 import {ce} from "../index.js";
 
 type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation";
@@ -209,9 +205,8 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                             const userC = Number(answer.c);
                             if (!Number.isFinite(userM) || !Number.isFinite(userC)) break;
                             const {m, c} = correctAnswer.value;
-                            const mOk = checkLineEquationConditions(userM, m);
-                            const cOk = checkLineEquationConditions(userC, c);
-                            if (mOk && cOk) {
+                            const answerIsCorrect = checkAndSubstituteLineEquation(userM, userC, m, c);
+                            if (answerIsCorrect) {
                                 isCorrect = true;
                                 score += 1;
                             }
@@ -293,6 +288,30 @@ function matchLine(userLine: { m: number; c: number }, correctLine: { m: Numeric
     return mOk && cOk;
 }
 
+function checkAndSubstituteLineEquation(m: number, c: number, mConditions: NumericCondition[], cConditions: NumericCondition[]): boolean {
+    const hasC = mConditions.some(condition => /c/i.test(condition.value));
+    const hasM = cConditions.some(condition => /m/i.test(condition.value));
+    if (hasC && hasM) {
+        return false;
+    }
+    if (hasC) {
+        mConditions.forEach(condition => {
+            const evaluated = substituteAndEvaluate(condition.value, "c", c);
+            condition.value = String(evaluated);
+        });
+    }
+    if (hasM) {
+        cConditions.forEach(condition => {
+            const evaluated = substituteAndEvaluate(condition.value, "m", m);
+            condition.value = String(evaluated);
+        });
+    }
+    const mOk = checkLineEquationConditions(m, mConditions);
+    const cOk = checkLineEquationConditions(c, cConditions);
+    return mOk && cOk;
+}
+
+
 function checkLineEquationConditions(value: number, conditions: NumericCondition[]): boolean {
     const EPS = 1e-12;
     let result = conditions[0]?.logic !== "or";
@@ -320,7 +339,6 @@ function checkLineEquationConditions(value: number, conditions: NumericCondition
         if (cond.logic === "or") result = result || check;
         else result = result && check;
     }
-
     return result;
 }
 
@@ -357,4 +375,17 @@ function evaluateCondition(cond: { value: string; operator: string }): number {
         throw new Error(`Invalid numeric value: ${cond.value}`);
     }
     return num;
+}
+
+function substituteAndEvaluate(expressionLatex: string, variable: "m" | "c", value: number): number {
+    const expr = ce.parse(expressionLatex, { syntax: "latex" });
+    const substituted = expr
+        .subs({ [variable]: value })
+        .simplify()
+        .N();
+    const result = Number(substituted.valueOf());
+    if (!Number.isFinite(result)) {
+        throw new Error(`Invalid numeric result for ${expressionLatex}`);
+    }
+    return result;
 }
