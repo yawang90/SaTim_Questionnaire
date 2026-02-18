@@ -71,6 +71,9 @@ export const GeoGebra = Node.create({
                 parseHTML: el => el.getAttribute('data-variant') || 'points',
                 renderHTML: attrs => ({ 'data-variant': attrs.variant }),
             },
+            value: {
+                default: [],
+            },
             answer: {
                 default: null
             },

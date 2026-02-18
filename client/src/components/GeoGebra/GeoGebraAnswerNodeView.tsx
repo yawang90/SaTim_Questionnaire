@@ -3,7 +3,7 @@ import { NodeViewWrapper } from '@tiptap/react';
 import { GeoGebraAnswerComponent } from './GeoGebraAnswerComponent';
 
 export const GeoGebraAnswerNodeView = ({ node, editor }: any) => {
-    const { materialId, width, height, maxPoints, maxLines, variant } = node.attrs;
+    const { materialId, width, height, maxPoints, maxLines, variant, value } = node.attrs;
     const geoGebraExtension = editor.extensionManager.extensions.find((ext: any) => ext.name === 'geoGebra');
     const onAnswerChange = geoGebraExtension?.options?.onAnswerChange;
 
@@ -16,6 +16,7 @@ export const GeoGebraAnswerNodeView = ({ node, editor }: any) => {
                 maxPoints={maxPoints}
                 maxLines={maxLines}
                 variant={variant}
+                value={value}
                 onAnswerChange={(answer) => {
                     if (onAnswerChange) onAnswerChange({ id: node.attrs.id, ...answer });
                 }}

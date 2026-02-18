@@ -18,7 +18,7 @@ export type LineEquationAnswer = {
 };
 
 export type GeoGebraPoint = { name: string; x: number; y: number };
-export type GeoGebraLine = { name: string; m: number; c: number };
+export type GeoGebraLine = { name: string; m: number; c: number; point1: GeoGebraPoint, point2: GeoGebraPoint };
 
 export type GeoGebraPointsAnswer = {
     kind: "geoGebraPoints";
@@ -172,7 +172,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 return {
                     kind: "geoGebraLines",
                     key: block.key,
-                    value: [{ name:"",m: 0, c: 0 }]
+                    value: [{ name:"",m: 0, c: 0 , point1: {name:"", x:0, y:0}, point2: {name:"", x:0, y:0}}]
                 };
         }
     });

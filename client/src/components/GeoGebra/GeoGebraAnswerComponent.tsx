@@ -13,6 +13,7 @@ interface GeoGebraAnswerComponentProps {
         kind: 'points' | 'lines';
         value: GeoGebraPoint[] | GeoGebraLine[];
     }) => void;
+    value?: GeoGebraPoint[] | GeoGebraLine[];
 }
 
 export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({
@@ -21,15 +22,16 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                                                                     height = 600,
                                                                                     maxPoints = 1,
                                                                                     maxLines = 0,
-                                                                                    variant, onAnswerChange
+                                                                                    variant, onAnswerChange, value
                                                                                 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [answerPoints, setAnswerPoints] = React.useState<{ name: string; x: number; y: number }[]>([]);
-    const [answerLines, setAnswerLines] = React.useState<{
-        name: string;
-        m: number;
-        c: number;
-    }[]>([]);
+    const [answerPoints, setAnswerPoints] = useState<GeoGebraPoint[]>(
+        variant === 'points' ? (value as GeoGebraPoint[]) ?? [] : []
+    );
+    const [answerLines, setAnswerLines] = useState<GeoGebraLine[]>(
+        variant === 'lines' ? (value as GeoGebraLine[]) ?? [] : []
+    );
+    const [previousAnswerExists, setPreviousAnswerExists] = useState<boolean>(!!value)
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const userLinesRef = useRef<string[]>([]);
@@ -38,11 +40,23 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
 
     useEffect(() => {
         if (variant === 'points') {
-            onAnswerChange?.({ kind: 'points', value: answerPoints });
+            onAnswerChange?.({kind: 'points', value: answerPoints});
         } else if (variant === 'lines') {
-            onAnswerChange?.({ kind: 'lines', value: answerLines });
+            onAnswerChange?.({kind: 'lines', value: answerLines});
         }
     }, [answerPoints, answerLines, onAnswerChange, variant]);
+
+    useEffect(() => {
+        if (!value) return;
+        if (variant === 'points') {
+            setPreviousAnswerExists(true);
+            setAnswerPoints(value as GeoGebraPoint[]);
+        }
+        if (variant === 'lines') {
+            setPreviousAnswerExists(true);
+            setAnswerLines(value as GeoGebraLine[]);
+        }
+    }, [value, variant]);
 
     useEffect(() => {
         if (!materialId || !containerRef.current) return;
@@ -57,8 +71,42 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 userPointsRef.current = [];
                 setSnackbarOpen(false);
                 setSnackbarMessage("");
-                setAnswerPoints([]);
-                setAnswerLines([]);
+                if (!previousAnswerExists) {
+                    setAnswerPoints([]);
+                    setAnswerLines([]);
+                }
+                const restorePoints = (points: GeoGebraPoint[]) => {
+                    points.forEach(p => {
+                        try {
+                            applet.evalCommand(`${p.name} = (${p.x}, ${p.y})`);
+                            userPointsRef.current.push(p.name);
+                        } catch (e) {
+                            console.warn("Failed to restore point", p, e);
+                        }
+                    });
+                    setAnswerPoints(points);
+                };
+                const restoreLines = (lines: GeoGebraLine[]) => {
+                    lines.forEach(l => {
+                        applet.evalCommand(`${l.point1.name} = (${l.point1.x}, ${l.point1.y})`);
+                        applet.evalCommand(`${l.point2.name} = (${l.point2.x}, ${l.point2.y})`);
+                        applet.evalCommand(`${l.name} = Line(${l.point1.name}, ${l.point2.name})`);
+                        userLinesRef.current.push(l.name);
+                    });
+                    lines.forEach(l => {
+                        applet.setFixed(l.name, true);
+                    });
+                    setAnswerLines(lines);
+                };
+                if (previousAnswerExists && value) {
+                    if (variant === 'points') {
+                        restorePoints(value as GeoGebraPoint[]);
+                    }
+                    if (variant === 'lines') {
+                        restoreLines(value as GeoGebraLine[]);
+                    }
+                }
+                setPreviousAnswerExists(false);
                 const initialPoints = new Set<string>();
                 try {
                     const allObjects = applet.getAllObjectNames();
@@ -153,7 +201,9 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                     applet.deleteObject(objName);
                                     if (!isPointUsedInOtherLines(p1, objName)) applet.deleteObject(p1);
                                     if (!isPointUsedInOtherLines(p2, objName)) applet.deleteObject(p2);
-                                } catch (err){ console.log(err) }
+                                } catch (err) {
+                                    console.log(err)
+                                }
                             }, 0);
                             applet.setMode(0);
                             setSnackbarMessage("Bitte verwende das Verschiebetool, du hast bereits die maximale Anzahl Linien eingezeichnet.");
@@ -162,6 +212,8 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     } else {
                         let m = 0;
                         let c = 0;
+                        let point1: GeoGebraPoint;
+                        let point2: GeoGebraPoint;
                         try {
                             const def = applet.getCommandString(objName);
                             const points = def.match(/[A-Za-z0-9_]+/g);
@@ -172,15 +224,21 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                 const y1 = applet.getYcoord(p1);
                                 const x2 = applet.getXcoord(p2);
                                 const y2 = applet.getYcoord(p2);
+                                point1 = {name: p1, x: x1, y: y1};
+                                point2 = {name: p2, x: x2, y: y2};
                                 m = Math.abs(x2 - x1) > 1e-8 ? (y2 - y1) / (x2 - x1) : Infinity;
                                 c = m === Infinity ? x1 : y1 - m * x1;
                             }
-                        } catch(e) { console.log(e)}
+                        } catch (e) {
+                            console.log(e)
+                        }
                         userLinesRef.current.push(objName);
                         setAnswerLines(prev => [...prev.filter(l => l.name !== objName), {
                             name: objName,
                             m,
                             c,
+                            point1,
+                            point2
                         }]);
                     }
                 };
@@ -202,14 +260,13 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                     try {
                                         const x = applet.getXcoord(p.name);
                                         const y = applet.getYcoord(p.name);
-                                        return { ...p, x: Number(x), y: Number(y) };
+                                        return {...p, x: Number(x), y: Number(y)};
                                     } catch {
-                                        return p; 
+                                        return p;
                                     }
                                 });
                             });
                         }
-
                         if (variant === 'lines') {
                             setAnswerLines(prev => {
                                 return prev.map(l => {
@@ -225,15 +282,17 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                             const y2 = applet.getYcoord(p2);
                                             const m = Math.abs(x2 - x1) > 1e-8 ? (y2 - y1) / (x2 - x1) : Infinity;
                                             const c = m === Infinity ? x1 : y1 - m * x1;
-                                            return { ...l, m, c };
+                                            const point1 = {name: p1, x: x1, y: y1};
+                                            const point2 = {name: p2, x: x2, y: y2};
+                                            return {...l, m, c, point1, point2};
                                         }
-                                    } catch { /* empty */ }
+                                    } catch { /* empty */
+                                    }
                                     return l;
                                 });
                             });
                         }
                     });
-
                 } catch (err) {
                     console.warn('[ggb] failed to register add listener', err);
                 }
@@ -241,7 +300,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
         };
         const ggbApplet = new (window as any).GGBApplet(params, true);
         ggbApplet.inject(containerRef.current);
-    }, [materialId, width, height, maxPoints, maxLines, variant]);
+    }, [materialId]);
 
     return (
         <div style={{width: "100%", display: "flex", justifyContent: "center", margin: "16px 0"}}>
@@ -254,17 +313,24 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     alignItems: "center",
                 }}/>
                 {variant === 'points' && (
-                    <div style={{marginTop: "12px", padding: "8px 12px", border: "1px solid #ccc", borderRadius: "8px", width: Number(width), background: "#fafafa",}}>
+                    <div style={{
+                        marginTop: "12px",
+                        padding: "8px 12px",
+                        border: "1px solid #ccc",
+                        borderRadius: "8px",
+                        width: Number(width),
+                        background: "#fafafa",
+                    }}>
                         <strong>Erfasste Punkte:</strong>
 
                         {answerPoints.length === 0 ? (
-                            <div style={{ fontStyle: "italic", marginTop: "6px", color: "#666" }}>
+                            <div style={{fontStyle: "italic", marginTop: "6px", color: "#666"}}>
                                 Noch keine Punkte gesetzt.
                             </div>
                         ) : (
-                            <ul style={{ margin: "8px 0 0 0", padding: 0, listStyle: "none" }}>
+                            <ul style={{margin: "8px 0 0 0", padding: 0, listStyle: "none"}}>
                                 {answerPoints.map(p => (
-                                    <li key={p.name} style={{ padding: "4px 0" }}>
+                                    <li key={p.name} style={{padding: "4px 0"}}>
                                         {p.name}: ({p.x.toFixed(3)}, {p.y.toFixed(3)})
                                     </li>
                                 ))}
@@ -274,12 +340,20 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                 )}
 
                 {variant === 'lines' && (
-                    <div style={{marginTop: "12px", padding: "8px 12px", border: "1px solid #ccc", borderRadius: "8px", width: Number(width), background: "#f3f6ff",}}>
+                    <div style={{
+                        marginTop: "12px",
+                        padding: "8px 12px",
+                        border: "1px solid #ccc",
+                        borderRadius: "8px",
+                        width: Number(width),
+                        background: "#f3f6ff",
+                    }}>
                         <strong>Erfasste Linien:</strong>
-                        <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div style={{marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px"}}>
                             {answerLines.map((l) => (
                                 <div key={l.name}>
-                                    Linie {l.name} mit Werten M: {l.m === Infinity ? "∞" : l.m.toFixed(3)} und C: {l.c.toFixed(3)}
+                                    Linie {l.name} mit Werten M: {l.m === Infinity ? "∞" : l.m.toFixed(3)} und
+                                    C: {l.c.toFixed(3)}
                                 </div>
                             ))}
                         </div>
