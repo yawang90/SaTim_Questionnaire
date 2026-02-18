@@ -7,6 +7,8 @@ import cors from 'cors';
 import surveyRoutes from "./routes/surveyRoutes.js";
 import solverRoutes from "./routes/solverRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
+import { ComputeEngine } from "@cortex-js/compute-engine";
+
 dotenv.config();
 
 const app = express();
@@ -30,3 +32,4 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 app.listen(port, () => {
     console.log(`Backend listening on http://localhost:${port}`);
 });
+export const ce = new ComputeEngine();

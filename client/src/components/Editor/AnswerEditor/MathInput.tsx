@@ -28,7 +28,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             rows: [
                 ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', {label: '⌫', command: 'deleteBackward'}],
                 variableRow,
-                ['+', '-', '[*]', { label: ':', command: ['insert', '/'] }, '=', "\\frac{#@}{#?}", '(', ')'],
+                ['+', '-', '[*]', { label: ':', command: ['insert', "\\frac{#@}{#?}", '(', ')'] }, '=', "\\frac{#@}{#?}", '(', ')'],
                 [], [], []
             ]
         }
@@ -73,11 +73,11 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
                     <>
                         <span>Interpretiert als: </span>
                         {/*// @ts-ignore*/}
-                        <math-field
-                            read-only
+                        <math-field read-only
                             value={interpretation.value}
                             style={{ fontSize: "0.85rem", minWidth: 100 }}
-                        />                                </>
+                        />
+                    </>
                 )}
                 {interpretation?.error && (
                     <>

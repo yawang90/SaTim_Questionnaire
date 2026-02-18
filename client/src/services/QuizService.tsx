@@ -56,6 +56,7 @@ export interface AnswerDTO {
  * Fetch a quiz by id
  * @param id Quiz ID
  * @param userId Cookie Session ID
+ * @param questionId
  * @returns Quiz object
  */
 export async function getQuiz(id: string, userId: string, questionId?: number): Promise<Quiz> {
