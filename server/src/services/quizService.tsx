@@ -103,12 +103,13 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     const totalQuestions = answerRecord.questionIds.length;
     const answeredQuestions = answeredQuestionIds.length;
 
+    let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion?.id, contentJson: nextQuestion?.contentJson} : null;
     return {
         surveyId: survey.id,
         surveyTitle: survey.title,
         instanceId: instance.id,
         bookletId: answerRecord.bookletId,
-        question: nextQuestion,
+        question: cleanNextQuestion,
         answerId: answerRecord.id,
         totalQuestions,
         answeredQuestions,
@@ -172,8 +173,7 @@ async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id:
     return {
         id: question.id,
         contentJson: question.contentJson,
-        contentHtml: question.contentHtml,
-        correctAnswers: question.correctAnswers,
+        contentHtml: question.contentHtml
     };
 }
 

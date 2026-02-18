@@ -1,4 +1,4 @@
-import type {GeoGebraLine, GeoGebraPoint} from "../pages/questions/AnswerUtils.tsx";
+import type {GeoGebraLine, GeoGebraPoint} from "../pages/utils/AnswerUtils.tsx";
 // @ts-ignore
 const API_BASE = import.meta.env.VITE_API_URL;
 

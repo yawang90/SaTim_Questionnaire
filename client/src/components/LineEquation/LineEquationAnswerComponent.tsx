@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react'
 import {type NodeViewProps, NodeViewWrapper} from '@tiptap/react'
 import {Box} from '@mui/material'
 import 'mathlive'
-import {getInterpretedValue} from "../../pages/questions/LineEquationValidator.tsx";
+import {getInterpretedValue} from "../MathHelper/LineEquationValidator.tsx";
 
 export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
     const mathfieldRef = useRef<any>(null)

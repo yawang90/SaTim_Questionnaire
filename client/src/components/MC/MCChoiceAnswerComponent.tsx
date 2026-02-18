@@ -2,9 +2,9 @@ import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import React, { useState } from "react";
 import {MathJax} from "better-react-mathjax";
 
-export const MCChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
-    const { groupId, checked } = node.attrs as { groupId?: string; checked?: boolean };
-    const [isChecked, setIsChecked] = useState(checked || false);
+export const MCChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) => {
+    const { groupId, selected } = node.attrs as { groupId?: string; selected?: boolean };
+    const [isChecked, setIsChecked] = useState(selected || false);
 
     const renderChildren = (fragment: any): React.ReactNode[] => {
         const nodes: React.ReactNode[] = [];

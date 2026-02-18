@@ -28,7 +28,7 @@ import {
     mapQuestionsStatus,
     mergeGeoGebraAnswers,
     parseContentToBlocks,
-} from "./AnswerUtils.tsx";
+} from "../utils/AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
 import PrettyTestResult from "./PrettyTestResult.tsx";

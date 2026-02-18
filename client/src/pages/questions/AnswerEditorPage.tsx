@@ -26,14 +26,14 @@ import QuestionLayout from "../../layouts/QuestionLayout";
 import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
 import {Preview} from "../../components/Editor/Preview";
 import type {JSONContent} from "@tiptap/core";
-import {type Block, type Choice, parseContentToBlocks} from "./AnswerUtils.tsx";
+import {type Block, type Choice, parseContentToBlocks} from "../utils/AnswerUtils.tsx";
 import {NumericAnswer} from "../../components/Editor/AnswerEditor/NumericAnswer.tsx";
 import {LineEquationAnswer} from "../../components/Editor/AnswerEditor/LineEquationAnswer.tsx";
 import {GeoGebraPointAnswer} from "../../components/Editor/AnswerEditor/GeoGebraPointAnswer.tsx";
 import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraLineAnswer.tsx";
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
-import {checkLineEquationHasErrors, checkPointHasErrors} from "./LineEquationValidator.tsx";
+import {checkLineEquationHasErrors, checkPointHasErrors} from "../../components/MathHelper/LineEquationValidator.tsx";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();

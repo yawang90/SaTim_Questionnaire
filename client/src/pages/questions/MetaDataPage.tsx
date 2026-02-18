@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import {Save as SaveIcon} from "@mui/icons-material";
 import {useNavigate, useParams} from "react-router-dom";
-import {initialFormSchema} from "./FormSchema.tsx";
+import {initialFormSchema} from "../utils/FormSchema.tsx";
 import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 

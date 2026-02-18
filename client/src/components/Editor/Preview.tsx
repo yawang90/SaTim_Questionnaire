@@ -22,7 +22,7 @@ import type {JSONContent} from '@tiptap/core';
 import {LatexDisplay} from "./NodeEditorPlugins.tsx";
 import {MathJaxContext} from "better-react-mathjax";
 import Underline from '@tiptap/extension-underline';
-import type {GeoGebraLine, GeoGebraPoint} from "../../pages/questions/AnswerUtils.tsx";
+import type {GeoGebraLine, GeoGebraPoint} from "../../pages/utils/AnswerUtils.tsx";
 import ImageResize from 'tiptap-extension-resize-image';
 
 interface PreviewProps {

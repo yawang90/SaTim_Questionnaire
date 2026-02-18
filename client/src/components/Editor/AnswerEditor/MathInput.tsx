@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Box} from '@mui/material';
 import 'mathlive';
-import {getInterpretedValue} from "../../../pages/questions/LineEquationValidator.tsx";
+import {getInterpretedValue} from "../../MathHelper/LineEquationValidator.tsx";
 
 interface MathInputProps {
     value: string;

@@ -24,8 +24,9 @@ import {
     type LineEquationAnswer,
     mergeGeoGebraAnswers,
     parseContentToBlocks
-} from '../questions/AnswerUtils.tsx';
+} from '../utils/AnswerUtils.tsx';
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import {enrichQuizWithAnswers} from "./utils/EnrichQuizWithAnswers.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -93,6 +94,10 @@ export default function QuizPage() {
                 data = await getQuiz(id, userId, qid);
             } else {
                 data = await getQuiz(id, userId);
+            }
+            if (data?.question) {
+                const contentWithAnswers = enrichQuizWithAnswers(typeof data.question.contentJson === "string" ? JSON.parse(data.question.contentJson) : data.question.contentJson, data.previousAnswer);
+                data.question.contentJson = contentWithAnswers;
             }
             setQuiz(data);
             setQuizFinished(!data.question);

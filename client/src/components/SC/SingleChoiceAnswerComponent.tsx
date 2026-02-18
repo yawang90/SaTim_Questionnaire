@@ -3,12 +3,12 @@ import React from "react";
 import {MathJax} from "better-react-mathjax";
 
 export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) => {
-    const { groupId } = node.attrs as { groupId?: string};
+    const { groupId, selected} = node.attrs as { groupId?: string, selected?: boolean};
 
     const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
         const radios = document.querySelectorAll<HTMLInputElement>(`input[name="group-${groupId || "default"}"]`);
-        radios.forEach(r => (r.checked = false)); // uncheck all siblings
-        (e.currentTarget as HTMLInputElement).checked = true; // check clicked radio
+        radios.forEach(r => (r.checked = false));
+        (e.currentTarget as HTMLInputElement).checked = true;
     };
 
     const renderChildren = (fragment: any): React.ReactNode[] => {
@@ -49,6 +49,7 @@ export const SingleChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) =
                 type="radio"
                 name={`group-${groupId || "default"}`}
                 onClick={handleClick}
+                defaultChecked={selected}
                 style={{ marginBottom: "0.25rem", flexShrink: 0 }}
             />
             <div className="mc-choice-content" style={{ display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap" }}>

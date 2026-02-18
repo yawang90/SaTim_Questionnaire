@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import type {GeoGebraLine, GeoGebraPoint} from "../../pages/questions/AnswerUtils.tsx";
+import type {GeoGebraLine, GeoGebraPoint} from "../../pages/utils/AnswerUtils.tsx";
 import {Alert, Snackbar} from "@mui/material";
 
 interface GeoGebraAnswerComponentProps {
