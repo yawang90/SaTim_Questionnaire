@@ -170,9 +170,9 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 };
             case "geoGebraLines":
                 return {
-                    kind: "geoGebraPoints",
+                    kind: "geoGebraLines",
                     key: block.key,
-                    value: [{ name:"",x: 0, y: 0 }]
+                    value: [{ name:"",m: 0, c: 0 }]
                 };
         }
     });
