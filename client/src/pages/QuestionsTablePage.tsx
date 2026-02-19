@@ -52,13 +52,10 @@ export default function QuestionsTablePage() {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const transformedRows = rows.map((row) => {
-        console.log(row)
         const flatRow: Record<string, any> = { id: row.id, status: row.status, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
         row.metadata.forEach((meta) => {
             flatRow[meta.key] = meta.value;
         });
-        console.log(flatRow)
-
         return flatRow;
     });
 

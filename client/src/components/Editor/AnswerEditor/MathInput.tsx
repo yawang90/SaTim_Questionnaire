@@ -6,12 +6,11 @@ import {getInterpretedValue} from "../../MathHelper/LineEquationValidator.tsx";
 interface MathInputProps {
     value: string;
     onChange: (val: string) => void;
-    placeholder?: string;
     width?: number;
     variables?: string[];
 }
 
-export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placeholder, width = 380, variables = []}) => {
+export const MathInput: React.FC<MathInputProps> = ({ value, onChange, width = 380, variables = []}) => {
     const mathfieldRef = useRef<any>(null);
     const [interpretation, setInterpretation] = useState<{ value: string, error: boolean }>({value: "", error: false});
 
@@ -20,7 +19,6 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
         const mf = mathfieldRef.current;
         mf.menuBar = false;
         mf.smartMode = false;
-        mf.virtualKeyboardMode = 'auto';
         const variableRow = variables.length ? variables : [];
         window.mathVirtualKeyboard.layouts = {
             label: 'Custom',
@@ -46,6 +44,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             mf.removeEventListener('input', handleInput);
         };
     }, [onChange, value, variables]);
+
     useEffect(() => {
         const id = setTimeout(() => {
             if (!value) {
@@ -63,9 +62,8 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
             {/* @ts-ignore */}
             <math-field
                 ref={mathfieldRef}
-                placeholder={placeholder}
                 style={{width, border: '1px solid #ccc', borderRadius: 4, padding: '4px 8px', fontSize: '1rem',}}
-                virtual-keyboard-mode="manual"
+                virtual-keyboard-mode="auto"
                 virtual-keyboards="custom"
             />
             <Box sx={{mt: 0.5, fontSize: "0.75rem", color: interpretation?.error ? "warning.main" : "text.secondary", transition: "opacity 0.15s ease",}}>
