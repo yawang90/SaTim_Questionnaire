@@ -27,7 +27,7 @@ import {
     extractAnswersFromJson,
     mapQuestionsStatus,
     mergeGeoGebraAnswers,
-    parseContentToBlocks,
+    parseContentToBlocks, type QuizStatus,
 } from "../utils/AnswerUtils.tsx";
 import type {useEditor} from '@tiptap/react';
 import {evaluateAnswers} from "../../services/SolverService.tsx";
@@ -39,7 +39,7 @@ export default function AnswerPreviewPage() {
 
     const [questionContent, setQuestionContent] = useState<JSONContent | null>(null);
     const [blocks, setBlocks] = useState<Block[]>([]);
-    const [quizStatus, setQuizStatus] = useState<'in bearbeitung' | 'abgeschlossen' | 'gelöscht'>('in bearbeitung');
+    const [quizStatus, setQuizStatus] = useState<QuizStatus>('in bearbeitung');
     const [loading, setLoading] = useState(false);
     const editorRef = React.useRef<ReturnType<typeof useEditor> | null>(null);
     const [testResult, setTestResult] = useState<any>(null);
@@ -145,6 +145,7 @@ export default function AnswerPreviewPage() {
                                         onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
                                 <FormControlLabel value="in bearbeitung" control={<Radio/>} label="In Bearbeitung"/>
                                 <FormControlLabel value="abgeschlossen" control={<Radio/>} label="Abgeschlossen"/>
+                                <FormControlLabel value="lektorat" control={<Radio/>} label="Lektorat"/>
                                 <FormControlLabel value="gelöscht" control={<Radio/>} label="Gelöscht"/>
                             </RadioGroup>
                         </FormControl>

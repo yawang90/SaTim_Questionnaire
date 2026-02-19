@@ -64,6 +64,7 @@ model BookletQuestion {
 
 enum question_status {
   ACTIVE
+  LECTURE
   FINISHED
   DELETED
 }

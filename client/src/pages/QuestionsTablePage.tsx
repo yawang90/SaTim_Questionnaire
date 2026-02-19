@@ -22,6 +22,8 @@ type QuestionRow = {
         label: string;
         value: string;
     }[];
+    createdBy?: { id: number, first_name: string, last_name: string, email: string };
+    updatedBy?: { id: number, first_name: string, last_name: string, email: string };
 };
 
 type QuestionDetails = {
@@ -50,10 +52,13 @@ export default function QuestionsTablePage() {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const transformedRows = rows.map((row) => {
-        const flatRow: Record<string, any> = { id: row.id, status: row.status};
+        console.log(row)
+        const flatRow: Record<string, any> = { id: row.id, status: row.status, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
         row.metadata.forEach((meta) => {
             flatRow[meta.key] = meta.value;
         });
+        console.log(flatRow)
+
         return flatRow;
     });
 
@@ -69,10 +74,14 @@ export default function QuestionsTablePage() {
                         return <Chip label="Gelöscht" color="secondary" size="small" />;
                     case "FINISHED":
                         return <Chip label="Abgeschlossen" color="primary" size="small" />;
+                    case "LECTURE":
+                        return <Chip label="Lektorat" color="success" size="small" />;
                     default:
                         return <Chip label={value || "Unbekannt"} size="small" />;
                 }
             }, });
+        columns.push({field: "createdBy", headerName: "Erstellt von", width: 140});
+        columns.push({field: "updatedBy", headerName: "Geändert von", width: 140});
         rows[0].metadata.forEach((meta) => {
             columns.push({ field: meta.key, headerName: meta.label, width: 200 });
         });
@@ -107,6 +116,9 @@ export default function QuestionsTablePage() {
                 break;
             case "Abgeschlossen":
                 statusCode = "FINISHED";
+                break;
+            case "Lektorat":
+                statusCode = "LECTURE";
                 break;
             default:
                 statusCode = "";
@@ -192,6 +204,7 @@ export default function QuestionsTablePage() {
                             <MenuItem value="">Alle</MenuItem>
                             <MenuItem value="In Bearbeitung">In Bearbeitung</MenuItem>
                             <MenuItem value="Gelöscht">Gelöscht</MenuItem>
+                            <MenuItem value="Lektorat">Lektorat</MenuItem>
                             <MenuItem value="Abgeschlossen">Abgeschlossen</MenuItem>
                         </Select>
                     </FormControl>

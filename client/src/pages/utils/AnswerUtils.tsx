@@ -2,6 +2,8 @@ import type {JSONContent} from "@tiptap/core";
 import {v4 as uuidv4} from "uuid";
 import type {GeoGebraAnswer} from "../../components/Editor/Preview.tsx";
 
+export type QuizStatus = 'in bearbeitung' | 'abgeschlossen' | 'gelöscht' | 'lektorat';
+
 export type Choice = { id: string; text: string; html?: string };
 
 export type Answer =
@@ -44,7 +46,7 @@ export type Block =
 
 export const mapQuestionsStatus = (
     status: string | null | undefined
-): "in bearbeitung" | "abgeschlossen" | "gelöscht" => {
+): QuizStatus => {
     switch (status) {
         case "ACTIVE":
             return "in bearbeitung";
@@ -52,6 +54,8 @@ export const mapQuestionsStatus = (
             return "abgeschlossen";
         case "DELETED":
             return "gelöscht";
+        case "LECTURE":
+            return "lektorat";
         default:
             return "in bearbeitung";
     }

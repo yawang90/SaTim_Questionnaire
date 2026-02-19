@@ -6,6 +6,7 @@ import {
     updateQuestionContentById,
     updateQuestionMetaById, updateQuestionStatusById
 } from "../services/editorService.js";
+import {question_status} from "@prisma/client";
 
 interface FieldInput {
     key: string;
@@ -22,6 +23,8 @@ interface QuestionContentInput {
     contentJson: object;
     contentHtml: string | null;
 }
+
+export type QuizStatus = 'in bearbeitung' | 'abgeschlossen' | 'gelöscht' | 'lektorat';
 
 export const uploadImage = async (req: Request, res: Response) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -183,7 +186,7 @@ export const duplicateQuestion = async (req: Request, res: Response) => {
     }
 };
 
-const mapFrontendStatusToEnum = (status: string): 'ACTIVE' | 'FINISHED' | 'DELETED' => {
+const mapFrontendStatusToEnum = (status: QuizStatus): question_status => {
     switch (status) {
         case 'in bearbeitung':
             return 'ACTIVE';
@@ -191,6 +194,8 @@ const mapFrontendStatusToEnum = (status: string): 'ACTIVE' | 'FINISHED' | 'DELET
             return 'FINISHED';
         case 'gelöscht':
             return 'DELETED';
+        case 'lektorat':
+            return 'LECTURE';
         default:
             throw new Error('Invalid status');
     }
