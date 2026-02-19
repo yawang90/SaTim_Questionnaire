@@ -38,8 +38,16 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, width = 3
             onChange(latex);
         };
         mf.addEventListener('input', handleInput);
-        mf.addEventListener('focusin', () => window.mathVirtualKeyboard.show());
-        mf.addEventListener('focusout', () => window.mathVirtualKeyboard.hide());
+        mf.addEventListener('focusin', () => {
+            console.log("focused in!!!")
+            console.log(window.mathVirtualKeyboard)
+            window.mathVirtualKeyboard.show()
+        });
+        mf.addEventListener('focusout', () => {
+            console.log("focused out!!!")
+            console.log(window.mathVirtualKeyboard)
+            window.mathVirtualKeyboard.hide()
+        });
         return () => {
             mf.removeEventListener('input', handleInput);
         };
@@ -63,7 +71,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, width = 3
             <math-field
                 ref={mathfieldRef}
                 style={{width, border: '1px solid #ccc', borderRadius: 4, padding: '4px 8px', fontSize: '1rem',}}
-                virtual-keyboard-mode="auto"
+                virtual-keyboard-mode="manual"
                 virtual-keyboards="custom"
             />
             <Box sx={{mt: 0.5, fontSize: "0.75rem", color: interpretation?.error ? "warning.main" : "text.secondary", transition: "opacity 0.15s ease",}}>
