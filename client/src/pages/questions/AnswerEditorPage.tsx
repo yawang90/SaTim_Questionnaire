@@ -34,12 +34,10 @@ import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraL
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
 import {checkLineEquationHasErrors, checkPointHasErrors} from "../../components/MathHelper/LineEquationValidator.tsx";
-import {MathfieldElement} from "mathlive";
 
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
-
     const [blocks, setBlocks] = useState<Block[]>([]);
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
@@ -47,9 +45,7 @@ export default function AnswerEditorPage() {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
-    useEffect(() => {
-        MathfieldElement.fontsDirectory= '/fonts/mathlive';
-    }, []);
+
     useEffect(() => {
         if (!id) return;
         setLoading(true);
