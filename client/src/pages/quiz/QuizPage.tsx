@@ -223,8 +223,8 @@ export default function QuizPage() {
     }
     return (
         <>
-            <AppBar position="fixed" sx={{ width: '100%' }}>
-                <Toolbar sx={{ flexDirection: "column", alignItems: "stretch", py: 1 }}>
+            <AppBar position="static" sx={{ width: '100%' }}>
+                <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1, px: 2 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
                         {questionIds.map((qid, index) => {
                             const isCurrent = quiz?.question?.id === qid;
@@ -251,6 +251,8 @@ export default function QuizPage() {
                             );
                         })}
                     </Box>
+                    <Box sx={{ color: "white", ml: 2 }}>
+                        {"userId:" + userId}</Box>
                 </Toolbar>
             </AppBar>
 
