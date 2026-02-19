@@ -20,7 +20,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, placehold
         const mf = mathfieldRef.current;
         mf.menuBar = false;
         mf.smartMode = false;
-        mf.virtualKeyboardMode = 'manual';
+        mf.virtualKeyboardMode = 'auto';
         const variableRow = variables.length ? variables : [];
         window.mathVirtualKeyboard.layouts = {
             label: 'Custom',
