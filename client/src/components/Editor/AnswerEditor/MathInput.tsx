@@ -17,6 +17,8 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, width = 3
     useEffect(() => {
         if (!mathfieldRef.current) return;
         const mf = mathfieldRef.current;
+        mf.virtualKeyboardMode = "manual"
+        mf.virtualKeyboardPolicy = "sandboxed";
         mf.menuBar = false;
         mf.smartMode = false;
         const variableRow = variables.length ? variables : [];
@@ -37,19 +39,14 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, width = 3
             const latex = mf.getValue('latex-expanded');
             onChange(latex);
         };
-        mf.addEventListener('input', handleInput);
-        mf.addEventListener('focusin', () => {
-            console.log("focused in!!!")
-            console.log(window.mathVirtualKeyboard)
+        const handleToggle = () => {
             window.mathVirtualKeyboard.show()
-        });
-        mf.addEventListener('focusout', () => {
-            console.log("focused out!!!")
-            console.log(window.mathVirtualKeyboard)
-            window.mathVirtualKeyboard.hide()
-        });
+        }
+        mf.addEventListener('input', handleInput);
+        mf.addEventListener("focusin", handleToggle)
         return () => {
             mf.removeEventListener('input', handleInput);
+            mf.removeEventListener("focusin", handleToggle)
         };
     }, [onChange, value, variables]);
 
