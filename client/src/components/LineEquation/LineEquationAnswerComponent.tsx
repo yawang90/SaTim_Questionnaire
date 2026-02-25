@@ -24,40 +24,36 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
     useEffect(() => {
         if (mathfieldRef.current) {
             const mf = mathfieldRef.current
-            mf.smartMode = true;
-            mf.implicitMode = "auto";
+            mf.virtualKeyboardMode = "manual"
+            mf.virtualKeyboardPolicy = "sandboxed";
+            mf.smartMode = false;
             mf.menuBar = false
-            mf.mathVirtualKeyboardPolicy = 'manual'
             window.mathVirtualKeyboard.layouts = {
                 label: 'Custom',
                 tooltip: 'Variables and numbers',
                 rows: [
                     ['0','1','2','3','4','5','6','7','8','9','.', { label: '⌫', command: 'deleteBackward' }],
                     ['x', 'y'],
-                    ['+', '-', '[*]',{ label: ':', command: ['insert', '/'] }, '=', "\\frac{#@}{#?}", '(', ')'],
+                    ['[+]', '[-]', '[*]', { label: ':', command: ['insert', "\\frac{#@}{#?}", '(', ')'] }, '[=]', "\\frac{#@}{#?}", '(', ')'],
                     [], [], []
                 ]
             }
             document.body.style.setProperty('--keycap-height', '32px')
             document.body.style.setProperty('--keycap-font-size', '15px')
-            if (!mf.getValue()) {
-                mf.value = 'y='
-            }
-            if (value) {
-                mf.value = value;
-            }
+            mf.value = value || '';
             const handleInput = () => {
                 const latex = mf.getValue('latex-expanded');
                 updateAttributes({ value: latex });
             }
-
-            mf.addEventListener('input', handleInput)
-            mf.addEventListener('focusin', () => window.mathVirtualKeyboard.show())
-            mf.addEventListener('focusout', () => window.mathVirtualKeyboard.hide())
-
-            return () => {
-                mf.removeEventListener('input', handleInput)
+            const handleToggle = () => {
+                window.mathVirtualKeyboard.show()
             }
+            mf.addEventListener('input', handleInput);
+            mf.addEventListener("focusin", handleToggle)
+            return () => {
+                mf.removeEventListener('input', handleInput);
+                mf.removeEventListener("focusin", handleToggle)
+            };
         }
     }, [updateAttributes]);
 
@@ -71,8 +67,6 @@ export const LineEquationAnswerComponent: React.FC<NodeViewProps> = ({ node, upd
                         style={{width: 380, border: '1px solid #ccc', borderRadius: 4, padding: '4px 8px', fontSize: '1rem',}}
                         virtual-keyboard-mode="manual"
                         virtual-keyboards="custom"
-                        virtual-keyboard-appearance="floating"
-                        virtual-keyboard-theme="material"
                     />
                     <Box sx={{mt: 0.5, fontSize: "0.75rem", color: interpretation?.error ? "warning.main" : "text.secondary", transition: "opacity 0.15s ease",}}>
                         {interpretation?.value && !interpretation.error && (
