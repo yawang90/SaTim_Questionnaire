@@ -74,7 +74,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     if (!editor) return null;
 
     const handleInsertImage = async (url: string) => {
-        editor.chain().focus().setImage({ src: url, width: imageWidth,height: imageHeight }).run();
+        (editor.chain().focus() as any).setImage({ src: url, width: imageWidth,height: imageHeight }).run();
         setImageUrl('');
         setOpen(false);
     };
