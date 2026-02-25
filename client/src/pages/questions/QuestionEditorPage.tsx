@@ -28,7 +28,6 @@ import {
     NumericInput,
     SingleChoice
 } from "../../components/Editor/NodeEditorPlugins.tsx";
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import {Table} from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
@@ -44,14 +43,14 @@ import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
 import {MathJaxContext} from 'better-react-mathjax';
 import Underline from '@tiptap/extension-underline';
-import ImageResize from 'tiptap-extension-resize-image';
+import {InlineResizableImage} from "../../components/Editor/InlineResizableImage.tsx";
 
 export default function QuestionEditorPage() {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
-            Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, Image, ImageResize,
+            Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, InlineResizableImage,
             MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',

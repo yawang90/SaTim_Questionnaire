@@ -330,7 +330,8 @@ export default function AnswerEditorPage() {
                                                             <FormControlLabel
                                                                 key={choice.id}
                                                                 control={<Checkbox checked={(answers[b.key] ?? []).includes(choice.id)} onChange={() => toggleChoice(b.key, choice.id)}/>}
-                                                                label={<MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text}}/></MathJax>}/>
+                                                                label={ <Box sx={{maxWidth: 400, width: 400, overflow: "hidden", wordBreak: "break-word",}}><MathJax dynamic><span dangerouslySetInnerHTML={{__html: choice.html || choice.text,}}/></MathJax></Box>}
+                                                            />
                                                         ))}
                                                     </FormGroup>
                                                 </FormControl>
