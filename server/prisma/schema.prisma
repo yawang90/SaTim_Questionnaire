@@ -90,6 +90,7 @@ model survey {
   booklet                booklet[]
   bookletMappingExcelUrl String?
   bookletVersion         Int              @default(0)
+  freeParam              String?
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
