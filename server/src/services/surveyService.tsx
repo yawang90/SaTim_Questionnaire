@@ -1,5 +1,5 @@
 import prisma from "../config/prismaClient.js";
-import {type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
+import {question_status, type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
 import XLSX from "xlsx";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
 
@@ -30,7 +30,6 @@ interface UpdateSurveyInput {
     updatedById: number;
     status?: survey_status;
 }
-
 
 /**
  * Create a new survey instance for an existing survey
@@ -85,7 +84,6 @@ export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => 
         include: { instances: true },
     });
 };
-
 
 /**
  * Get all surveys
@@ -151,7 +149,6 @@ export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Pro
         include: { instances: true },
     });
 };
-
 
 /**
  * Delete a survey by ID
@@ -245,17 +242,11 @@ export const getBookletsBySurveyId = async (surveyId: number) => {
     });
 };
 
-
 /**
  * Process uploaded survey Excel files
  * Creates new booklets or updates existing ones
  */
-export const processSurveyExcels = async (
-    surveyId: number,
-    slotQuestionFile: Express.Multer.File,
-    bookletSlotFile: Express.Multer.File,
-    createdById: number
-) => {
+export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Express.Multer.File, bookletSlotFile: Express.Multer.File, createdById: number) => {
     const slotToQuestionMap = readSlotToQuestionExcel(slotQuestionFile);
     const bookletMap = readBookletToSlotExcel(bookletSlotFile, slotToQuestionMap);
     const errors: any[] = [];
@@ -265,15 +256,17 @@ export const processSurveyExcels = async (
 
         const validQuestions = await prisma.question.findMany({
             where: { id: { in: questionIds } },
-            select: { id: true },
+            select: { id: true, status: true },
         });
         const validIds = validQuestions.map(q => q.id);
-
+        const unfinishedIds = validQuestions.filter(q => q.status !== question_status.FINISHED).map(q => q.id);
         const missing = questionIds.filter(id => !validIds.includes(id));
-        if (missing.length > 0) {
+
+        if (missing.length > 0 || unfinishedIds.length > 0) {
             errors.push({
                 bookletId,
                 missingQuestionIds: missing,
+                unfinishedQuestionIds: unfinishedIds
             });
         }
     }
@@ -326,79 +319,10 @@ export const processSurveyExcels = async (
     });
 };
 
-
-
-function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
-    const slotQuestionWorkbook = XLSX.read(slotQuestionFile.buffer, {type: "buffer"});
-
-    if (slotQuestionWorkbook.SheetNames.length === 0) {
-        throw new Error("Slot-Question Excel file has no sheets");
-    }
-    const slotQuestionSheetName = slotQuestionWorkbook.SheetNames[0]!;
-    const slotQuestionSheet = slotQuestionWorkbook.Sheets[slotQuestionSheetName];
-    if (!slotQuestionSheet) {
-        throw new Error(`Sheet "${slotQuestionSheetName}" not found in Slot-Question Excel file`);
-    }
-    const slotQuestionData = XLSX.utils.sheet_to_json<Record<string, string>>(slotQuestionSheet, {defval: ""});
-    const slotToQuestionMap: Record<string, number> = {};
-    for (const row of slotQuestionData) {
-        const keys = Object.keys(row);
-        if (keys.length !== 2) {
-            throw new Error(`Expected 2 columns per row, found ${keys.length}: ${JSON.stringify(row)}`);
-        }
-
-        const [questionIdCol, slotCodeCol] = keys as [string, string];
-        const questionId = Number(row[questionIdCol]);
-        const slotCode = row[slotCodeCol]?.toString().trim();
-
-        if (isNaN(questionId)) throw new Error(`Invalid question ID "${row[questionIdCol]}" in row: ${JSON.stringify(row)}`);
-        if (!slotCode) throw new Error(`Empty slot code for question ID "${questionId}" in row: ${JSON.stringify(row)}`);
-
-        if (slotToQuestionMap[slotCode]) {
-            throw new Error(`Duplicate slot code "${slotCode}" found in Slot-Question Excel`);
-        }
-        slotToQuestionMap[slotCode] = questionId;
-    }
-    return slotToQuestionMap;
-}
-
-function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQuestionMap: Record<string, number>) {
-    const bookletSlotWorkbook = XLSX.read(bookletSlotFile.buffer, {type: "buffer"});
-    if (bookletSlotWorkbook.SheetNames.length === 0) {
-        throw new Error("Booklet-Slot Excel file has no sheets");
-    }
-    const bookletSlotSheetName = bookletSlotWorkbook.SheetNames[0]!;
-    const bookletSlotSheet = bookletSlotWorkbook.Sheets[bookletSlotSheetName];
-    if (!bookletSlotSheet) {
-        throw new Error(`Sheet "${bookletSlotSheetName}" not found in Booklet-Slot Excel file`);
-    }
-    const bookletSlotData = XLSX.utils.sheet_to_json<Record<string, string>>(bookletSlotSheet, {defval: ""});
-
-    const bookletMap: Record<string, number[]> = {};
-    for (const row of bookletSlotData) {
-        for (const [bookletNameRaw, slotCodeRaw] of Object.entries(row)) {
-            const bookletName = bookletNameRaw.trim();
-            const slotCode = slotCodeRaw?.toString().trim();
-
-            if (!bookletName) throw new Error(`Empty booklet name found in row: ${JSON.stringify(row)}`);
-            if (!slotCode) throw new Error(`Empty slot code in booklet "${bookletName}" for row: ${JSON.stringify(row)}`);
-
-            const questionId = slotToQuestionMap[slotCode];
-            if (questionId === undefined) throw new Error(`Slot code "${slotCode}" in booklet "${bookletName}" does not exist in Slot-Question mapping`);
-
-            if (!bookletMap[bookletName]) bookletMap[bookletName] = [];
-            bookletMap[bookletName].push(questionId);
-        }
-    }
-    return bookletMap;
-}
-
 /**
  * Export survey answers for selected instances, including question scores
  */
-export const getSurveyExport = async (
-    surveyId: number,
-    instanceIds: number[]
+export const getSurveyExport = async (surveyId: number, instanceIds: number[]
 ): Promise<Buffer> => {
     const survey = await prisma.survey.findUnique({
         where: { id: surveyId },
@@ -481,3 +405,68 @@ export const getSurveyExport = async (
     XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
     return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 };
+
+function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
+    const slotQuestionWorkbook = XLSX.read(slotQuestionFile.buffer, {type: "buffer"});
+
+    if (slotQuestionWorkbook.SheetNames.length === 0) {
+        throw new Error("Slot-Question Excel file has no sheets");
+    }
+    const slotQuestionSheetName = slotQuestionWorkbook.SheetNames[0]!;
+    const slotQuestionSheet = slotQuestionWorkbook.Sheets[slotQuestionSheetName];
+    if (!slotQuestionSheet) {
+        throw new Error(`Sheet "${slotQuestionSheetName}" not found in Slot-Question Excel file`);
+    }
+    const slotQuestionData = XLSX.utils.sheet_to_json<Record<string, string>>(slotQuestionSheet, {defval: ""});
+    const slotToQuestionMap: Record<string, number> = {};
+    for (const row of slotQuestionData) {
+        const keys = Object.keys(row);
+        if (keys.length !== 2) {
+            throw new Error(`Expected 2 columns per row, found ${keys.length}: ${JSON.stringify(row)}`);
+        }
+
+        const [questionIdCol, slotCodeCol] = keys as [string, string];
+        const questionId = Number(row[questionIdCol]);
+        const slotCode = row[slotCodeCol]?.toString().trim();
+
+        if (isNaN(questionId)) throw new Error(`Invalid question ID "${row[questionIdCol]}" in row: ${JSON.stringify(row)}`);
+        if (!slotCode) throw new Error(`Empty slot code for question ID "${questionId}" in row: ${JSON.stringify(row)}`);
+
+        if (slotToQuestionMap[slotCode]) {
+            throw new Error(`Duplicate slot code "${slotCode}" found in Slot-Question Excel`);
+        }
+        slotToQuestionMap[slotCode] = questionId;
+    }
+    return slotToQuestionMap;
+}
+
+function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQuestionMap: Record<string, number>) {
+    const bookletSlotWorkbook = XLSX.read(bookletSlotFile.buffer, {type: "buffer"});
+    if (bookletSlotWorkbook.SheetNames.length === 0) {
+        throw new Error("Booklet-Slot Excel file has no sheets");
+    }
+    const bookletSlotSheetName = bookletSlotWorkbook.SheetNames[0]!;
+    const bookletSlotSheet = bookletSlotWorkbook.Sheets[bookletSlotSheetName];
+    if (!bookletSlotSheet) {
+        throw new Error(`Sheet "${bookletSlotSheetName}" not found in Booklet-Slot Excel file`);
+    }
+    const bookletSlotData = XLSX.utils.sheet_to_json<Record<string, string>>(bookletSlotSheet, {defval: ""});
+
+    const bookletMap: Record<string, number[]> = {};
+    for (const row of bookletSlotData) {
+        for (const [bookletNameRaw, slotCodeRaw] of Object.entries(row)) {
+            const bookletName = bookletNameRaw.trim();
+            const slotCode = slotCodeRaw?.toString().trim();
+
+            if (!bookletName) throw new Error(`Empty booklet name found in row: ${JSON.stringify(row)}`);
+            if (!slotCode) throw new Error(`Empty slot code in booklet "${bookletName}" for row: ${JSON.stringify(row)}`);
+
+            const questionId = slotToQuestionMap[slotCode];
+            if (questionId === undefined) throw new Error(`Slot code "${slotCode}" in booklet "${bookletName}" does not exist in Slot-Question mapping`);
+
+            if (!bookletMap[bookletName]) bookletMap[bookletName] = [];
+            bookletMap[bookletName].push(questionId);
+        }
+    }
+    return bookletMap;
+}

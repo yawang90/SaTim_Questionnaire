@@ -72,6 +72,8 @@ const SurveyUpdatePage = () => {
     });
     const [booklets, setBooklets] = useState<Booklet[]>([]);
     const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<any[]>([]);
+    const [errorDialogOpen, setErrorDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -119,11 +121,9 @@ const SurveyUpdatePage = () => {
             setSurvey({ ...survey, file1, file2 });
         } catch (err: any) {
             if (err?.details) {
-                const msg = err.details
-                    .map((e:any) =>
-                        `Booklet ${e.bookletId}: Fehlende Aufgaben -> ${e.missingQuestionIds.join(", ")}`
-                    ).join("\n");
-                setSnackbar({open: true, message: msg, severity: "error"});
+                setValidationErrors(err.details);
+                setUploadDialogOpen(false);
+                setErrorDialogOpen(true);
             } else {
                 setSnackbar({open: true, message: "Fehler beim Hochladen der Dateien.", severity: "error"});
             }
@@ -323,7 +323,39 @@ const SurveyUpdatePage = () => {
                         </Button>
                     </DialogActions>
                 </Dialog>
+                <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)} fullWidth maxWidth="sm">
+                    <DialogTitle>Excel Validierungsfehler</DialogTitle>
+                    <DialogContent dividers>
+                        {validationErrors.map((e, index) => (
+                            <Box
+                                key={index}
+                                sx={{mb: 2, p: 2, border: "1px solid #e0e0e0", borderRadius: 2, backgroundColor: "#fafafa"}}>
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                    Booklet {e.bookletId}
+                                </Typography>
 
+                                {e.missingQuestionIds?.length > 0 && (
+                                    <Tooltip title="Diese Aufgaben existieren nicht in der Datenbank oder wurden gelöscht." arrow>
+                                    <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                                        Fehlende Aufgaben: {e.missingQuestionIds.join(", ")}
+                                    </Typography></Tooltip>
+                                )}
+
+                                {e.unfinishedQuestionIds?.length > 0 && (
+                                    <Tooltip title="Diese Aufgaben haben nicht den Status 'abgeschlossen', schliessen Sie die Aufgabe ab." arrow>
+                                    <Typography color="warning.main" variant="body2" sx={{ mt: 1 }}>
+                                        Nicht abgeschlossene Aufgaben: {e.unfinishedQuestionIds.join(", ")}
+                                    </Typography></Tooltip>
+                                )}
+                            </Box>
+                        ))}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setErrorDialogOpen(false)} variant="contained">
+                            Verstanden
+                        </Button>
+                    </DialogActions>
+                </Dialog>
                 <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                     <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
                 </Snackbar>
