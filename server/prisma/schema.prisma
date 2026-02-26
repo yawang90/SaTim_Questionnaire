@@ -153,6 +153,7 @@ model answer {
   booklet  booklet        @relation("BelongsToBooklet", fields: [bookletId], references: [id])
 
   @@unique([surveyId, instanceId, bookletId, userId])
+  @@index([userId, instanceId])
 }
 
 model questionAnswer {
@@ -161,7 +162,7 @@ model questionAnswer {
   questionId       Int
   answerJson       Json?
   createdAt        DateTime  @default(now())
-  solvedTime       Float?
+  solvedTime       Float?    @default(0.0)
   solvingTimeStart DateTime  @default(now())
   solvingTimeEnd   DateTime?
   skipped          Boolean   @default(false)

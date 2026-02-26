@@ -1,5 +1,5 @@
 import type {Request, Response} from "express";
-import {getQuiz, skipQuestion, submitQuizAnswer} from "../services/quizService.js";
+import {getQuiz, skipQuestion, submitQuizAnswer, trackQuestionTime} from "../services/quizService.js";
 
 /**
  * Get a quiz by ID
@@ -73,3 +73,20 @@ export const skipQuestionHandler = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to skip question" });
     }
 };
+
+/**
+ * Track time spent on a quiz question
+ */
+export const trackQuestionTimeHandler = async (req: Request, res: Response) => {
+    try {
+        const { instanceId, questionId, userId, seconds } = req.body
+        if (!instanceId || !questionId || !userId || seconds === undefined) {
+            return res.status(400).json({ error: "Missing required fields" })
+        }
+        await trackQuestionTime(userId, Number(questionId), Number(instanceId), Number(seconds))
+        res.status(200).json({ success: true })
+    } catch (err: any) {
+        console.error("Error tracking question time:", err)
+        res.status(500).json({ error: "Failed to track time" })
+    }
+}

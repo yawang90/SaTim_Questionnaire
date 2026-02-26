@@ -115,3 +115,26 @@ export async function skipQuestion(questionId: number, instanceId: string, userI
     }
     return res.json();
 }
+
+export async function trackQuestionTime(instanceId: string, questionId: number, userId: string, seconds: number ) {
+    const res = await fetch(
+        `${API_BASE}/api/quiz/track-time`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                instanceId,
+                questionId,
+                userId,
+                seconds
+            })
+        }
+    )
+    if (!res.ok) {
+        const msg = await res.text()
+        throw new Error(`Failed to track time: ${msg}`)
+    }
+    return res.json()
+}

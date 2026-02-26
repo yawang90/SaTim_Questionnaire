@@ -135,8 +135,6 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
     if (!questionAnswer) {
         throw new Error("ANSWER_QUESTIONS_RECORD_NOT_FOUND");
     }
-    const now = new Date();
-    const timeSolvedSeconds = Math.round((now.getTime() - questionAnswer.solvingTimeStart.getTime()) / 1000);
     const updatedQA = await prisma.questionAnswer.update({
         where: {
             id: questionAnswer.id,
@@ -144,8 +142,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         data: {
             answerJson,
             skipped: false,
-            solvingTimeEnd: now,
-            solvedTime: timeSolvedSeconds
+            solvingTimeEnd: new Date()
         },
     });
 
@@ -231,11 +228,32 @@ export async function skipQuestion(userId: string, questionId: number, instanceI
         data: {
             skipped: true,
             answerJson: {},
-            solvingTimeEnd: new Date(),
-            solvedTime: Math.round(
-                (Date.now() - qa.solvingTimeStart.getTime()) / 1000
-            ),
+            solvingTimeEnd: new Date()
         },
     });
 }
 
+export async function trackQuestionTime(userId: string, questionId: number, instanceId: number, seconds: number) {
+    const answer = await prisma.answer.findFirst({
+        where: {
+            userId,
+            instanceId,
+            questionIds: {
+                has: questionId
+            }
+        }
+    })
+    if (!answer) return
+    await prisma.questionAnswer.update({
+        where: {
+            answerId_questionId: {
+                answerId: answer.id,
+                questionId
+            }
+        },
+        data: {
+            solvedTime: {
+                increment: seconds
+            }}
+    })
+}

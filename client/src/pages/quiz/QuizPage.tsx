@@ -7,7 +7,7 @@ import {
     type Quiz,
     type Quiz as QuizType,
     skipQuestion,
-    submitAnswer
+    submitAnswer, trackQuestionTime
 } from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
@@ -49,7 +49,7 @@ export default function QuizPage() {
     });
     const [questionIds, setQuestionIds] = useState<number[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
-
+    const questionStartRef = React.useRef<number>(Date.now())
     const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
         setGeoGebraAnswers(prev => {
             const idx = prev.findIndex(a => a.id === answer.id);
@@ -193,6 +193,22 @@ export default function QuizPage() {
             setSubmitting(false);
         }
     };
+
+    const flushQuestionTime = async () => {
+        if (!quiz?.question || !userId || !id) return
+        const elapsed = Math.floor((Date.now() - questionStartRef.current) / 1000)
+        try {
+            await trackQuestionTime(id, quiz.question.id, userId, elapsed)
+            questionStartRef.current = Date.now()
+        } catch (e) {
+            console.error("Time tracking failed", e)
+        }
+    }
+
+    useEffect(() => {
+        const interval = setInterval(() => {flushQuestionTime()}, 60000)
+        return () => clearInterval(interval)
+    }, [quiz, userId, id])
 
     if (loading)
         return (
