@@ -19,7 +19,12 @@ import {
 import {Save as SaveIcon} from "@mui/icons-material";
 import {useNavigate, useParams} from "react-router-dom";
 import {initialFormSchema} from "../utils/FormSchema.tsx";
-import {createQuestionForm, loadQuestionForm, updateQuestionForm} from "../../services/EditorService.tsx";
+import {
+    createQuestionForm,
+    loadQuestionForm,
+    type Question,
+    updateQuestionForm
+} from "../../services/EditorService.tsx";
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox" | "select";
@@ -47,6 +52,8 @@ export default function MetaDataPage() {
         severity: "success" as "success" | "error",
     });
     const { id } = useParams<{ id: string }>();
+    const [question, setQuestion] = useState<Question>();
+
     const handleTextChange = (key: string, value: string) => {
         setFormSchema((prev) =>
             prev.map((field) =>
@@ -120,6 +127,7 @@ export default function MetaDataPage() {
             setLoading(true);
             loadQuestionForm(id)
                 .then((data) => {
+                    setQuestion(data);
                     setFormSchema(data.metadata ?? []);
                 })
                 .catch((err) => console.error("Error loading question form data", err))
@@ -129,7 +137,7 @@ export default function MetaDataPage() {
 
     return (
         <MainLayout>
-            <QuestionLayout>
+            <QuestionLayout question={question}>
                 <Box sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
                     <Paper elevation={0} sx={{ padding: 3, border: "2px solid #000" }}>
                         <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: "center", fontWeight: "bold" }}>

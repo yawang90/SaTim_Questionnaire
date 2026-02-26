@@ -2,6 +2,7 @@ import React from "react";
 import {Box, Step, StepLabel, Stepper} from "@mui/material";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import MainLayout from "./MainLayout";
+import type {Question} from "../services/EditorService.tsx";
 
 const steps = [
     { label: "Metadaten", path: "/meta" },
@@ -12,16 +13,27 @@ const steps = [
 
 interface QuestionLayoutProps {
     children: React.ReactNode;
-    allowedSteps?: boolean[];
+    question?: Question;
 }
 
-export default function QuestionLayout({children, allowedSteps = [true, false, false, false],}: QuestionLayoutProps) {
+export default function QuestionLayout({children, question}: QuestionLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams();
-
+    const getAllowedSteps = (question?: Question): boolean[] => {
+        if (!question) return [true, false, false, false];
+        const hasMetadata = Array.isArray(question.metadata) && question.metadata.length > 0;
+        const hasContent = question.contentJson && typeof question.contentJson === "object" && Object.keys(question.contentJson as object).length > 0;
+        const hasCorrectAnswers = !!question.correctAnswers && Object.keys(question.correctAnswers).length > 0;
+        return [
+            true,
+            hasMetadata,
+            hasMetadata && hasContent,
+            hasMetadata && hasContent && hasCorrectAnswers
+        ];
+    };
+    const enabledSteps = getAllowedSteps(question);
     const activeStep = steps.findIndex((s) => location.pathname.startsWith(s.path));
-
     const handleStepClick = (path: string, enabled: boolean) => {
         if (!enabled) return;
         if (id) navigate(`${path}/${id}`);
@@ -34,12 +46,32 @@ export default function QuestionLayout({children, allowedSteps = [true, false, f
                 <Box sx={{ mb: 4 }}>
                     <Stepper activeStep={activeStep} alternativeLabel>
                         {steps.map((step, index) => {
-                            const enabled = allowedSteps[index];
                             return (
                                 <Step
                                     key={step.label}
-                                    onClick={() => handleStepClick(step.path, enabled)}
-                                    sx={{cursor: enabled ? "pointer" : "not-allowed", opacity: enabled ? 1 : 0.5, pointerEvents: enabled ? "auto" : "none", "& .MuiStepLabel-label": {color: enabled ? "text.primary" : "text.disabled",},}}>
+                                    active={activeStep === index}
+                                    completed={enabledSteps[index] && index !== activeStep}
+                                    disabled={!enabledSteps[index]}
+                                    onClick={() => handleStepClick(step.path, enabledSteps[index])}
+                                    sx={{
+                                        cursor: enabledSteps[index] ? "pointer" : "not-allowed",
+                                        "& .MuiStepLabel-label": {
+                                            color: enabledSteps[index]
+                                                ? "primary.main"
+                                                : "text.disabled",
+                                        },
+                                        "& .MuiStepIcon-root": {
+                                            color: enabledSteps[index]
+                                                ? "primary.main"
+                                                : undefined,
+                                        },
+                                        "& .MuiStepIcon-root.Mui-completed": {
+                                            color: "primary.main",
+                                        },
+                                        "& .MuiStepIcon-root.Mui-active": {
+                                            color: "info.main",
+                                        },
+                                    }}>
                                     <StepLabel>{step.label}</StepLabel>
                                 </Step>
                             );

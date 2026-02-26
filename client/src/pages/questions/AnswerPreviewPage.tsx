@@ -20,7 +20,7 @@ import {
 import {Save} from '@mui/icons-material';
 import {useNavigate, useParams} from 'react-router-dom';
 import {type GeoGebraAnswer, Preview} from '../../components/Editor/Preview';
-import {loadQuestionForm, updateQuestionStatus} from '../../services/EditorService.tsx';
+import {loadQuestionForm, type Question, updateQuestionStatus} from '../../services/EditorService.tsx';
 import type {JSONContent} from '@tiptap/core';
 import {
     type Block,
@@ -53,6 +53,7 @@ export default function AnswerPreviewPage() {
         message: '',
         severity: 'info',
     });
+    const [question, setQuestion] = useState<Question>();
     const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
     const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
         setGeoGebraAnswers(prev => {
@@ -72,6 +73,7 @@ export default function AnswerPreviewPage() {
         (async () => {
             try {
                 const question = await loadQuestionForm(id);
+                setQuestion(question);
                 const content = question.contentJson;
                 setQuestionContent(content);
                 setQuizStatus(mapQuestionsStatus(question.status));
@@ -130,7 +132,7 @@ export default function AnswerPreviewPage() {
 
     return (
         <MainLayout>
-            <QuestionLayout allowedSteps={[true, true, true, true]}>
+            <QuestionLayout question={question}>
                 <Box sx={{minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
                     <Paper elevation={0} sx={{padding: 3, border: '2px solid #000'}}>
                         <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>

@@ -23,7 +23,7 @@ import {ExpandMore, Save} from "@mui/icons-material";
 import {useNavigate, useParams} from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import QuestionLayout from "../../layouts/QuestionLayout";
-import {loadQuestionForm, updateQuestionAnswers} from "../../services/EditorService.tsx";
+import {loadQuestionForm, type Question, updateQuestionAnswers} from "../../services/EditorService.tsx";
 import {Preview} from "../../components/Editor/Preview";
 import type {JSONContent} from "@tiptap/core";
 import {type Block, type Choice, parseContentToBlocks} from "../utils/AnswerUtils.tsx";
@@ -45,6 +45,7 @@ export default function AnswerEditorPage() {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
+    const [question, setQuestion] = useState<Question>();
 
     useEffect(() => {
         if (!id) return;
@@ -52,6 +53,7 @@ export default function AnswerEditorPage() {
         (async () => {
             try {
                 const question = await loadQuestionForm(id);
+                setQuestion(question);
                 const contentJson = question.contentJson;
                 setQuestionContentJson(contentJson);
                 const parsedBlocks = parseContentToBlocks(contentJson);
@@ -291,7 +293,7 @@ export default function AnswerEditorPage() {
 
     return (
         <MainLayout>
-            <QuestionLayout allowedSteps={[true, true, true, false]}>
+            <QuestionLayout question={question}>
                 <MathJaxContext>
                     <Box sx={{minHeight: "100vh", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6}}>
                         <Paper elevation={0} sx={{p: 3, border: "2px solid #000"}}>

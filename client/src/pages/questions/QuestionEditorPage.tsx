@@ -38,7 +38,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import {FontFamily, FontSize, TextStyle} from '@tiptap/extension-text-style';
 import AddIcon from '@mui/icons-material/Add';
 import {Preview} from "../../components/Editor/Preview.tsx";
-import {loadQuestionForm, updateQuestionContent} from '../../services/EditorService.tsx';
+import {loadQuestionForm, type Question, updateQuestionContent} from '../../services/EditorService.tsx';
 import {useNavigate, useParams} from "react-router-dom";
 import {Save as SaveIcon} from "@mui/icons-material";
 import {MathJaxContext} from 'better-react-mathjax';
@@ -69,6 +69,7 @@ export default function QuestionEditorPage() {
         message: "",
         severity: "success" as "success" | "error",
     });
+    const [question, setQuestion] = useState<Question>();
 
     const addMCChoiceBlock = () => {
         if (!editor) return;
@@ -219,7 +220,7 @@ export default function QuestionEditorPage() {
         (async () => {
             try {
                 const question = await loadQuestionForm(id);
-                question.groupId = 999;
+                setQuestion(question);
                 if (editor && question.contentJson) {
                     editor.commands.setContent(question.contentJson);
                 }
@@ -231,7 +232,7 @@ export default function QuestionEditorPage() {
 
     return (
         <MainLayout>
-            <QuestionLayout allowedSteps={[true, true, true, true]}>
+            <QuestionLayout question={question}>
                 <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6 }}>
                     <Paper elevation={0} sx={{ padding: 3, border: '2px solid #000' }}>
                         <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
