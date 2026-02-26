@@ -72,10 +72,7 @@ export default function AnswerPreviewPage() {
         (async () => {
             try {
                 const question = await loadQuestionForm(id);
-                const content =
-                    typeof question.contentJson === 'string'
-                        ? JSON.parse(question.contentJson)
-                        : question.contentJson ?? {type: 'doc', content: []};
+                const content = question.contentJson;
                 setQuestionContent(content);
                 setQuizStatus(mapQuestionsStatus(question.status));
                 const parsedBlocks: Block[] = parseContentToBlocks(content);

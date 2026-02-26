@@ -52,9 +52,7 @@ export default function AnswerEditorPage() {
         (async () => {
             try {
                 const question = await loadQuestionForm(id);
-                const contentJson = typeof question.contentJson === "string"
-                    ? JSON.parse(question.contentJson)
-                    : question.contentJson ?? {type: "doc", content: []};
+                const contentJson = question.contentJson;
                 setQuestionContentJson(contentJson);
                 const parsedBlocks = parseContentToBlocks(contentJson);
                 setBlocks(parsedBlocks);

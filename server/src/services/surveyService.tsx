@@ -322,8 +322,7 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
 /**
  * Export survey answers for selected instances, including question scores
  */
-export const getSurveyExport = async (surveyId: number, instanceIds: number[]
-): Promise<Buffer> => {
+export const getSurveyExport = async (surveyId: number, instanceIds: number[]): Promise<Buffer> => {
     const survey = await prisma.survey.findUnique({
         where: { id: surveyId },
     });
@@ -377,7 +376,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]
                 AufgabeID_System: qa.questionId,
                 Aufgabe_Position: position,
                 Aufgabe_RawResponse: JSON.stringify(qa.answerJson ?? []),
-                Aufgabe_Score: result.score,
+                Aufgabe_Score: result?.score,
                 Aufgabe_StartedAt: qa.solvingTimeStart?.toISOString() ?? "",
                 Aufgabe_FinishedAt: qa.solvingTimeEnd?.toISOString() ?? "",
                 Aufgabe_Zeit_MS: qa.solvedTime

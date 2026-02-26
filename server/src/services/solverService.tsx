@@ -75,19 +75,23 @@ export interface EvaluateResult {
     details: EvaluateDetail[];
 }
 
-export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult> => {
+export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult| null> => {
     const questionEntry: Pick<question, "id" | "correctAnswers"> | null =
         await prisma.question.findUnique({
             where: {id: questionId},
             select: {id: true, correctAnswers: true}
         });
 
-    if (!questionEntry) throw new Error("Question not found");
+    if (!questionEntry) {
+        console.log("Question not found at evaluateAnswers.");
+        return null;
+    }
 
     const correctAnswers = questionEntry.correctAnswers as CorrectAnswersJson | null;
 
     if (!correctAnswers || typeof correctAnswers !== "object") {
-        throw new Error("No correct answers found for this question");
+        console.log("No correct answers found for this question");
+        return null;
     }
 
     let score = 0;

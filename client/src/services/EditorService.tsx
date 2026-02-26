@@ -1,7 +1,21 @@
 import {authFetch} from "./AuthFetchHelper.tsx";
+import type {MetaField} from "../pages/questions/MetaDataPage.tsx";
 
 // @ts-expect-error
 const API_URL = import.meta.env.VITE_API_URL;
+export interface Question {
+    id: number;
+    title: string;
+    contentJson: JSON;
+    createdById: string;
+    createdAt: string;
+    updatedById?: string;
+    updatedAt?: string;
+    status: string;
+    groupId: number;
+    correctAnswers?: Record<string, any>;
+    metadata?: MetaField[];
+}
 
 /**
  * Helper for request with error handling
@@ -40,7 +54,7 @@ export async function createQuestionForm(formData: Record<string, any>, groupId:
  * Load metadata entry by ID (for editing)
  * @param id - The ID of the metadata
  */
-export async function loadQuestionForm(id: string) {
+export async function loadQuestionForm(id: string): Promise<Question> {
     const token = localStorage.getItem("token");
     const response = await authFetch(`${API_URL}/api/editor/question/${id}`, {
         method: "GET",
@@ -78,7 +92,7 @@ export async function updateQuestionForm(id: string, formData: Record<string, an
  */
 export async function updateQuestionContent(id: string, contentJson: object, contentHtml: string | null) {
     const token = localStorage.getItem("token");
-    const payload = { contentJson, contentHtml };
+    const payload = {contentJson, contentHtml};
     const response = await authFetch(`${API_URL}/api/editor/question/${id}/content`, {
         method: "PATCH",
         headers: {
@@ -134,7 +148,7 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
  */
 export async function updateQuestionAnswers(id: string, answers: Record<string, any>) {
     const token = localStorage.getItem("token");
-    const payload = { answers };
+    const payload = {answers};
     const response = await authFetch(`${API_URL}/api/editor/question/${id}/answers`, {
         method: "PATCH",
         headers: {
@@ -153,7 +167,7 @@ export async function updateQuestionAnswers(id: string, answers: Record<string, 
  */
 export async function updateQuestionStatus(id: string, status: string) {
     const token = localStorage.getItem("token");
-    const payload = { status };
+    const payload = {status};
     const response = await authFetch(`${API_URL}/api/editor/question/${id}/status`, {
         method: "PATCH",
         headers: {

@@ -9,7 +9,7 @@ import MainLayout from "../layouts/MainLayout.tsx";
 import {DataGrid, type GridColDef, type GridRowId} from "@mui/x-data-grid";
 import { Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import {duplicateQuestion, loadAllQuestions, loadQuestionForm} from "../services/EditorService.tsx";
+import {duplicateQuestion, loadAllQuestions, loadQuestionForm, type Question} from "../services/EditorService.tsx";
 import {type FullUser, getUserById} from "../services/UserService.tsx";
 
 const groupId = "999";
@@ -26,16 +26,6 @@ type QuestionRow = {
     updatedBy?: { id: number, first_name: string, last_name: string, email: string };
 };
 
-type QuestionDetails = {
-    id: number;
-    title: string;
-    createdById: string;
-    createdAt: string;
-    updatedById?: string;
-    updatedAt?: string;
-    status: string;
-};
-
 export default function QuestionsTablePage() {
     const navigate = useNavigate();
     const [filterStatus, setFilterStatus] = useState<string>("");
@@ -43,7 +33,7 @@ export default function QuestionsTablePage() {
     const [rows, setRows] = useState<QuestionRow[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [selectedQuestion, setSelectedQuestion] = useState<QuestionDetails | null>(null);
+    const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
     const [detailsLoading, setDetailsLoading] = useState<boolean>(false);
     const [createdByUser, setCreatedByUser] = useState<FullUser | null>(null);
     const [updatedByUser, setUpdatedByUser] = useState<FullUser | null>(null);
@@ -103,7 +93,7 @@ export default function QuestionsTablePage() {
         const searchId = parseInt(searchText, 10);
         const matchesId = searchText ? row.id === searchId : true;
 
-        let statusCode = "";
+        let statusCode: string;
         switch (filterStatus) {
             case "In Bearbeitung":
                 statusCode = "ACTIVE";
