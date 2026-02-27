@@ -25,7 +25,7 @@ export interface NextQuestion {
     skippedQuestions: number[];
 }
 
-export async function getQuiz(instanceId: string, userId: string, questionId?: number): Promise<NextQuestion> {
+export async function getQuiz(instanceId: string, userId: string, questionId?: number, freeParam?: string): Promise<NextQuestion> {
     const instance = await prisma.surveyInstance.findUnique({
         where: {id: Number(instanceId)},
     });
@@ -50,6 +50,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 instanceId: instance.id,
                 bookletId: booklet.id,
                 userId,
+                freeParam: freeParam ? freeParam: null,
                 questionIds: booklet.BookletQuestion.map(bq => bq.question.id),
             },
             include: { questionsAnswers: true, booklet: { include: { BookletQuestion: true } } },

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useParams} from "react-router-dom";
+import {useParams, useSearchParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
 import {
     type AnswerDTO,
@@ -30,6 +30,8 @@ import {enrichQuizWithAnswers} from "./utils/EnrichQuizWithAnswers.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
+    const freeParam = searchParams.get("freeParam");
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
@@ -65,18 +67,15 @@ export default function QuizPage() {
     useEffect(() => {
         const key = "quizUserId";
         const expiryKey = "quizUserIdExpiry";
-
         let storedUser = localStorage.getItem(key);
         const expiry = localStorage.getItem(expiryKey);
         const now = new Date().getTime();
-
         if (!storedUser || !expiry || now > parseInt(expiry)) {
             storedUser = uuidv4();
             const fourteenDays = 14 * 24 * 60 * 60 * 1000;
             localStorage.setItem(key, storedUser);
             localStorage.setItem(expiryKey, (now + fourteenDays).toString());
         }
-
         setUserId(storedUser);
     }, []);
 
@@ -91,9 +90,9 @@ export default function QuizPage() {
         try {
             let data: Quiz;
             if (qid) {
-                data = await getQuiz(id, userId, qid);
+                data = await getQuiz(id, userId, qid, freeParam);
             } else {
-                data = await getQuiz(id, userId);
+                data = await getQuiz(id, userId, undefined, freeParam);
             }
             if (data?.question) {
                 const contentWithAnswers = enrichQuizWithAnswers(typeof data.question.contentJson === "string" ? JSON.parse(data.question.contentJson) : data.question.contentJson, data.previousAnswer);

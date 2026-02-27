@@ -57,20 +57,22 @@ export interface AnswerDTO {
  * @param id Quiz ID
  * @param userId Cookie Session ID
  * @param questionId
+ * @param freeParam
  * @returns Quiz object
  */
-export async function getQuiz(id: string, userId: string, questionId?: number): Promise<Quiz> {
+export async function getQuiz(id: string, userId: string, questionId?: number, freeParam?: string | null): Promise<Quiz> {
     const url = new URL(`${API_BASE}/api/quiz/instance/${id}`);
-    url.searchParams.set("userId", userId);
-    if (questionId) {
-        url.searchParams.set("questionId", questionId.toString());
-    }
     const res = await fetch(url.toString(), {
+        method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
+        body: JSON.stringify({
+            userId,
+            freeParam: freeParam,
+            questionId: questionId
+        })
     });
-
     if (!res.ok) {
         if (res.status === 403) {
             throw new Error("NOT_ACTIVE");

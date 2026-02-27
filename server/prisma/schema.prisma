@@ -90,7 +90,6 @@ model survey {
   booklet                booklet[]
   bookletMappingExcelUrl String?
   bookletVersion         Int              @default(0)
-  freeParam              String?
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
@@ -148,6 +147,7 @@ model answer {
   questionsAnswers questionAnswer[] @relation("BelongsToAnswer")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  freeParam        String?
 
   survey   survey         @relation("BelogsToSurvey", fields: [surveyId], references: [id])
   instance surveyInstance @relation("BelongsToInstance", fields: [instanceId], references: [id])

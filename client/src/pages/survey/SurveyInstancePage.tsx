@@ -122,7 +122,7 @@ const SurveyInstancePage = () => {
     };
 
     const handleOpenLinkDialog = (instance: SurveyInstance) => {
-        const url = `${window.location.origin}/quiz/${instance.id}`;
+        const url = `${window.location.origin}/quiz/${instance.id}?freeParam=`;
         setGeneratedLink(url);
         setLinkDialogOpen(true);
     };
@@ -371,7 +371,10 @@ const SurveyInstancePage = () => {
                         <Typography gutterBottom>
                             Diesen Link kannst du teilen, um die Umfrage aufzurufen:
                         </Typography>
-                        <TextField fullWidth value={generatedLink} InputProps={{ readOnly: true }} sx={{ mt: 1 }}/>
+                        <TextField fullWidth value={generatedLink} onChange={(e) => setGeneratedLink(e.target.value)} sx={{ mt: 1 }}/>
+                        <Typography  color="text.secondary">
+                            Den "freeParam" kannst du benutzen um innerhalb eine Durchführungen Antworten zu kennzeichnen (z.B freeParam=Lehrer).
+                        </Typography>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setLinkDialogOpen(false)}>Schließen</Button>
