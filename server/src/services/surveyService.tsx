@@ -373,13 +373,15 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                 GruppenBezeichnung: instance.name,
                 Booklet_ID: answer.booklet.bookletId,
                 Booklet_Version: answer.booklet.version,
+                Freier_Parameter: answer.freeParam,
                 AufgabeID_System: qa.questionId,
                 Aufgabe_Position: position,
                 Aufgabe_RawResponse: JSON.stringify(qa.answerJson ?? []),
                 Aufgabe_Score: result?.score,
                 Aufgabe_StartedAt: qa.solvingTimeStart?.toISOString() ?? "",
                 Aufgabe_FinishedAt: qa.solvingTimeEnd?.toISOString() ?? "",
-                Aufgabe_Zeit_MS: qa.solvedTime
+                Aufgabe_Zeit_MS: qa.solvedTime,
+                Aufgabe_Skipped: qa.skipped,
             });
 
         }
@@ -392,6 +394,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
         "GruppenBezeichnung",
         "Booklet_ID",
         "Booklet_Version",
+        "Freier_Parameter",
         "AufgabeID_System",
         "Aufgabe_Position",
         "Aufgabe_RawResponse",
@@ -399,6 +402,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
         "Aufgabe_StartedAt",
         "Aufgabe_FinishedAt",
         "Aufgabe_Zeit_MS",
+        "Aufgabe_Skipped"
     ];
     const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
     XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
