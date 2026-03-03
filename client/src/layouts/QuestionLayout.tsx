@@ -1,5 +1,5 @@
 import React from "react";
-import {Box, Step, StepLabel, Stepper} from "@mui/material";
+import {Alert, Box, Step, StepLabel, Stepper} from "@mui/material";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import MainLayout from "./MainLayout";
 import type {Question} from "../services/EditorService.tsx";
@@ -44,6 +44,12 @@ export default function QuestionLayout({children, question}: QuestionLayoutProps
         <MainLayout>
             <Box sx={{minHeight: "100vh", backgroundColor: "background.default", py: 3, px: 2, display: "flex", flexDirection: "column", mt: 6,}}>
                 <Box sx={{ mb: 4 }}>
+                    {question && !question.isEditable && (
+                        <Alert severity="warning" sx={{ mb: 3 }}>
+                            Diese Frage kann nicht mehr bearbeitet werden,
+                            da sie bereits in einem Booklet verwendet wird und abgeschlossen ist.
+                        </Alert>
+                    )}
                     <Stepper activeStep={activeStep} alternativeLabel>
                         {steps.map((step, index) => {
                             return (

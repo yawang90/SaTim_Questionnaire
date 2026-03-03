@@ -142,10 +142,14 @@ export default function AnswerPreviewPage() {
                         <FormControl component="fieldset">
                             <RadioGroup sx={{justifyContent: 'center', display: 'flex', gap: 3}} value={quizStatus}
                                         onChange={(e) => setQuizStatus(e.target.value as typeof quizStatus)}>
-                                <FormControlLabel value="in bearbeitung" control={<Radio/>} label="In Bearbeitung"/>
-                                <FormControlLabel value="abgeschlossen" control={<Radio/>} label="Abgeschlossen"/>
-                                <FormControlLabel value="lektorat" control={<Radio/>} label="Lektorat"/>
-                                <FormControlLabel value="gelöscht" control={<Radio/>} label="Gelöscht"/>
+                                <FormControlLabel   disabled={!question?.isEditable}
+                                                    value="in bearbeitung" control={<Radio/>} label="In Bearbeitung"/>
+                                <FormControlLabel   disabled={!question?.isEditable}
+                                                    value="abgeschlossen" control={<Radio/>} label="Abgeschlossen"/>
+                                <FormControlLabel   disabled={!question?.isEditable}
+                                                    value="lektorat" control={<Radio/>} label="Lektorat"/>
+                                <FormControlLabel   disabled={!question?.isEditable}
+                                                    value="gelöscht" control={<Radio/>} label="Gelöscht"/>
                             </RadioGroup>
                         </FormControl>
 
@@ -169,7 +173,7 @@ export default function AnswerPreviewPage() {
                                     <Button variant="outlined" onClick={handleResetAnswers}>
                                         Single Choice zurücksetzen
                                     </Button>
-                                    <Button variant="contained" startIcon={<Save/>} onClick={handleSaveStatus}>
+                                    <Button variant="contained" startIcon={<Save/>} disabled={!question?.isEditable} onClick={handleSaveStatus}>
                                         Speichern
                                     </Button>
                                 </Box>

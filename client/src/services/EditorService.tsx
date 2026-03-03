@@ -15,6 +15,7 @@ export interface Question {
     groupId: number;
     correctAnswers?: Record<string, any>;
     metadata?: MetaField[];
+    isEditable: boolean;
 }
 
 /**

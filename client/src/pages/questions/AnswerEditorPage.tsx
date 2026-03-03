@@ -429,7 +429,7 @@ export default function AnswerEditorPage() {
                                 <Button variant="outlined" onClick={() => navigate(`/editor/${id}`)}>Zurück</Button>
                                 <Button variant="outlined" onClick={() => setOpenPreview(true)}>Vorschau</Button>
                                 <Button variant="contained" startIcon={<Save/>} onClick={handleSaveAnswers}
-                                        disabled={loading}>
+                                        disabled={loading || !question?.isEditable}>
                                     {loading ? "Speichern…" : "Speichern"}
                                 </Button>
                             </Box>

@@ -21,6 +21,9 @@ interface UpdateMetadataInput {
     updatedById: number;
 }
 
+type QuestionWithEditFlag = question & {
+    isEditable: boolean;
+};
 export const saveImage = async (file: Express.Multer.File): Promise<string> => {
     const safeName = file.originalname.replace(/\s+/g, "_");
     const fileName = `${Date.now()}_${safeName}`;
@@ -58,12 +61,33 @@ export const createQuestionMeta = async (data: CreateQuestionInput): Promise<que
 /**
  * Find a metadata entry by ID
  */
-export const findQuestionById = async (id: number): Promise<question | null> => {
-    return prisma.question.findUnique({
-        where: {id},
-    });
-};
+export const findQuestionById = async (
+    id: number
+): Promise<QuestionWithEditFlag | null> => {
 
+    const result = await prisma.question.findUnique({
+        where: { id },
+        include: {
+            bookletQuestion: {
+                select: { questionId: true }
+            }
+        }
+    });
+
+    if (!result) return null;
+
+    const appearsInBooklet = result.bookletQuestion.length > 0;
+    const isFinished = result.status === "FINISHED";
+    const isEditable = !(appearsInBooklet && isFinished);
+
+    // remove relation if you don’t want to expose it
+    const { bookletQuestion, ...questionData } = result;
+
+    return {
+        ...questionData,
+        isEditable
+    };
+};
 /**
  * Update question metadata
  */

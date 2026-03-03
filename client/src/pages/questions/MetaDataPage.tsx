@@ -228,7 +228,7 @@ export default function MetaDataPage() {
                                 <Button variant="outlined" fullWidth onClick={() => navigate("/table")}>
                                     Abbrechen
                                 </Button>
-                                <Button variant="contained" fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
+                                <Button variant="contained" disabled={!question?.isEditable} fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
                                     Speichern
                                 </Button>
                             </Box>

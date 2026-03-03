@@ -264,7 +264,7 @@ export default function QuestionEditorPage() {
                         <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'center' }}>
                             <Button variant="outlined" onClick={() => {navigate(`/meta/${id}`)}}>Zurück</Button>
                             <Button variant="outlined" onClick={handleOpenPreview}>Vorschau</Button>
-                            <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave}>Speichern</Button>
+                            <Button variant="contained" disabled={!question?.isEditable} startIcon={<SaveIcon />} onClick={handleSave}>Speichern</Button>
                         </Box>
 
                         <Dialog open={openPreview} onClose={handleClosePreview} maxWidth="md" fullScreen>
