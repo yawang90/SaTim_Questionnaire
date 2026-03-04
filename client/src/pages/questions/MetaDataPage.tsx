@@ -60,10 +60,8 @@ export default function MetaDataPage() {
                 field.key === key ? { ...field, value } : field
             )
         );
-
         setErrors((prev) => ({ ...prev, [key]: false }));
     };
-
 
     const handleCheckboxChange = (key: string, option: string, checked: boolean) => {
         setFormSchema((prev) =>
@@ -75,13 +73,11 @@ export default function MetaDataPage() {
 
     const handleSave = async () => {
         const newErrors: Record<string, boolean> = {};
-
         formSchema.forEach((field) => {
             if (field.required && !field.value?.trim()) {
                 newErrors[field.key] = true;
             }
         });
-
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setSnackbar({
@@ -228,7 +224,7 @@ export default function MetaDataPage() {
                                 <Button variant="outlined" fullWidth onClick={() => navigate("/table")}>
                                     Abbrechen
                                 </Button>
-                                <Button variant="contained" disabled={!question?.isEditable} fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
+                                <Button variant="contained" disabled={id ? !question?.isEditable : false} fullWidth startIcon={<SaveIcon />} onClick={handleSave}>
                                     Speichern
                                 </Button>
                             </Box>
