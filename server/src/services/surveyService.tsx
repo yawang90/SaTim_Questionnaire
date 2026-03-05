@@ -322,91 +322,108 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
 /**
  * Export survey answers for selected instances, including question scores
  */
+/**
+ * Export survey answers for selected instances, including question scores
+ */
 export const getSurveyExport = async (surveyId: number, instanceIds: number[]): Promise<Buffer> => {
     const survey = await prisma.survey.findUnique({
         where: { id: surveyId },
+        include: {
+            booklet: {
+                include: {
+                    BookletQuestion: true
+                }
+            }
+        }
     });
     if (!survey) throw new Error("Survey not found");
+    const allBookletQuestions = survey.booklet.flatMap(b => b.BookletQuestion ?? []);
+    const allQuestionIds = Array.from(new Set(allBookletQuestions.map(q => q.questionId)));
     const instances = await prisma.surveyInstance.findMany({
-        where: { id: { in: instanceIds }, surveyId },
+        where: { id: { in: instanceIds }, surveyId }
     });
-    if (!instances.length) throw new Error("No valid instances found");
+    if (!instances.length) {
+        throw new Error("No valid instances found");
+    }
     const answers = await prisma.answer.findMany({
         where: { surveyId, instanceId: { in: instanceIds } },
         include: {
             questionsAnswers: true,
             booklet: {
                 include: {
-                    BookletQuestion: true,
-                },
-            },
-        },
+                    BookletQuestion: true
+                }
+            }
+        }
     });
-
     const rows: any[] = [];
     for (const answer of answers) {
-        const instance = instances.find((i) => i.id === answer.instanceId);
+        const instance = instances.find(i => i.id === answer.instanceId);
         if (!instance) continue;
-
+        const qaMap = new Map<number, typeof answer.questionsAnswers[0]>();
         for (const qa of answer.questionsAnswers) {
-            const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as {
-                key: string;
-                value: any;
-                kind?: string;
-                c?: string;
-                m?: string;
-            }[] : [];
-
-            const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({
-                key: a.key,
-                value: a.value,
-                m: a.m,
-                c: a.c
-            }));
-
-            const result = await evaluateAnswersService(qa.questionId, userAnswerInput);
-            const bq = answer.booklet.BookletQuestion.find(bq => bq.questionId === qa.questionId);
-            const position = bq?.position ?? null;
-            rows.push({
-                SchuelerID_System: answer.userId,
-                GruppenID_ausLink: instance.id,
-                GruppenBezeichnung: instance.name,
-                Booklet_ID: answer.booklet.bookletId,
-                Booklet_Version: answer.booklet.version,
-                Freier_Parameter: answer.freeParam,
-                AufgabeID_System: qa.questionId,
-                Aufgabe_Position: position,
-                Aufgabe_RawResponse: JSON.stringify(qa.answerJson ?? []),
-                Aufgabe_Score: result?.score,
-                Aufgabe_StartedAt: qa.solvingTimeStart?.toISOString() ?? "",
-                Aufgabe_FinishedAt: qa.solvingTimeEnd?.toISOString() ?? "",
-                Aufgabe_Zeit_MS: qa.solvedTime,
-                Aufgabe_Skipped: qa.skipped,
-            });
-
+            qaMap.set(qa.questionId, qa);
         }
+        const bookletQuestionSet = new Set(
+            answer.booklet.BookletQuestion.map(bq => bq.questionId)
+        );
+        const bookletPositionMap = new Map<number, number>();
+        for (const bq of answer.booklet.BookletQuestion) {
+            bookletPositionMap.set(bq.questionId, bq.position);
+        }
+        const row: any = {
+            SchuelerID_System: answer.userId,
+            GruppenID_ausLink: instance.id,
+            GruppenBezeichnung: instance.name,
+            Booklet_ID: answer.booklet.bookletId,
+            Booklet_Version: answer.booklet.version,
+            Freier_Parameter: answer.freeParam,
+        };
+        for (const questionId of allQuestionIds) {
+            if (!bookletQuestionSet.has(questionId)) {
+                row[`Aufgabe_${questionId}_SystemID`] = "";
+                row[`Aufgabe_${questionId}_Position`] = "";
+                row[`Aufgabe_${questionId}_RawResponse`] = "";
+                row[`Aufgabe_${questionId}_Score`] = "";
+                row[`Aufgabe_${questionId}_StartedAt`] = "";
+                row[`Aufgabe_${questionId}_FinishedAt`] = "";
+                row[`Aufgabe_${questionId}_Zeit_MS`] = "";
+                row[`Aufgabe_${questionId}_Skipped`] = "";
+                continue;
+            }
+            const qa = qaMap.get(questionId);
+            if (!qa) {
+                row[`Aufgabe_${questionId}_SystemID`] = questionId;
+                row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
+                row[`Aufgabe_${questionId}_RawResponse`] = "";
+                row[`Aufgabe_${questionId}_Score`] = "";
+                row[`Aufgabe_${questionId}_StartedAt`] = "";
+                row[`Aufgabe_${questionId}_FinishedAt`] = "";
+                row[`Aufgabe_${questionId}_Zeit_MS`] = "";
+                row[`Aufgabe_${questionId}_Skipped`] = "";
+                continue;
+            }
+            const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
+            const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
+            const result = await evaluateAnswersService(questionId, userAnswerInput);
+            row[`Aufgabe_${questionId}_SystemID`] = qa.questionId;
+            row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
+            row[`Aufgabe_${questionId}_RawResponse`] = JSON.stringify(qa.answerJson ?? []);
+            row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
+            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart?.toISOString() ?? "";
+            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd?.toISOString() ?? "";
+            row[`Aufgabe_${questionId}_Zeit_MS`] = qa.solvedTime ?? "";
+            row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
+        }
+        rows.push(row);
     }
-
     const workbook = XLSX.utils.book_new();
-    const headers = [
-        "SchuelerID_System",
-        "GruppenID_ausLink",
-        "GruppenBezeichnung",
-        "Booklet_ID",
-        "Booklet_Version",
-        "Freier_Parameter",
-        "AufgabeID_System",
-        "Aufgabe_Position",
-        "Aufgabe_RawResponse",
-        "Aufgabe_Score",
-        "Aufgabe_StartedAt",
-        "Aufgabe_FinishedAt",
-        "Aufgabe_Zeit_MS",
-        "Aufgabe_Skipped"
-    ];
-    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
-    return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    return XLSX.write(workbook, {
+        type: "buffer",
+        bookType: "xlsx"
+    });
 };
 
 function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {

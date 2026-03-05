@@ -247,7 +247,7 @@ export const uploadSurveyExcelsHandler = async (req: Request, res: Response) => 
 }
 
 
-    export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
+export const getSurveyBookletsHandler = async (req: Request, res: Response) => {
     try {
         const surveyId = Number(req.params.id);
         if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
@@ -273,7 +273,7 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
 
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename=Survey_${surveyId}_Export.xlsx`
+            `attachment; filename=Erhebung_${surveyId}.xlsx`
         );
         res.setHeader(
             "Content-Type",

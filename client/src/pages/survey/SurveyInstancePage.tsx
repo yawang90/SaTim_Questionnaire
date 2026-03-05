@@ -215,7 +215,7 @@ const SurveyInstancePage = () => {
             const url = window.URL.createObjectURL(fileBlob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Survey_${survey!.title}_Export.xlsx`;
+            a.download = `Erhebung_Export_${survey!.title}.xlsx`;
             document.body.appendChild(a);
             a.click();
             a.remove();
