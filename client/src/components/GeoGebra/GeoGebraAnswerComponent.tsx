@@ -201,8 +201,14 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                             setTimeout(() => {
                                 try {
                                     applet.deleteObject(objName);
-                                    if (!isPointUsedInOtherLines(p1, objName)) applet.deleteObject(p1);
-                                    if (!isPointUsedInOtherLines(p2, objName)) applet.deleteObject(p2);
+                                    const isPreexisting = (name: string) =>
+                                        existingObjectsRef.current.has(name);
+                                    if (!isPreexisting(p1) && !isPointUsedInOtherLines(p1, objName)) {
+                                        applet.deleteObject(p1);
+                                    }
+                                    if (!isPreexisting(p2) && !isPointUsedInOtherLines(p2, objName)) {
+                                        applet.deleteObject(p2);
+                                    }
                                 } catch (err) {
                                     console.log(err)
                                 }
