@@ -158,16 +158,27 @@ model answer {
 }
 
 model questionAnswer {
-  id               Int       @id @default(autoincrement())
+  id               Int                      @id @default(autoincrement())
   answerId         Int
   questionId       Int
   answerJson       Json?
-  createdAt        DateTime  @default(now())
-  solvedTime       Float?    @default(0.0)
-  solvingTimeStart DateTime  @default(now())
+  createdAt        DateTime                 @default(now())
+  solvedTime       Float?                   @default(0.0)
+  solvingTimeStart DateTime                 @default(now())
   solvingTimeEnd   DateTime?
-  skipped          Boolean   @default(false)
-  answer           answer    @relation("BelongsToAnswer", fields: [answerId], references: [id])
+  skipped          Boolean                  @default(false)
+  answer           answer                   @relation("BelongsToAnswer", fields: [answerId], references: [id])
+  sessions         QuestionSolvingSession[]
 
   @@unique([answerId, questionId])
+}
+
+model QuestionSolvingSession {
+  id               Int            @id @default(autoincrement())
+  questionAnswerId Int
+  startTime        DateTime
+  endTime          DateTime?
+  questionAnswer   questionAnswer @relation(fields: [questionAnswerId], references: [id], onDelete: Cascade)
+
+  @@index([questionAnswerId])
 }

@@ -258,3 +258,74 @@ export async function trackQuestionTime(userId: string, questionId: number, inst
             }}
     })
 }
+
+export async function startQuestionSession(userId: string, questionId: number, instanceId: number) {
+    const answer = await prisma.answer.findFirst({
+        where: { userId, instanceId }
+    });
+    if (!answer) return;
+    const qa = await prisma.questionAnswer.findUnique({
+        where: {
+            answerId_questionId: {
+                answerId: answer.id,
+                questionId
+            }
+        }
+    });
+    if (!qa) return;
+    const openSession = await prisma.questionSolvingSession.findFirst({
+        where: {
+            questionAnswerId: qa.id,
+            endTime: null
+        }
+    });
+    if (!openSession) {
+        await prisma.questionSolvingSession.create({
+            data: {
+                questionAnswerId: qa.id,
+                startTime: new Date()
+            }
+        });
+    } else {
+        await prisma.questionSolvingSession.update({
+            where: { id: openSession.id },
+            data: { endTime: new Date() }
+        });
+    }
+}
+
+export async function endQuestionSession(userId: string, questionId: number, instanceId: number) {
+    const answer = await prisma.answer.findFirst({
+        where: { userId, instanceId }
+    });
+    if (!answer) return;
+    const qa = await prisma.questionAnswer.findUnique({
+        where: {
+            answerId_questionId: {
+                answerId: answer.id,
+                questionId
+            }
+        }
+    });
+    if (!qa) return;
+    const openSession = await prisma.questionSolvingSession.findFirst({
+        where: {
+            questionAnswerId: qa.id,
+            endTime: null
+        }
+    });
+    if (!openSession) return;
+    const now = new Date();
+    await prisma.questionSolvingSession.update({
+        where: { id: openSession.id },
+        data: { endTime: now }
+    });
+    const duration =
+        (now.getTime() - openSession.startTime.getTime()) / 1000;
+    await prisma.questionAnswer.update({
+        where: { id: qa.id },
+        data: {
+            solvedTime: { increment: duration }
+        }
+    });
+}
