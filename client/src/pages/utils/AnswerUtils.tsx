@@ -11,7 +11,8 @@ export type Answer =
     | { kind: "freeText" | "freeTextInline" | "numeric"; key: string; value: string }
     | LineEquationAnswer
     | GeoGebraPointsAnswer
-    | GeoGebraLinesAnswer;
+    | GeoGebraLinesAnswer
+    | GeoGebraSlopeAnswer;
 
 export type LineEquationAnswer = {
     kind: "lineEquation";
@@ -20,7 +21,8 @@ export type LineEquationAnswer = {
 };
 
 export type GeoGebraPoint = { name: string; x: number; y: number };
-export type GeoGebraLine = { name: string; m: number; c: number; point1: GeoGebraPoint, point2: GeoGebraPoint };
+export type GeoGebraLine = { name: string; m: number; c: number; point1: GeoGebraPoint; point2: GeoGebraPoint };
+export type GeoGebraSlope = { line1: string; point1Line1: GeoGebraPoint; point2Line1: GeoGebraPoint; line2: string; point1Line2: GeoGebraPoint, point2Line2: GeoGebraPoint };
 
 export type GeoGebraPointsAnswer = {
     kind: "geoGebraPoints";
@@ -34,6 +36,12 @@ export type GeoGebraLinesAnswer = {
     value: GeoGebraLine[];
 };
 
+export type GeoGebraSlopeAnswer = {
+    kind: "geoGebraSlope";
+    key: string;
+    value: GeoGebraSlope;
+};
+
 export type Block =
     | { kind: "mc"; key: string; choices: Choice[] }
     | { kind: "sc"; key: string; choices: Choice[] }
@@ -42,7 +50,8 @@ export type Block =
     | { kind: "numeric"; key: string }
     | { kind: "lineEquation"; key: string }
     | { kind: "geoGebraPoints"; key: string; attrs?: { maxPoints?: number }}
-    | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number }};
+    | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number }}
+    | {kind: "geoGebraSlope"; key: string;};
 
 export const mapQuestionsStatus = (
     status: string | null | undefined
@@ -137,6 +146,12 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
                     };
                 }
             }
+            if (node.type === "geoGebraSlope") {
+                const nodeKey = node.attrs?.id || uuidv4();
+                    blockMap[nodeKey] = {
+                        kind: "geoGebraSlope",
+                        key: nodeKey};
+            }
             if (node.content) walk(node.content);
         });
     };
@@ -178,6 +193,12 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                     key: block.key,
                     value: [{ name:"",m: 0, c: 0 , point1: {name:"", x:0, y:0}, point2: {name:"", x:0, y:0}}]
                 };
+            case "geoGebraSlope":
+                return {
+                    kind: "geoGebraSlope",
+                    key: block.key,
+                    value: { line1: "", point1Line1: {name:"", x:0, y:0}, point2Line1:{name:"", x:0, y:0}, line2: "", point1Line2: {name:"", x:0, y:0}, point2Line2: {name:"", x:0, y:0}}
+                };
         }
     });
 
@@ -185,14 +206,12 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
         for (const node of nodes) {
             if (!node || !node.type) continue;
 
-            const block = blocks.find((b) => b.key === node.attrs?.id || b.key === node.attrs?.groupId);
+            const block = blocks.find((b) => b.key === node.attrs?.id);
             if (!block) {
                 if (node.content) walk(node.content);
                 continue;
             }
-
             const answer = answers.find((a) => a.key === block.key)!;
-
             switch (block.kind) {
                 case "sc":
                 case "mc": {

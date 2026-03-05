@@ -21,7 +21,7 @@ import MainLayout from '../../layouts/MainLayout.tsx';
 import {
     FreeText,
     FreeTextInline,
-    GeoGebra,
+    GeoGebra, GeoGebraSlopeNode,
     LatexDisplay,
     LineEquation,
     MCChoice,
@@ -51,7 +51,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, InlineResizableImage,
-            MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebra, LatexDisplay, SingleChoice
+            MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebraSlopeNode, GeoGebra, LatexDisplay, SingleChoice
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -125,7 +125,6 @@ export default function QuestionEditorPage() {
 
     const addGeoGebraPoints = () => {
         if (!editor) return;
-
         editor.chain().focus().insertContent({
             type: 'geoGebra',
             attrs: {
@@ -140,7 +139,6 @@ export default function QuestionEditorPage() {
 
     const addGeoGebraLines = () => {
         if (!editor) return;
-
         editor.chain().focus().insertContent({
             type: 'geoGebra',
             attrs: {
@@ -149,6 +147,17 @@ export default function QuestionEditorPage() {
                 materialId: '',
                 maxPoints: 0,
                 maxLines: 1,
+            },
+        }).run();
+    };
+
+    const addGeoGebraSlopes = () => {
+        if (!editor) return;
+        editor.chain().focus().insertContent({
+            type: 'geoGebraSlope',
+            attrs: {
+                id: uuidv4(),
+                materialId: '',
             },
         }).run();
     };
@@ -258,6 +267,7 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addLineEquation}>Geradengleichung</MenuItem>
                                 <MenuItem onClick={addGeoGebraPoints}>GeoGebra Applet – Punkte</MenuItem>
                                 <MenuItem onClick={addGeoGebraLines}>GeoGebra Applet – Strecke, Gerade, etc.</MenuItem>
+                                <MenuItem onClick={addGeoGebraSlopes}>GeoGebra Applet – Steigungsdreieck</MenuItem>
                             </Menu>
                         </Box>
 

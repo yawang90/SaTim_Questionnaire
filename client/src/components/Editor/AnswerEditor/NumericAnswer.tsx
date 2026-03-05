@@ -11,12 +11,13 @@ export interface Condition {
 interface NumericAnswerProps {
     conditions: Condition[];
     onChange: (conditions: Condition[]) => void;
+    alternateText?: string;
 }
 
 const operators: Condition["operator"][] = ["=", "<", ">", "<=", ">="];
 const logics: Condition["logic"][] = ["and", "or"];
 
-export const NumericAnswer: React.FC<NumericAnswerProps> = ({ conditions, onChange }) => {
+export const NumericAnswer: React.FC<NumericAnswerProps> = ({ conditions, onChange, alternateText }) => {
     const handleChange = (index: number, field: keyof Condition, newValue: string) => {
         const next: Condition[] = [...conditions];
         next[index] = { ...next[index], [field]: newValue } as Condition;
@@ -48,7 +49,7 @@ export const NumericAnswer: React.FC<NumericAnswerProps> = ({ conditions, onChan
 
     return (
         <Box>
-            <Typography fontWeight="bold">Die Antwort ist</Typography>
+            <Typography fontWeight="bold">{alternateText ? alternateText : "Die Antwort ist"}</Typography>
             {conditions.map((cond, idx) => (
                 <Box key={idx} display="flex" alignItems="center" gap={1} mb={1}>
                     {idx > 0 && (

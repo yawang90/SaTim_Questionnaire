@@ -1,0 +1,121 @@
+import React, {useEffect, useRef, useState} from 'react';
+import {Alert, Snackbar} from "@mui/material";
+import type {GeoGebraLine, GeoGebraSlope} from '../../../pages/utils/AnswerUtils.tsx';
+
+interface GeoGebraAnswerComponentProps {
+    materialId: string;
+    width?: string | number;
+    height?: string | number;
+    onAnswerChange?: (answer: {
+        kind: 'slope'
+        value: GeoGebraSlope | null
+    }) => void;
+    value?: GeoGebraSlope
+}
+
+export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600, onAnswerChange, value}) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [lines, setLines] = useState<GeoGebraLine[]>([]);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const initialObjectsRef = useRef<Set<string>>(new Set());
+
+    function resyncLines(applet: any) {
+        const allObjects = applet.getAllObjectNames();
+        const detectedLines: GeoGebraLine[] = [];
+        allObjects.forEach((name: string) => {
+            if (initialObjectsRef.current.has(name)) return;
+            const type = applet.getObjectType(name);
+            if (["line", "segment", "ray"].includes(type)) {
+                const line = extractLineData(applet, name);
+                if (line) {
+                    detectedLines.push(line);
+                }
+            }
+        });
+        setLines(detectedLines.slice(0, 2));
+    }
+
+    useEffect(() => {
+        if (!materialId || !containerRef.current) return;
+        containerRef.current.innerHTML = "";
+        const params = {
+            material_id: materialId,
+            width,
+            height,
+            appletOnLoad: (applet: any) => {
+                initialObjectsRef.current = new Set(
+                    applet.getAllObjectNames()
+                );
+                setLines([]);
+                applet.registerAddListener(() => {
+                    resyncLines(applet);
+                });
+                applet.registerUpdateListener(() => {
+                    resyncLines(applet);
+                });
+                applet.registerRemoveListener(() => {
+                    resyncLines(applet);
+                });
+                applet.registerClearListener(() => {
+                    setLines([]);
+                });
+            }};
+        const ggbApplet = new (window as any).GGBApplet(params, true);
+        ggbApplet.inject(containerRef.current);
+    }, [materialId, width, height]);
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div ref={containerRef} style={{ width, height }}/>
+            <div style={{marginTop: 12, padding: 10, border: "1px solid #ccc", borderRadius: 8, width: typeof width === "number" ? width : `${width}px`, background: "#f3f6ff",}}>
+                <strong>Erfasste Linien:</strong>
+                {lines.map((l) => (
+                    <div key={l.name}>
+                        <strong>Linie {l.name}</strong>
+                        <div>
+                            Punkt 1: ({l.point1.x.toFixed(2)}, {l.point1.y.toFixed(2)})
+                        </div>
+                        <div>
+                            Punkt 2: ({l.point2.x.toFixed(2)}, {l.point2.y.toFixed(2)})
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
+                <Alert severity="warning" variant="filled">
+                    Du kannst nur zwei Linien für das Steigungsdreieck zeichnen.
+                </Alert>
+            </Snackbar>
+        </div>
+    );
+};
+
+function extractLineData(applet: any, lineName: string): GeoGebraLine | null {
+    try {
+        const def = applet.getCommandString(lineName);
+        const matches = def.match(/[A-Za-z0-9_]+/g);
+        if (!matches || matches.length < 3) return null;
+
+        const p1Name = matches[1];
+        const p2Name = matches[2];
+
+        const x1 = applet.getXcoord(p1Name);
+        const y1 = applet.getYcoord(p1Name);
+        const x2 = applet.getXcoord(p2Name);
+        const y2 = applet.getYcoord(p2Name);
+
+        const m = 2
+        const c = 1
+
+        return {
+            name: lineName,
+            m,
+            c,
+            point1: { name: p1Name, x: x1, y: y1 },
+            point2: { name: p2Name, x: x2, y: y2 },
+        };
+    } catch {
+        return null;
+    }
+}

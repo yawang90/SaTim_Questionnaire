@@ -7,6 +7,7 @@ import {FreeTextInlineAnswerComponent} from "../FreeText/FreeTextInlineAnswerCom
 import {NumericAnswerComponent} from "../Numeric/NumericAnswerComponent.tsx";
 import {SingleChoiceAnswerComponent} from "../SC/SingleChoiceAnswerComponent.tsx";
 import {LineEquationAnswerComponent} from "../LineEquation/LineEquationAnswerComponent.tsx";
+import {GeoGebraSlopeAnswerNodeView} from "../GeoGebra/SlopeTriangle/GeoGebraSlopeAnswerNodeView.tsx";
 
 export const FreeText = Node.create({
     name: 'freeText',
@@ -90,6 +91,36 @@ export const GeoGebra = Node.create({
 
     addNodeView() {
         return ReactNodeViewRenderer(GeoGebraAnswerNodeView);
+    },
+});
+
+export const GeoGebraSlopeNode = Node.create({
+    name: 'geoGebraSlope',
+    group: 'block',
+    atom: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            materialId: { default: '' },
+            width: { default: '800' },
+            height: { default: '600' },
+            value: {
+                default: null,
+            },
+            answer: {
+                default: null
+            },
+        };
+    },
+    parseHTML() {
+        return [{ tag: 'div[data-type="geoGebraSlope"]' }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'geoGebraSlope' })];
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(GeoGebraSlopeAnswerNodeView);
     },
 });
 

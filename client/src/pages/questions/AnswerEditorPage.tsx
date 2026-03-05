@@ -109,6 +109,9 @@ export default function AnswerEditorPage() {
                     }
                     break;
                 }
+                case "geoGebraSlope": {
+                    initial[b.key] = [{operator: "=", value: ""}];
+                }
             }
 
         });
@@ -183,9 +186,6 @@ export default function AnswerEditorPage() {
         blocks.forEach((b) => {
             const val = answers[b.key];
             switch (b.kind) {
-                case "mc":
-                    if (!val || val.length === 0) errors.push(`Multiple Choice (${b.key}) braucht mindestens eine Auswahl.`);
-                    break;
                 case "sc":
                     if (val === null) errors.push(`Single Choice (${b.key}) braucht eine Auswahl.`);
                     break;
@@ -217,6 +217,9 @@ export default function AnswerEditorPage() {
                             errors.push(`GeoGebra Linie ${lineName} (${b.key}) benötigt gültige Bedingungen für m und c.`);
                         }
                     }
+                    break;
+                case "geoGebraSlope":
+                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Geogebra Steigung (${b.key}) braucht gültige Werte.`);
                     break;
             }
         });
@@ -317,6 +320,7 @@ export default function AnswerEditorPage() {
                                                             b.kind === "freeTextInline" ? `Freitext Inline (${idx + 1})` :
                                                                 b.kind === "numeric" ? `Numerische Eingabe (${idx + 1})` :
                                                                     b.kind === "lineEquation" ? `Geradengleichung (${idx + 1})` :
+                                                                        b.kind === "geoGebraSlope" ? `GeoGebra Steigungsdreieck (${idx + 1})` :
                                                                         b.kind === "geoGebraPoints" ? `GeoGebra Punkte (${idx + 1})` :
                                                                             `GeoGebra Linien (${idx + 1})`}
                                             </Typography>
@@ -421,6 +425,13 @@ export default function AnswerEditorPage() {
                                                     );
                                                 })
                                             }
+
+                                            {b.kind === "geoGebraSlope" &&
+                                                <NumericAnswer
+                                                    conditions={answers[b.key] ?? [{operator: "=", value: ""}]}
+                                                    onChange={(val) => handleAnswerChange(b.key, val)}
+                                                    alternateText={"Der korrekte Wert für Steigung m ist:"}
+                                                />}
                                         </AccordionDetails>
                                     </Accordion>
                                 ))}
