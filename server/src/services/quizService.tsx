@@ -40,7 +40,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
         where: { surveyId: survey.id, instanceId: instance.id, userId },
-        include: { questionsAnswers: true, booklet: { include: { BookletQuestion: { orderBy: { position: "asc" } } } } },
+        include: { questionsAnswers: true, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
@@ -51,9 +51,9 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 bookletId: booklet.id,
                 userId,
                 freeParam: freeParam ? freeParam: null,
-                questionIds: booklet.BookletQuestion.map(bq => bq.question.id),
+                questionIds: booklet.bookletQuestion.map(bq => bq.question.id),
             },
-            include: { questionsAnswers: true, booklet: { include: { BookletQuestion: true } } },
+            include: { questionsAnswers: true, booklet: { include: { bookletQuestion: true } } },
         });
     }
     let nextQuestion: QuizQuestion | null = null;
@@ -180,7 +180,7 @@ async function assignBookletToUser(surveyId: number) {
         const booklets = await tx.booklet.findMany({
             where: { surveyId },
             include: {
-                BookletQuestion: {
+                bookletQuestion: {
                     orderBy: { position: "asc" },
                     include: {
                         question: true,

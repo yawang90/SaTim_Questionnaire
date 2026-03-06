@@ -233,7 +233,7 @@ export const getBookletsBySurveyId = async (surveyId: number) => {
     return prisma.booklet.findMany({
         where: { surveyId, version: maxVersion },
         include: {
-            BookletQuestion: {
+            bookletQuestion: {
                 include: { question: true },
                 orderBy: { position: "asc" },
             },
@@ -331,13 +331,13 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
         include: {
             booklet: {
                 include: {
-                    BookletQuestion: true
+                    bookletQuestion: true
                 }
             }
         }
     });
     if (!survey) throw new Error("Survey not found");
-    const allBookletQuestions = survey.booklet.flatMap(b => b.BookletQuestion ?? []);
+    const allBookletQuestions = survey.booklet.flatMap(b => b.bookletQuestion ?? []);
     const allQuestionIds = Array.from(new Set(allBookletQuestions.map(q => q.questionId)));
     const instances = await prisma.surveyInstance.findMany({
         where: { id: { in: instanceIds }, surveyId }
@@ -351,7 +351,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             questionsAnswers: true,
             booklet: {
                 include: {
-                    BookletQuestion: true
+                    bookletQuestion: true
                 }
             }
         }
@@ -365,10 +365,10 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             qaMap.set(qa.questionId, qa);
         }
         const bookletQuestionSet = new Set(
-            answer.booklet.BookletQuestion.map(bq => bq.questionId)
+            answer.booklet.bookletQuestion.map(bq => bq.questionId)
         );
         const bookletPositionMap = new Map<number, number>();
-        for (const bq of answer.booklet.BookletQuestion) {
+        for (const bq of answer.booklet.bookletQuestion) {
             bookletPositionMap.set(bq.questionId, bq.position);
         }
         const row: any = {

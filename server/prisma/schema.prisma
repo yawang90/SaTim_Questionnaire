@@ -47,10 +47,10 @@ model question {
 
   createdBy       users             @relation("CreatedQuestions", fields: [createdById], references: [id])
   updatedBy       users             @relation("UpdatedQuestions", fields: [updatedById], references: [id])
-  bookletQuestion BookletQuestion[]
+  bookletQuestion bookletQuestion[]
 }
 
-model BookletQuestion {
+model bookletQuestion {
   bookletId  Int
   questionId Int
   position   Int
@@ -132,7 +132,7 @@ model booklet {
   survey          survey            @relation(fields: [surveyId], references: [id])
   createdBy       users             @relation("CreatedBooklets", fields: [createdById], references: [id])
   answer          answer[]          @relation("BelongsToBooklet")
-  BookletQuestion BookletQuestion[]
+  bookletQuestion bookletQuestion[]
 
   @@index([surveyId])
 }
@@ -168,12 +168,12 @@ model questionAnswer {
   solvingTimeEnd   DateTime?
   skipped          Boolean                  @default(false)
   answer           answer                   @relation("BelongsToAnswer", fields: [answerId], references: [id])
-  sessions         QuestionSolvingSession[]
+  sessions         questionSolvingSession[]
 
   @@unique([answerId, questionId])
 }
 
-model QuestionSolvingSession {
+model questionSolvingSession {
   id               Int            @id @default(autoincrement())
   questionAnswerId Int
   startTime        DateTime

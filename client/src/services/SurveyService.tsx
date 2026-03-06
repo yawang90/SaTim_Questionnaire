@@ -177,7 +177,7 @@ export const uploadSurveyExcels = async (surveyId: string, file1: File, file2: F
 export interface Booklet {
     id: number;
     bookletId: number;
-    BookletQuestion: any[];
+    bookletQuestion: any[];
     excelFileUrl: string;
     createdAt: string;
     version: number;
