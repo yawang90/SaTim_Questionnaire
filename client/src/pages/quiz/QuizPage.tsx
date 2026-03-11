@@ -52,7 +52,7 @@ export default function QuizPage() {
     const [questionIds, setQuestionIds] = useState<number[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const questionStartRef = React.useRef<number>(Date.now())
-    const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
+        const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
         setGeoGebraAnswers(prev => {
             const idx = prev.findIndex(a => a.id === answer.id);
             if (idx >= 0) {

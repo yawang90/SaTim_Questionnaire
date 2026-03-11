@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Alert, Snackbar} from "@mui/material";
-import type {GeoGebraLine, GeoGebraPoint, GeoGebraSlope} from '../../../pages/utils/AnswerUtils.tsx';
+import type {GeoGebraLine, GeoGebraSlope} from '../../../pages/utils/AnswerUtils.tsx';
 
 interface GeoGebraAnswerComponentProps {
     materialId: string;
@@ -60,7 +60,6 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
             const type = applet.getObjectType(name);
             if (["line", "segment", "ray"].includes(type)) {
                 lineNames.push(name);
-
                 const line = extractLineData(applet, name);
                 if (line) detectedLines.push(line);
             }
@@ -91,9 +90,7 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
     useEffect(() => {
         if (!value) return;
         if (value as GeoGebraSlope) {
-            const line1: GeoGebraLine = {name: value.line1, m:0, c:0, point1: value.point1Line1, point2: value.point2Line1}
-            const line2: GeoGebraLine = {name: value.line2, m:0, c:0, point1: value.point1Line2, point2: value.point2Line2}
-            setLines([line1, line2]);
+            setPreviousAnswerExists(true);
         }
     }, [value]);
 
@@ -125,13 +122,14 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
                             point1: value.point1Line2,
                             point2: value.point2Line2
                         }
-                        setLines([line1, line2]);
-                        lines.forEach(l => {
+                        const newLines = [line1, line2];
+                        setLines(newLines);
+                        newLines.forEach(l => {
                             applet.evalCommand(`${l.point1.name} = (${l.point1.x}, ${l.point1.y})`);
                             applet.evalCommand(`${l.point2.name} = (${l.point2.x}, ${l.point2.y})`);
-                            applet.evalCommand(`${l.name} = Line(${l.point1.name}, ${l.point2.name})`);
+                            applet.evalCommand(`${l.name} = Segment(${l.point1.name}, ${l.point2.name})`);
                         });
-                        lines.forEach(l => {
+                        newLines.forEach(l => {
                             applet.setFixed(l.name, true);
                         });
                     }
