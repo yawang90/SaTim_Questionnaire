@@ -13,6 +13,36 @@ interface GeoGebraAnswerComponentProps {
     value?: GeoGebraSlope
 }
 
+function pointUsedByOtherLine(applet: any, pointName: string, ignoreLine: string) {
+    const objects = applet.getAllObjectNames();
+    for (const name of objects) {
+        if (name === ignoreLine) continue;
+        const type = applet.getObjectType(name);
+        if (["line", "segment", "ray"].includes(type)) {
+            const def = applet.getCommandString(name);
+            if (def.includes(pointName)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function deleteLineAndUnusedPoints(applet: any, lineName: string) {
+    const def = applet.getCommandString(lineName);
+    const matches = def.match(/[A-Za-z0-9_]+/g);
+    if (!matches || matches.length < 3) return;
+    const p1 = matches[1];
+    const p2 = matches[2];
+    applet.deleteObject(lineName);
+    if (!pointUsedByOtherLine(applet, p1, lineName)) {
+        applet.deleteObject(p1);
+    }
+    if (!pointUsedByOtherLine(applet, p2, lineName)) {
+        applet.deleteObject(p2);
+    }
+}
+
 export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = ({materialId, width = 800, height = 600, onAnswerChange, value}) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [lines, setLines] = useState<GeoGebraLine[]>([]);
@@ -22,16 +52,24 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
     function resyncLines(applet: any) {
         const allObjects = applet.getAllObjectNames();
         const detectedLines: GeoGebraLine[] = [];
+        const lineNames: string[] = [];
+
         allObjects.forEach((name: string) => {
             if (initialObjectsRef.current.has(name)) return;
             const type = applet.getObjectType(name);
             if (["line", "segment", "ray"].includes(type)) {
+                lineNames.push(name);
+
                 const line = extractLineData(applet, name);
-                if (line) {
-                    detectedLines.push(line);
-                }
+                if (line) detectedLines.push(line);
             }
         });
+        if (lineNames.length > 2) {
+            const newest = lineNames[lineNames.length - 1];
+            deleteLineAndUnusedPoints(applet, newest);
+            applet.setMode(0);
+            setSnackbarOpen(true);
+        }
         setLines(detectedLines.slice(0, 2));
     }
 

@@ -138,7 +138,7 @@ export default function QuizPage() {
 
     function validateAnswerExists(extractedAnswers: Answer[]) {
         const isFilled = (ans: Answer) => {
-            if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
+            if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines' || ans.kind === 'geoGebraSlope') {
                 if (!Array.isArray(ans.value)) return false;
                 return ans.value.some((v: any) => v.name?.trim() !== '');
             }

@@ -276,6 +276,10 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
             const match = geoGebraAnswers.find(g => g.id === ans.key);
             if (match) {return {...ans, value: match.value,} as GeoGebraLinesAnswer;}
         }
+        if (ans.kind === "geoGebraSlope") {
+            console.log(geoGebraAnswers)
+            const match = geoGebraAnswers.find(g => g.id === ans.key);
+        }
         return ans;
     });
 }
