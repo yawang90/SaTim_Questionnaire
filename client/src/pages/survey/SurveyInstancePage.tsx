@@ -55,12 +55,16 @@ interface SurveyInstance {
     validFrom: string;
     validTo: string;
     bookletVersion: number;
+    twoStage: boolean;
+    secondStageTaskId?: string;
 }
 
 interface NewInstanceInput {
     name: string;
     validFrom: Dayjs | null;
     validTo: Dayjs | null;
+    twoStage: boolean;
+    secondStageTaskId?: string;
 }
 const SurveyInstancePage = () => {
     const { id } = useParams<{ id: string }>();
@@ -77,14 +81,10 @@ const SurveyInstancePage = () => {
     const [generatedLink, setGeneratedLink] = useState("");
     const [instances, setInstances] = useState<SurveyInstance[]>([]);
     const [instanceDialogOpen, setInstanceDialogOpen] = useState(false);
-    const [newInstance, setNewInstance] = useState<NewInstanceInput>({ name: "", validFrom: null, validTo: null });
+    const [newInstance, setNewInstance] = useState<NewInstanceInput>({name: "", validFrom: null, validTo: null, twoStage: false});
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editInstance, setEditInstance] = useState<SurveyInstance | null>(null);
-    const [editData, setEditData] = useState<NewInstanceInput>({
-        name: "",
-        validFrom: null,
-        validTo: null
-    });
+    const [editData, setEditData] = useState<NewInstanceInput>({name: "", validFrom: null, validTo: null, twoStage: false});
     const [instanceFilter, setInstanceFilter] = useState<"ALL" | "ACTIVE" | "FUTURE" | "PAST">("ALL");
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [selectedForExport, setSelectedForExport] = useState<number[]>([]);
@@ -145,6 +145,10 @@ const SurveyInstancePage = () => {
             setSnackbar({ open: true, message: "Das Enddatum muss nach dem Startdatum liegen.", severity: "error" });
             return;
         }
+        if (newInstance.twoStage && !newInstance.secondStageTaskId?.trim()) {
+            setSnackbar({open: true, message: "Bitte die Aufgaben ID der 2. Stufe eingeben.", severity: "error"});
+            return;
+        }
         setLoading(true);
         try {
             await createSurveyInstance(survey.id, {
@@ -154,7 +158,7 @@ const SurveyInstancePage = () => {
             });
             setSnackbar({ open: true, message: "Test Durchführung erfolgreich erstellt.", severity: "success" });
             setInstanceDialogOpen(false);
-            setNewInstance({ name: "", validFrom: null, validTo: null });
+            setNewInstance({ name: "", validFrom: null, validTo: null ,twoStage: false});
             await fetchSurvey();
         } catch (err) {
             console.error("Failed to create instance:", err);
@@ -311,7 +315,9 @@ const SurveyInstancePage = () => {
                                                 setEditData({
                                                     name: inst.name,
                                                     validFrom: dayjs(inst.validFrom),
-                                                    validTo: dayjs(inst.validTo)
+                                                    validTo: dayjs(inst.validTo),
+                                                    twoStage: inst.twoStage,
+                                                    secondStageTaskId: inst.secondStageTaskId
                                                 });
                                                 setEditDialogOpen(true);}}>
                                                 Bearbeiten
@@ -353,6 +359,33 @@ const SurveyInstancePage = () => {
                                     })
                                 }
                             />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={newInstance.twoStage}
+                                        onChange={(e) =>
+                                            setNewInstance({
+                                                ...newInstance,
+                                                twoStage: e.target.checked,
+                                                secondStageTaskId: ""
+                                            })
+                                        }
+                                    />
+                                } label="Zweistufige Aufgabe"
+                            />
+                            {newInstance.twoStage && (
+                                <TextField
+                                    label="Aufgaben ID der 2. Stufe"
+                                    fullWidth
+                                    value={newInstance.secondStageTaskId}
+                                    onChange={(e) =>
+                                        setNewInstance({
+                                            ...newInstance,
+                                            secondStageTaskId: e.target.value
+                                        })
+                                    }
+                                />
+                            )}
                         </Box>
                     </DialogContent>
                     <DialogActions>
@@ -360,7 +393,7 @@ const SurveyInstancePage = () => {
                         <Button
                             variant="contained"
                             onClick={handleCreateInstance}
-                            disabled={!newInstance.name || !newInstance.validFrom || !newInstance.validTo || loading}>
+                            disabled={!newInstance.name || !newInstance.validFrom || !newInstance.validTo || (newInstance.twoStage && !newInstance.secondStageTaskId) ||  loading}>
                             {loading ? "Speichern..." : "Erstellen"}
                         </Button>
                     </DialogActions>
@@ -388,11 +421,39 @@ const SurveyInstancePage = () => {
                             <TextField label="Name" fullWidth value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })}/>
                             <DatePicker label="Gültig von" value={editData.validFrom} onChange={(date) => setEditData({ ...editData, validFrom: date })}/>
                             <DatePicker label="Gültig bis" value={editData.validTo} onChange={(date) => setEditData({ ...editData, validTo: date })}/>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={editData.twoStage}
+                                        onChange={(e) =>
+                                            setEditData({
+                                                ...editData,
+                                                twoStage: e.target.checked,
+                                                secondStageTaskId: ""
+                                            })
+                                        }
+                                    />
+                                }
+                                label="Zweistufige Aufgabe"
+                            />
+                            {editData.twoStage && (
+                                <TextField
+                                    label="Aufgaben ID der 2. Stufe"
+                                    fullWidth
+                                    value={editData.secondStageTaskId}
+                                    onChange={(e) =>
+                                        setEditData({
+                                            ...editData,
+                                            secondStageTaskId: e.target.value
+                                        })
+                                    }
+                                />
+                            )}
                         </Box>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
-                        <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo || loading}>
+                        <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo ||  (editData.twoStage && !editData.secondStageTaskId) || loading}>
                             {loading ? "Speichern..." : "Aktualisieren"}
                         </Button>
                     </DialogActions>
