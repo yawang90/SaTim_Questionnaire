@@ -439,19 +439,21 @@ function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
     }
     const slotQuestionData = XLSX.utils.sheet_to_json<Record<string, string>>(slotQuestionSheet, {defval: ""});
     const slotToQuestionMap: Record<string, number> = {};
-    for (const row of slotQuestionData) {
+    for (let rawRow of slotQuestionData) {
+        const row = Object.fromEntries(
+            Object.entries(rawRow).filter(
+                ([key, value]) => !key.startsWith("__EMPTY") && value !== ""
+            )
+        );
         const keys = Object.keys(row);
         if (keys.length !== 2) {
             throw new Error(`Expected 2 columns per row, found ${keys.length}: ${JSON.stringify(row)}`);
         }
-
         const [questionIdCol, slotCodeCol] = keys as [string, string];
         const questionId = Number(row[questionIdCol]);
         const slotCode = row[slotCodeCol]?.toString().trim();
-
         if (isNaN(questionId)) throw new Error(`Invalid question ID "${row[questionIdCol]}" in row: ${JSON.stringify(row)}`);
         if (!slotCode) throw new Error(`Empty slot code for question ID "${questionId}" in row: ${JSON.stringify(row)}`);
-
         if (slotToQuestionMap[slotCode]) {
             throw new Error(`Duplicate slot code "${slotCode}" found in Slot-Question Excel`);
         }
@@ -461,31 +463,42 @@ function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
 }
 
 function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQuestionMap: Record<string, number>) {
-    const bookletSlotWorkbook = XLSX.read(bookletSlotFile.buffer, {type: "buffer"});
-    if (bookletSlotWorkbook.SheetNames.length === 0) {
+    const workbook = XLSX.read(bookletSlotFile.buffer, { type: "buffer" });
+
+    if (workbook.SheetNames.length === 0) {
         throw new Error("Booklet-Slot Excel file has no sheets");
     }
-    const bookletSlotSheetName = bookletSlotWorkbook.SheetNames[0]!;
-    const bookletSlotSheet = bookletSlotWorkbook.Sheets[bookletSlotSheetName];
-    if (!bookletSlotSheet) {
-        throw new Error(`Sheet "${bookletSlotSheetName}" not found in Booklet-Slot Excel file`);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]!];
+    if (!sheet) {
+        throw new Error(`Sheet "${workbook.SheetNames[0]}" not found`);
     }
-    const bookletSlotData = XLSX.utils.sheet_to_json<Record<string, string>>(bookletSlotSheet, {defval: ""});
-
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {header: 1, defval: "",});
+    if (rows.length === 0) {
+        throw new Error("Booklet-Slot Excel file is empty");
+    }
+    if (!rows.length || !rows[0]) {
+        throw new Error("Booklet-Slot Excel file has no rows or header row is empty");
+    }
+    const headerRow = rows[0];
     const bookletMap: Record<string, number[]> = {};
-    for (const row of bookletSlotData) {
-        for (const [bookletNameRaw, slotCodeRaw] of Object.entries(row)) {
-            const bookletName = bookletNameRaw.trim();
-            const slotCode = slotCodeRaw?.toString().trim();
+    for (let col = 0; col < headerRow.length; col++) {
+        const bookletName = headerRow[col]?.trim();
+        if (!bookletName) continue;
+        bookletMap[bookletName] = [];
 
-            if (!bookletName) throw new Error(`Empty booklet name found in row: ${JSON.stringify(row)}`);
-            if (!slotCode) throw new Error(`Empty slot code in booklet "${bookletName}" for row: ${JSON.stringify(row)}`);
-
+        for (let row = 1; row < rows.length; row++) {
+            const slotCode = rows[row]?.[col]?.toString().trim();
+            if (!slotCode) continue;
             const questionId = slotToQuestionMap[slotCode];
-            if (questionId === undefined) throw new Error(`Slot code "${slotCode}" in booklet "${bookletName}" does not exist in Slot-Question mapping`);
-
-            if (!bookletMap[bookletName]) bookletMap[bookletName] = [];
+            if (questionId === undefined) {
+                throw new Error(
+                    `Slot code "${slotCode}" in booklet "${bookletName}" does not exist in Slot-Question mapping`
+                );
+            }
             bookletMap[bookletName].push(questionId);
+        }
+        if (bookletMap[bookletName].length === 0) {
+            throw new Error(`Booklet "${bookletName}" has no slot codes`);
         }
     }
     return bookletMap;

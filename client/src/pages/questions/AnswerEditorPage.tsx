@@ -35,6 +35,7 @@ import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
 import {checkLineEquationHasErrors, checkPointHasErrors} from "../../components/MathHelper/LineEquationValidator.tsx";
 
+
 export default function AnswerEditorPage() {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -46,6 +47,8 @@ export default function AnswerEditorPage() {
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [questionContentJson, setQuestionContentJson] = useState<JSONContent>({});
     const [question, setQuestion] = useState<Question>();
+    const getGeoGebraPointName = (index: number, blockKey: string) => {return `P${index + 1} (${blockKey})`;};
+    const getGeoGebraLineName = (index: number, blockKey: string) => {return `L${index + 1} (${blockKey})`;};
 
     useEffect(() => {
         if (!id) return;
@@ -90,7 +93,7 @@ export default function AnswerEditorPage() {
                 case "geoGebraPoints": {
                     const maxPoints = b.attrs?.maxPoints ?? 1;
                     for (let i = 0; i < maxPoints; i++) {
-                        const pointName = `P${i + 1}`;
+                        const pointName = getGeoGebraPointName(i, b.key);
                         initial[pointName] = {
                             x: [{operator: "=", value: "", logic: "and"}],
                             y: [{operator: "=", value: "", logic: "and"}]
@@ -101,13 +104,16 @@ export default function AnswerEditorPage() {
                 case "geoGebraLines": {
                     const maxLines = b.attrs?.maxLines ?? 0;
                     for (let i = 0; i < maxLines; i++) {
-                        const name = `L${i + 1}`;
+                        const name = getGeoGebraLineName(i, b.key);
                         initial[name] = {
                             m: [{operator: "=", value: "", logic: "and"}],
                             c: [{operator: "=", value: "", logic: "and"}]
                         };
                     }
                     break;
+                }
+                case "geoGebraSlope": {
+                    initial[b.key] = [{operator: "=", value: ""}];
                 }
             }
 
@@ -183,9 +189,6 @@ export default function AnswerEditorPage() {
         blocks.forEach((b) => {
             const val = answers[b.key];
             switch (b.kind) {
-                case "mc":
-                    if (!val || val.length === 0) errors.push(`Multiple Choice (${b.key}) braucht mindestens eine Auswahl.`);
-                    break;
                 case "sc":
                     if (val === null) errors.push(`Single Choice (${b.key}) braucht eine Auswahl.`);
                     break;
@@ -202,7 +205,7 @@ export default function AnswerEditorPage() {
                     break;
                 case "geoGebraPoints":
                     for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
-                        const pointName = `P${i + 1}`;
+                        const pointName = getGeoGebraPointName(i, b.key);
                         const conds = answers[pointName];
                         if (!conds || !hasValid(conds.x) || !hasValid(conds.y)) {
                             errors.push(`GeoGebra Punkt ${pointName} (${b.key}) benötigt gültige Bedingungen für x und y.`);
@@ -211,12 +214,15 @@ export default function AnswerEditorPage() {
                     break;
                 case "geoGebraLines":
                     for (let i = 0; i < (b.attrs?.maxLines ?? 0); i++) {
-                        const lineName = `L${i + 1}`;
+                        const lineName = getGeoGebraLineName(i, b.key);
                         const conds = answers[lineName];
                         if (!conds || !hasValid(conds.m) || !hasValid(conds.c)) {
                             errors.push(`GeoGebra Linie ${lineName} (${b.key}) benötigt gültige Bedingungen für m und c.`);
                         }
                     }
+                    break;
+                case "geoGebraSlope":
+                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Geogebra Steigung (${b.key}) braucht gültige Werte.`);
                     break;
             }
         });
@@ -235,7 +241,7 @@ export default function AnswerEditorPage() {
                     case "geoGebraPoints": {
                         value = {};
                         for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
-                            const pointName = `P${i + 1}`;
+                            const pointName = getGeoGebraPointName(i, b.key);
                             if (answers[pointName]) {
                                 const transformed = checkPointHasErrors(answers[pointName]);
                                 if ("error" in transformed) {
@@ -250,7 +256,7 @@ export default function AnswerEditorPage() {
                     case "geoGebraLines": {
                         value = {};
                         for (let i = 0; i < (b.attrs?.maxLines ?? 0); i++) {
-                            const lineName = `L${i + 1}`;
+                            const lineName = getGeoGebraLineName(i, b.key);
                             if (answers[lineName]) {
                                 const transformed = checkLineEquationHasErrors(answers[lineName]);
                                 if ("error" in transformed) {
@@ -317,6 +323,7 @@ export default function AnswerEditorPage() {
                                                             b.kind === "freeTextInline" ? `Freitext Inline (${idx + 1})` :
                                                                 b.kind === "numeric" ? `Numerische Eingabe (${idx + 1})` :
                                                                     b.kind === "lineEquation" ? `Geradengleichung (${idx + 1})` :
+                                                                        b.kind === "geoGebraSlope" ? `GeoGebra Steigungsdreieck (${idx + 1})` :
                                                                         b.kind === "geoGebraPoints" ? `GeoGebra Punkte (${idx + 1})` :
                                                                             `GeoGebra Linien (${idx + 1})`}
                                             </Typography>
@@ -382,16 +389,9 @@ export default function AnswerEditorPage() {
                                             )}
 
                                             {b.kind === "geoGebraLines" &&
-                                                Array.from({length: b.attrs?.maxLines ?? 0}).map((_, idx) => {
-                                                    const lineName = `L${idx + 1}`;
-                                                    const conds = answers[lineName] ?? {
-                                                        m: [{
-                                                            operator: "=",
-                                                            value: "",
-                                                            logic: "and"
-                                                        }], c: [{operator: "=", value: "", logic: "and"}]
-                                                    };
-
+                                                Array.from({length: b.attrs?.maxLines ?? 0}).map((_, i) => {
+                                                    const lineName = getGeoGebraLineName(i, b.key);
+                                                    const conds = answers[lineName] ?? {m: [{operator: "=", value: "", logic: "and"}], c: [{operator: "=", value: "", logic: "and"}]};
                                                     return (
                                                         <GeoGebraLineAnswer key={lineName} data={{name: lineName}} conditions={conds}
                                                             onChange={(next) => {
@@ -403,8 +403,8 @@ export default function AnswerEditorPage() {
                                             }
 
                                             {b.kind === "geoGebraPoints" &&
-                                                Array.from({length: b.attrs?.maxPoints ?? 0}).map((_, idx) => {
-                                                    const pointName = `P${idx + 1}`;
+                                                Array.from({length: b.attrs?.maxPoints ?? 0}).map((_, i) => {
+                                                    const pointName = getGeoGebraPointName(i, b.key);
                                                     const conds = answers[pointName] ?? {
                                                         x: [{
                                                             operator: "=",
@@ -421,6 +421,13 @@ export default function AnswerEditorPage() {
                                                     );
                                                 })
                                             }
+
+                                            {b.kind === "geoGebraSlope" &&
+                                                <NumericAnswer
+                                                    conditions={answers[b.key] ?? [{operator: "=", value: ""}]}
+                                                    onChange={(val) => handleAnswerChange(b.key, val)}
+                                                    alternateText={"Der korrekte Wert für Steigung m ist:"}
+                                                />}
                                         </AccordionDetails>
                                     </Accordion>
                                 ))}

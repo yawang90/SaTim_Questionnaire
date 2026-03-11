@@ -8,6 +8,7 @@ import {NumericEditorComponent} from "../Numeric/NumericEditorComponent.tsx";
 import {LaTeXComponent} from "../LaTeX/LaTeXComponent.tsx";
 import {SingleChoiceEditorComponent} from "../SC/SingleChoiceEditorComponent.tsx";
 import {LineEquationEditorComponent} from "../LineEquation/LineEquationEditorComponent.tsx";
+import {GeoGebraSlopeEditorComponent} from "../GeoGebra/SlopeTriangle/GeoGebraSlopeEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -135,6 +136,36 @@ export const GeoGebra = Node.create({
 
     addNodeView() {
         return ReactNodeViewRenderer(GeoGebraEditorComponent);
+    },
+});
+
+export const GeoGebraSlopeNode = Node.create({
+    name: 'geoGebraSlope',
+    group: 'block',
+    atom: true,
+
+    addAttributes() {
+        return {
+            id: { default: null },
+            materialId: { default: '' },
+            width: { default: '800' },
+            height: { default: '600' },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-type="geoGebraSlope"]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'div',
+            mergeAttributes(HTMLAttributes, { 'data-type': 'geoGebraSlope' }),
+        ];
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(GeoGebraSlopeEditorComponent);
     },
 });
 

@@ -52,7 +52,7 @@ export default function QuizPage() {
     const [questionIds, setQuestionIds] = useState<number[]>([]);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const questionStartRef = React.useRef<number>(Date.now())
-    const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
+        const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
         setGeoGebraAnswers(prev => {
             const idx = prev.findIndex(a => a.id === answer.id);
             if (idx >= 0) {
@@ -138,6 +138,9 @@ export default function QuizPage() {
 
     function validateAnswerExists(extractedAnswers: Answer[]) {
         const isFilled = (ans: Answer) => {
+            if (ans.kind === 'geoGebraSlope') {
+                return (ans.value.line1?.trim() !== "" && ans.value.line2?.trim() !== "");
+            }
             if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
                 if (!Array.isArray(ans.value)) return false;
                 return ans.value.some((v: any) => v.name?.trim() !== '');

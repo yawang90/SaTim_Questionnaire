@@ -28,6 +28,7 @@ export function enrichQuizWithAnswers(content: JSONContent, previousAnswers?: an
                     case "lineEquation":
                     case "geoGebraLines":
                     case "geoGebraPoints":
+                    case "geoGebraSlope":
                         newNode.attrs = {
                             ...newNode.attrs,
                             value: answerNode.value
@@ -74,6 +75,7 @@ function buildFlatAnswerMap(previousAnswers?: PreviousAnswer[]) {
             case "freetext":
             case "geoGebraPoints":
             case "geoGebraLines":
+            case "geoGebraSlope":
             case "lineEquation":
             default:
                 map.set(
