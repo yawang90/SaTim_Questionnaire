@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Alert, Snackbar} from "@mui/material";
-import type {GeoGebraLine, GeoGebraSlope} from '../../../pages/utils/AnswerUtils.tsx';
+import type {GeoGebraLine, GeoGebraPoint, GeoGebraSlope} from '../../../pages/utils/AnswerUtils.tsx';
 
 interface GeoGebraAnswerComponentProps {
     materialId: string;
@@ -48,6 +48,7 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
     const [lines, setLines] = useState<GeoGebraLine[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const initialObjectsRef = useRef<Set<string>>(new Set());
+    const [previousAnswerExists, setPreviousAnswerExists] = useState<boolean>(!!value)
 
     function resyncLines(applet: any) {
         const allObjects = applet.getAllObjectNames();
@@ -74,6 +75,29 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
     }
 
     useEffect(() => {
+        if (lines?.length == 2) {
+            const geoGebraSlopeAnswer : GeoGebraSlope = {
+                line1: lines[0].name,
+                point1Line1: lines[0].point1,
+                point2Line1: lines[0].point2,
+                line2: lines[1].name,
+                point1Line2: lines[1].point1,
+                point2Line2: lines[1].point2
+            }
+            onAnswerChange?.({kind: 'slope', value: geoGebraSlopeAnswer});
+        }
+        }, [lines, onAnswerChange]);
+
+    useEffect(() => {
+        if (!value) return;
+        if (value as GeoGebraSlope) {
+            const line1: GeoGebraLine = {name: value.line1, m:0, c:0, point1: value.point1Line1, point2: value.point2Line1}
+            const line2: GeoGebraLine = {name: value.line2, m:0, c:0, point1: value.point1Line2, point2: value.point2Line2}
+            setLines([line1, line2]);
+        }
+    }, [value]);
+
+    useEffect(() => {
         if (!materialId || !containerRef.current) return;
         containerRef.current.innerHTML = "";
         const params = {
@@ -85,6 +109,37 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
                     applet.getAllObjectNames()
                 );
                 setLines([]);
+                if (previousAnswerExists && value) {
+                    if (value as GeoGebraSlope) {
+                        const line1: GeoGebraLine = {
+                            name: value.line1,
+                            m: 0,
+                            c: 0,
+                            point1: value.point1Line1,
+                            point2: value.point2Line1
+                        }
+                        const line2: GeoGebraLine = {
+                            name: value.line2,
+                            m: 0,
+                            c: 0,
+                            point1: value.point1Line2,
+                            point2: value.point2Line2
+                        }
+                        setLines([line1, line2]);
+                        lines.forEach(l => {
+                            applet.evalCommand(`${l.point1.name} = (${l.point1.x}, ${l.point1.y})`);
+                            applet.evalCommand(`${l.point2.name} = (${l.point2.x}, ${l.point2.y})`);
+                            applet.evalCommand(`${l.name} = Line(${l.point1.name}, ${l.point2.name})`);
+                        });
+                        lines.forEach(l => {
+                            applet.setFixed(l.name, true);
+                        });
+                    }
+                }
+                if (!previousAnswerExists) {
+                    setLines([]);
+                 }
+                setPreviousAnswerExists(false);
                 applet.registerAddListener(() => {
                     resyncLines(applet);
                 });
@@ -106,10 +161,10 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div ref={containerRef} style={{ width, height }}/>
             <div style={{marginTop: 12, padding: 10, border: "1px solid #ccc", borderRadius: 8, width: typeof width === "number" ? width : `${width}px`, background: "#f3f6ff",}}>
-                <strong>Erfasste Linien:</strong>
+                <strong>Erfasste Segmente für Geradensteigung:</strong>
                 {lines.map((l) => (
                     <div key={l.name}>
-                        <strong>Linie {l.name}</strong>
+                        <strong>Segment {l.name}</strong>
                         <div>
                             Punkt 1: ({l.point1.x.toFixed(2)}, {l.point1.y.toFixed(2)})
                         </div>

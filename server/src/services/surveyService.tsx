@@ -439,19 +439,21 @@ function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
     }
     const slotQuestionData = XLSX.utils.sheet_to_json<Record<string, string>>(slotQuestionSheet, {defval: ""});
     const slotToQuestionMap: Record<string, number> = {};
-    for (const row of slotQuestionData) {
+    for (let rawRow of slotQuestionData) {
+        const row = Object.fromEntries(
+            Object.entries(rawRow).filter(
+                ([key, value]) => !key.startsWith("__EMPTY") && value !== ""
+            )
+        );
         const keys = Object.keys(row);
         if (keys.length !== 2) {
             throw new Error(`Expected 2 columns per row, found ${keys.length}: ${JSON.stringify(row)}`);
         }
-
         const [questionIdCol, slotCodeCol] = keys as [string, string];
         const questionId = Number(row[questionIdCol]);
         const slotCode = row[slotCodeCol]?.toString().trim();
-
         if (isNaN(questionId)) throw new Error(`Invalid question ID "${row[questionIdCol]}" in row: ${JSON.stringify(row)}`);
         if (!slotCode) throw new Error(`Empty slot code for question ID "${questionId}" in row: ${JSON.stringify(row)}`);
-
         if (slotToQuestionMap[slotCode]) {
             throw new Error(`Duplicate slot code "${slotCode}" found in Slot-Question Excel`);
         }
@@ -481,9 +483,7 @@ function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQues
     const bookletMap: Record<string, number[]> = {};
     for (let col = 0; col < headerRow.length; col++) {
         const bookletName = headerRow[col]?.trim();
-
-        if (!bookletName) continue; // ignore empty columns
-
+        if (!bookletName) continue;
         bookletMap[bookletName] = [];
 
         for (let row = 1; row < rows.length; row++) {

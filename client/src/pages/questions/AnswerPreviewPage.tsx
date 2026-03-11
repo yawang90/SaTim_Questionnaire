@@ -56,7 +56,6 @@ export default function AnswerPreviewPage() {
     const [question, setQuestion] = useState<Question>();
     const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
     const handleGeoGebraChange = (answer: GeoGebraAnswer) => {
-        console.log("settttt")
         setGeoGebraAnswers(prev => {
             const idx = prev.findIndex(a => a.id === answer.id);
             if (idx >= 0) {
