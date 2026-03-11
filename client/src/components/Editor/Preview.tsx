@@ -4,7 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import {
     FreeText,
     FreeTextInline,
-    GeoGebra,
+    GeoGebra, GeoGebraSlopeNode,
     LineEquation,
     MCChoice,
     NumericInput,
@@ -21,7 +21,7 @@ import type {JSONContent} from '@tiptap/core';
 import {LatexDisplay} from "./NodeEditorPlugins.tsx";
 import {MathJaxContext} from "better-react-mathjax";
 import Underline from '@tiptap/extension-underline';
-import type {GeoGebraLine, GeoGebraPoint} from "../../pages/utils/AnswerUtils.tsx";
+import type {GeoGebraLine, GeoGebraPoint, GeoGebraSlope} from "../../pages/utils/AnswerUtils.tsx";
 import {InlineResizableImage} from "./InlineResizableImage.tsx";
 
 interface PreviewProps {
@@ -32,8 +32,8 @@ interface PreviewProps {
 
 export interface GeoGebraAnswer {
     id: string;
-    kind: 'points' | 'lines';
-    value: GeoGebraPoint[] | GeoGebraLine[];
+    kind: 'points' | 'lines' | 'slopes';
+    value: GeoGebraPoint[] | GeoGebraLine[] | GeoGebraSlope[];
 }
 
 export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEditorRef, onGeoGebraChange }) => {
@@ -53,6 +53,11 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             TableHeader,
             InlineResizableImage,
             GeoGebra.configure({
+                onAnswerChange: (answer: GeoGebraAnswer) => {
+                    if (onGeoGebraChange) onGeoGebraChange(answer);
+                },
+            }),
+            GeoGebraSlopeNode.configure({
                 onAnswerChange: (answer: GeoGebraAnswer) => {
                     if (onGeoGebraChange) onGeoGebraChange(answer);
                 },
