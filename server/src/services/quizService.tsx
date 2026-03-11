@@ -44,6 +44,11 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
+        let questionIds = booklet.bookletQuestion.map(bq => bq.question.id);
+        const twoTier = instance.twoTierQuestion;
+        if (instance.isTwoTier && twoTier != null) {
+            questionIds = questionIds.flatMap(qid => [qid, twoTier]);
+        }
         answerRecord = await prisma.answer.create({
             data: {
                 surveyId: survey.id,
@@ -51,7 +56,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 bookletId: booklet.id,
                 userId,
                 freeParam: freeParam ? freeParam: null,
-                questionIds: booklet.bookletQuestion.map(bq => bq.question.id),
+                questionIds: questionIds,
             },
             include: { questionsAnswers: true, booklet: { include: { bookletQuestion: true } } },
         });
