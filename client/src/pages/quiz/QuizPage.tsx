@@ -2,11 +2,11 @@ import React, {useEffect, useState} from 'react';
 import {useParams, useSearchParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
 import {
-    type AnswerDTO,
+    type AnswerDTO, endQuestionSession,
     getQuiz,
     type Quiz,
     type Quiz as QuizType,
-    skipQuestion,
+    skipQuestion, startQuestionSession,
     submitAnswer, trackQuestionTime
 } from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
@@ -63,6 +63,23 @@ export default function QuizPage() {
             return [...prev, answer];
         });
     };
+
+    useEffect(() => {
+        if (!quiz?.question || !quiz?.question?.id || !userId || !id) return;
+        startQuestionSession(id, quiz.question.id, userId).catch(console.error);
+        return () => {
+            if (!quiz?.question || !quiz?.question?.id || !userId || !id) return;
+            endQuestionSession(id, quiz.question.id, userId).catch(console.error);
+        };
+    }, [quiz?.question, quiz?.question?.id, id, userId]);
+
+    useEffect(() => {
+        const handler = () => {
+            endQuestionSession(id!, quiz!.question!.id, userId!).catch(() => {});
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [quiz, quiz?.question, quiz?.question?.id, id, userId]);
 
     useEffect(() => {
         const key = "quizUserId";

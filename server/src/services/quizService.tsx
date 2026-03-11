@@ -40,7 +40,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
         where: { surveyId: survey.id, instanceId: instance.id, userId },
-        include: { questionsAnswers: true, booklet: { include: { BookletQuestion: { orderBy: { position: "asc" } } } } },
+        include: { questionsAnswers: true, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
@@ -51,9 +51,9 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 bookletId: booklet.id,
                 userId,
                 freeParam: freeParam ? freeParam: null,
-                questionIds: booklet.BookletQuestion.map(bq => bq.question.id),
+                questionIds: booklet.bookletQuestion.map(bq => bq.question.id),
             },
-            include: { questionsAnswers: true, booklet: { include: { BookletQuestion: true } } },
+            include: { questionsAnswers: true, booklet: { include: { bookletQuestion: true } } },
         });
     }
     let nextQuestion: QuizQuestion | null = null;
@@ -180,7 +180,7 @@ async function assignBookletToUser(surveyId: number) {
         const booklets = await tx.booklet.findMany({
             where: { surveyId },
             include: {
-                BookletQuestion: {
+                bookletQuestion: {
                     orderBy: { position: "asc" },
                     include: {
                         question: true,
@@ -257,4 +257,75 @@ export async function trackQuestionTime(userId: string, questionId: number, inst
                 increment: seconds
             }}
     })
+}
+
+export async function startQuestionSession(userId: string, questionId: number, instanceId: number) {
+    const answer = await prisma.answer.findFirst({
+        where: { userId, instanceId }
+    });
+    if (!answer) return;
+    const qa = await prisma.questionAnswer.findUnique({
+        where: {
+            answerId_questionId: {
+                answerId: answer.id,
+                questionId
+            }
+        }
+    });
+    if (!qa) return;
+    const openSession = await prisma.questionSolvingSession.findFirst({
+        where: {
+            questionAnswerId: qa.id,
+            endTime: null
+        }
+    });
+    if (!openSession) {
+        await prisma.questionSolvingSession.create({
+            data: {
+                questionAnswerId: qa.id,
+                startTime: new Date()
+            }
+        });
+    } else {
+        await prisma.questionSolvingSession.update({
+            where: { id: openSession.id },
+            data: { endTime: new Date() }
+        });
+    }
+}
+
+export async function endQuestionSession(userId: string, questionId: number, instanceId: number) {
+    const answer = await prisma.answer.findFirst({
+        where: { userId, instanceId }
+    });
+    if (!answer) return;
+    const qa = await prisma.questionAnswer.findUnique({
+        where: {
+            answerId_questionId: {
+                answerId: answer.id,
+                questionId
+            }
+        }
+    });
+    if (!qa) return;
+    const openSession = await prisma.questionSolvingSession.findFirst({
+        where: {
+            questionAnswerId: qa.id,
+            endTime: null
+        }
+    });
+    if (!openSession) return;
+    const now = new Date();
+    await prisma.questionSolvingSession.update({
+        where: { id: openSession.id },
+        data: { endTime: now }
+    });
+    const duration =
+        (now.getTime() - openSession.startTime.getTime()) / 1000;
+    await prisma.questionAnswer.update({
+        where: { id: qa.id },
+        data: {
+            solvedTime: { increment: duration }
+        }
+    });
 }

@@ -1,5 +1,12 @@
 import type {Request, Response} from "express";
-import {getQuiz, skipQuestion, submitQuizAnswer, trackQuestionTime} from "../services/quizService.js";
+import {
+    endQuestionSession,
+    getQuiz,
+    skipQuestion,
+    startQuestionSession,
+    submitQuizAnswer,
+    trackQuestionTime
+} from "../services/quizService.js";
 
 /**
  * Get a quiz by ID
@@ -91,3 +98,37 @@ export const trackQuestionTimeHandler = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to track time" })
     }
 }
+
+/**
+ * Start question solving session
+ */
+export const startQuestionSessionHandler = async (req: Request, res: Response) => {
+    try {
+        const { userId, questionId, instanceId } = req.body;
+        if (!userId || !questionId || !instanceId) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        await startQuestionSession(userId, Number(questionId), Number(instanceId));
+        res.status(200).json({ success: true });
+    } catch (err: any) {
+        console.error("Error starting question session:", err);
+        res.status(500).json({ error: "Failed to start session" });
+    }
+};
+
+/**
+ * End question solving session
+ */
+export const endQuestionSessionHandler = async (req: Request, res: Response) => {
+    try {
+        const { userId, questionId, instanceId } = req.body;
+        if (!userId || !questionId || !instanceId) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        await endQuestionSession(userId, Number(questionId), Number(instanceId));
+        res.status(200).json({ success: true });
+    } catch (err: any) {
+        console.error("Error ending question session:", err);
+        res.status(500).json({ error: "Failed to end session" });
+    }
+};

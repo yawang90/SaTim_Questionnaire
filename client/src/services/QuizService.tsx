@@ -140,3 +140,42 @@ export async function trackQuestionTime(instanceId: string, questionId: number, 
     }
     return res.json()
 }
+
+export async function startQuestionSession(instanceId: string, questionId: number, userId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/session/start`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            instanceId,
+            questionId,
+            userId
+        })
+    });
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to start session: ${msg}`);
+    }
+    return res.json();
+}
+
+export async function endQuestionSession(instanceId: string, questionId: number, userId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/session/end`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            instanceId,
+            questionId,
+            userId
+        })
+    });
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to end session: ${msg}`);
+    }
+
+    return res.json();
+}

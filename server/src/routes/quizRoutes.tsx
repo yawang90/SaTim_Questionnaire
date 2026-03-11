@@ -1,7 +1,8 @@
 import express from 'express';
 import {
+    endQuestionSessionHandler,
     getQuizHandler,
-    skipQuestionHandler,
+    skipQuestionHandler, startQuestionSessionHandler,
     submitAnswerHandler,
     trackQuestionTimeHandler
 } from "../controllers/quizController.js";
@@ -12,5 +13,7 @@ router.post('/instance/:id', getQuizHandler);
 router.post('/question/:questionId/answer', submitAnswerHandler);
 router.post('/question/:questionId/skip', skipQuestionHandler);
 router.post('/track-time', trackQuestionTimeHandler);
+router.post('/session/start', startQuestionSessionHandler);
+router.post('/session/end', endQuestionSessionHandler);
 
 export default router;

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import MainLayout from "../layouts/MainLayout";
-import {Box, Button, Card, CardContent, CardHeader, TextField, Typography} from "@mui/material";
+import {Box, Card, CardContent, CardHeader, TextField, Typography} from "@mui/material";
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {type FullUser, getUserById} from "../services/UserService.tsx";
 
@@ -40,10 +40,6 @@ const ProfilePage = () => {
         setUser(prev => ({...prev, [field]: value}));
     };
 
-    const handleSave = () => {
-        console.log("Saving user profile:", user);
-    };
-
     return (
         <MainLayout>
             <Box sx={{minHeight: '100vh', py: 3, px: 2, display: 'flex', flexDirection: 'column', mt: 6}}>
@@ -62,9 +58,6 @@ const ProfilePage = () => {
                                    onChange={(e) => handleChange("last_name", e.target.value)} disabled={isLoading}/>
                         <TextField label="E-Mail" type="email" fullWidth value={user.email}
                                    onChange={(e) => handleChange("email", e.target.value)} disabled={isLoading}/>
-                        <Button variant="contained" fullWidth sx={{mt: 2}} onClick={handleSave} disabled={isLoading}>
-                            Speichern
-                        </Button>
                     </CardContent>
                 </Card>
             </Box>
