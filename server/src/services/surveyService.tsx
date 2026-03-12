@@ -18,6 +18,8 @@ interface CreateSurveyInput {
         validFrom: Date;
         validTo: Date;
     }[];
+    twoStage?: boolean;
+    secondStageTaskId?: string;
 }
 
 /**
@@ -29,6 +31,8 @@ interface UpdateSurveyInput {
     mode?: survey_mode;
     updatedById: number;
     status?: survey_status;
+    twoStage?: boolean;
+    secondStageTaskId?: string;
 }
 
 /**
@@ -41,6 +45,8 @@ interface CreateSurveyInstanceInput {
     validTo: Date;
     createdById: number;
     updatedById: number;
+    twoStage?: boolean;
+    secondStageTaskId?: string;
 }
 
 /**
@@ -51,6 +57,8 @@ interface UpdateSurveyInstanceInput {
     validFrom?: Date;
     validTo?: Date;
     updatedById: number;
+    twoStage?: boolean;
+    secondStageTaskId?: string;
 }
 
 /**
@@ -159,16 +167,28 @@ export const deleteSurveyById = async (id: number): Promise<survey> => {
     });
 };
 
+async function validateSecondStageQuestion(secondStageTaskId?: string) {
+    if (!secondStageTaskId) return;
+    const question = await prisma.question.findUnique({
+        where: { id: Number(secondStageTaskId) },
+        select: { id: true }
+    });
+    if (!question) {
+        throw new Error("Second stage question ID does not exist.");
+    }
+}
+
 export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Promise<surveyInstance> => {
     const survey = await prisma.survey.findUnique({
         where: { id: data.surveyId },
         select: { bookletVersion: true }
     });
-
     if (!survey) {
         throw new Error("Survey not found");
     }
-
+    if (data.twoStage && data.secondStageTaskId) {
+        await validateSecondStageQuestion(data.secondStageTaskId);
+    }
     return prisma.surveyInstance.create({
         data: {
             surveyId: data.surveyId,
@@ -178,6 +198,8 @@ export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Pro
             createdById: data.createdById,
             updatedById: data.updatedById,
             bookletVersion: survey.bookletVersion,
+            isTwoTier: data.twoStage ?? false,
+            twoTierQuestion: Number(data.secondStageTaskId) ?? null,
         },
     });
 };
@@ -199,13 +221,21 @@ export const getSurveyInstances = async (surveyId: number): Promise<surveyInstan
 /**
  * Update a specific survey instance
  */
-export const updateSurveyInstanceById = async (
-    id: number,
-    data: UpdateSurveyInstanceInput
-): Promise<surveyInstance> => {
+export const updateSurveyInstanceById = async (id: number, data: UpdateSurveyInstanceInput): Promise<surveyInstance> => {
+    if (data.twoStage && data.secondStageTaskId) {
+        await validateSecondStageQuestion(data.secondStageTaskId);
+    }
     return prisma.surveyInstance.update({
         where: { id },
-        data,
+        data: {
+            name: data.name ? data.name : "",
+            validFrom: data.validFrom ? data.validFrom : "",
+            validTo: data.validTo ? data.validTo : "",
+            isTwoTier: data.twoStage ?? false,
+            twoTierQuestion: data.secondStageTaskId
+                ? Number(data.secondStageTaskId)
+                : null
+        }
     });
 };
 

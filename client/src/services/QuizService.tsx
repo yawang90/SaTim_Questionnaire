@@ -104,6 +104,22 @@ export async function submitAnswer(answer: AnswerDTO, userId: string) {
     return res.json();
 }
 
+export async function submitTwoTierAnswer(answer: AnswerDTO, userId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/question/${answer.questionId}/twoTierAnswer?userId=${userId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"},
+        body: JSON.stringify(answer),
+    });
+
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to submit answer: ${msg}`);
+    }
+
+    return res.json();
+}
+
 export async function skipQuestion(questionId: number, instanceId: string, userId: string) {
     const res = await fetch(`${API_BASE}/api/quiz/question/${questionId}/skip?instanceId=${instanceId}&userId=${userId}`, {
             method: "POST",
