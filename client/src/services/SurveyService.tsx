@@ -206,12 +206,16 @@ export interface SurveyInstanceDTO {
     name: string;
     validFrom: string;
     validTo: string;
+    twoStage?: boolean;
+    secondStageTaskId?: string;
 }
 
 export async function createSurveyInstance(surveyId: number, data: SurveyInstanceDTO) {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
-
+    if (data.twoStage && !data.secondStageTaskId) {
+        throw new Error("Für eine zweistufige Aufgabe muss die Aufgaben ID der 2. Stufe angegeben werden.");
+    }
     const res = await fetch(`${API_BASE}/api/survey/${surveyId}/instance`, {
         method: "POST",
         headers: {
@@ -253,7 +257,9 @@ export async function updateSurveyInstance(
 ) {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
-
+    if (data.twoStage && !data.secondStageTaskId) {
+        throw new Error("Für eine zweistufige Aufgabe muss die Aufgaben ID der 2. Stufe angegeben werden.");
+    }
     const res = await fetch(`${API_BASE}/api/survey/instance/${instanceId}`, {
         method: "PUT",
         headers: {

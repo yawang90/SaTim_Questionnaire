@@ -55,12 +55,16 @@ interface SurveyInstance {
     validFrom: string;
     validTo: string;
     bookletVersion: number;
+    isTwoTier: boolean;
+    twoTierQuestion?: string;
 }
 
 interface NewInstanceInput {
     name: string;
     validFrom: Dayjs | null;
     validTo: Dayjs | null;
+    isTwoTier: boolean;
+    twoTierQuestion?: string;
 }
 const SurveyInstancePage = () => {
     const { id } = useParams<{ id: string }>();
@@ -77,14 +81,10 @@ const SurveyInstancePage = () => {
     const [generatedLink, setGeneratedLink] = useState("");
     const [instances, setInstances] = useState<SurveyInstance[]>([]);
     const [instanceDialogOpen, setInstanceDialogOpen] = useState(false);
-    const [newInstance, setNewInstance] = useState<NewInstanceInput>({ name: "", validFrom: null, validTo: null });
+    const [newInstance, setNewInstance] = useState<NewInstanceInput>({name: "", validFrom: null, validTo: null, isTwoTier: false});
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editInstance, setEditInstance] = useState<SurveyInstance | null>(null);
-    const [editData, setEditData] = useState<NewInstanceInput>({
-        name: "",
-        validFrom: null,
-        validTo: null
-    });
+    const [editData, setEditData] = useState<NewInstanceInput>({name: "", validFrom: null, validTo: null, isTwoTier: false});
     const [instanceFilter, setInstanceFilter] = useState<"ALL" | "ACTIVE" | "FUTURE" | "PAST">("ALL");
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [selectedForExport, setSelectedForExport] = useState<number[]>([]);
@@ -145,16 +145,22 @@ const SurveyInstancePage = () => {
             setSnackbar({ open: true, message: "Das Enddatum muss nach dem Startdatum liegen.", severity: "error" });
             return;
         }
+        if (newInstance.isTwoTier && !newInstance.twoTierQuestion?.trim()) {
+            setSnackbar({open: true, message: "Bitte die Aufgaben ID der 2. Stufe eingeben.", severity: "error"});
+            return;
+        }
         setLoading(true);
         try {
             await createSurveyInstance(survey.id, {
                 name: newInstance.name,
                 validFrom: newInstance.validFrom.toISOString(),
                 validTo: newInstance.validTo.toISOString(),
+                twoStage: newInstance.isTwoTier,
+                secondStageTaskId: newInstance.twoTierQuestion
             });
             setSnackbar({ open: true, message: "Test Durchführung erfolgreich erstellt.", severity: "success" });
             setInstanceDialogOpen(false);
-            setNewInstance({ name: "", validFrom: null, validTo: null });
+            setNewInstance({ name: "", validFrom: null, validTo: null ,isTwoTier: false});
             await fetchSurvey();
         } catch (err) {
             console.error("Failed to create instance:", err);
@@ -183,6 +189,8 @@ const SurveyInstancePage = () => {
                 name: editData.name,
                 validFrom: editData.validFrom.toISOString(),
                 validTo: editData.validTo.toISOString(),
+                twoStage: editData.isTwoTier,
+                secondStageTaskId: editData.twoTierQuestion
             });
 
             setSnackbar({ open: true, message: "Durchführung aktualisiert.", severity: "success" });
@@ -303,6 +311,10 @@ const SurveyInstancePage = () => {
                                             <Typography variant="body2">
                                                Booklet Version: {inst.bookletVersion}
                                             </Typography>
+                                            {inst.isTwoTier && (
+                                                <Typography variant="body2">
+                                                Zweistufige Aufgaben ID: {inst.twoTierQuestion}
+                                            </Typography>)}
                                             <Button size="small" variant="contained" onClick={() => handleOpenLinkDialog(inst)}>
                                                 Test URL generieren
                                             </Button>
@@ -311,7 +323,9 @@ const SurveyInstancePage = () => {
                                                 setEditData({
                                                     name: inst.name,
                                                     validFrom: dayjs(inst.validFrom),
-                                                    validTo: dayjs(inst.validTo)
+                                                    validTo: dayjs(inst.validTo),
+                                                    isTwoTier: inst.isTwoTier,
+                                                    twoTierQuestion: inst.twoTierQuestion
                                                 });
                                                 setEditDialogOpen(true);}}>
                                                 Bearbeiten
@@ -353,6 +367,23 @@ const SurveyInstancePage = () => {
                                     })
                                 }
                             />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={newInstance.isTwoTier}
+                                        onChange={(e) =>
+                                            setNewInstance({...newInstance, isTwoTier: e.target.checked, twoTierQuestion: ""})}
+                                    />
+                                } label="Zweistufige Aufgabe"
+                            />
+                            {newInstance.isTwoTier && (
+                                <TextField
+                                    label="Aufgaben ID der 2. Stufe"
+                                    fullWidth
+                                    value={newInstance.twoTierQuestion}
+                                    onChange={(e) => setNewInstance({...newInstance, twoTierQuestion: e.target.value})}
+                                />
+                            )}
                         </Box>
                     </DialogContent>
                     <DialogActions>
@@ -360,7 +391,7 @@ const SurveyInstancePage = () => {
                         <Button
                             variant="contained"
                             onClick={handleCreateInstance}
-                            disabled={!newInstance.name || !newInstance.validFrom || !newInstance.validTo || loading}>
+                            disabled={!newInstance.name || !newInstance.validFrom || !newInstance.validTo || (newInstance.isTwoTier && !newInstance.twoTierQuestion) ||  loading}>
                             {loading ? "Speichern..." : "Erstellen"}
                         </Button>
                     </DialogActions>
@@ -388,11 +419,32 @@ const SurveyInstancePage = () => {
                             <TextField label="Name" fullWidth value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })}/>
                             <DatePicker label="Gültig von" value={editData.validFrom} onChange={(date) => setEditData({ ...editData, validFrom: date })}/>
                             <DatePicker label="Gültig bis" value={editData.validTo} onChange={(date) => setEditData({ ...editData, validTo: date })}/>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={editData.isTwoTier}
+                                        onChange={(e) =>
+                                            setEditData({...editData, isTwoTier: e.target.checked, twoTierQuestion: e.target.checked ? editData.twoTierQuestion : ""})
+                                        }
+                                    />
+                                }
+                                label="Zweistufige Aufgabe"
+                            />
+                            {editData.isTwoTier && (
+                                <TextField
+                                    label="Aufgaben ID der 2. Stufe"
+                                    fullWidth
+                                    value={editData.twoTierQuestion}
+                                    onChange={(e) =>
+                                        setEditData({...editData, twoTierQuestion: e.target.value})
+                                    }
+                                />
+                            )}
                         </Box>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setEditDialogOpen(false)}>Abbrechen</Button>
-                        <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo || loading}>
+                        <Button variant="contained" onClick={handleUpdateInstance} disabled={!editData.name || !editData.validFrom || !editData.validTo ||  (editData.isTwoTier && !editData.twoTierQuestion) || loading}>
                             {loading ? "Speichern..." : "Aktualisieren"}
                         </Button>
                     </DialogActions>

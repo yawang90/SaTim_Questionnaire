@@ -135,9 +135,14 @@ export const createSurveyInstanceHandler = async (req: Request, res: Response) =
         if (!surveyId) return res.status(400).json({ error: "Invalid survey ID" });
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
-        const { name, validFrom, validTo } = req.body;
+        const { name, validFrom, validTo, twoStage, secondStageTaskId } = req.body;
         if (!name || !validFrom || !validTo) {
             return res.status(400).json({ error: "Missing required fields: name, validFrom, validTo" });
+        }
+        if (twoStage && (!secondStageTaskId || !secondStageTaskId.toString().trim())) {
+            return res.status(400).json({
+                error: "Zweistufige Aufgaben benötigen eine secondStageTaskId"
+            });
         }
         const instance = await createSurveyInstance({
             surveyId,
@@ -146,6 +151,8 @@ export const createSurveyInstanceHandler = async (req: Request, res: Response) =
             validTo: new Date(validTo),
             createdById: userId,
             updatedById: userId,
+            twoStage: twoStage ?? false,
+            secondStageTaskId: secondStageTaskId?.toString() ?? null
         });
 
         res.status(201).json(instance);
@@ -178,13 +185,20 @@ export const updateSurveyInstanceHandler = async (req: Request, res: Response) =
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const { name, validFrom, validTo } = req.body;
-
+        const { name, validFrom, validTo, twoStage, secondStageTaskId } = req.body;
+        if (twoStage && (!secondStageTaskId || !secondStageTaskId.toString().trim())) {
+            return res.status(400).json({
+                error: "Zweistufige Aufgaben benötigen eine secondStageTaskId"
+            });
+        }
         const updatePayload: any = { updatedById: userId };
         if (name) updatePayload.name = name;
         if (validFrom) updatePayload.validFrom = new Date(validFrom);
         if (validTo) updatePayload.validTo = new Date(validTo);
-
+        if (twoStage !== undefined) {
+            updatePayload.twoStage = twoStage;
+            updatePayload.secondStageTaskId = twoStage ? secondStageTaskId.toString() : null;
+        }
         const updated = await updateSurveyInstanceById(id, updatePayload);
 
         res.json(updated);
