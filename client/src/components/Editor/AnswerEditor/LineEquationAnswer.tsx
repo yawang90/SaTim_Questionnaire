@@ -12,12 +12,10 @@ interface Props {
 }
 
 export const LineEquationAnswer: React.FC<Props> = ({ conditions, onChange }) => {
-
     return (
         <Box display="flex" gap={6}>
             <LineEquationEditor label="m" conditions={conditions.m} onChange={(nextM) =>
                 onChange({ ...conditions, m: nextM })}/>
-
             <LineEquationEditor label="c" conditions={conditions.c} onChange={(nextC) => onChange({ ...conditions, c: nextC })}/>
         </Box>
     );

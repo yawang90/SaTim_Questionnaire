@@ -8,6 +8,7 @@ import {NumericAnswerComponent} from "../Numeric/NumericAnswerComponent.tsx";
 import {SingleChoiceAnswerComponent} from "../SC/SingleChoiceAnswerComponent.tsx";
 import {LineEquationAnswerComponent} from "../LineEquation/LineEquationAnswerComponent.tsx";
 import {GeoGebraSlopeAnswerNodeView} from "../GeoGebra/SlopeTriangle/GeoGebraSlopeAnswerNodeView.tsx";
+import {AlgebraAnswerComponent} from "../Algebra/AlgebraAnswerComponent.tsx";
 
 export const FreeText = Node.create({
     name: 'freeText',
@@ -267,5 +268,49 @@ export const LineEquation = Node.create({
 
     addNodeView() {
         return ReactNodeViewRenderer(LineEquationAnswerComponent)
+    },
+})
+
+export const Algebra = Node.create({
+    name: 'algebra',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+
+    addAttributes() {
+        return {
+            id: {
+                default: null,
+            },
+            value: {
+                default: '',
+                parseHTML: element => element.getAttribute('data-value') || '',
+                renderHTML: attributes => ({
+                    'data-value': attributes.value,
+                }),
+            },
+        }
+    },
+
+    parseHTML() {
+        return [
+            {
+                tag: 'span[data-type="algebra"]',
+            },
+        ]
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'algebra',
+                class: 'algebra',
+            }),
+        ]
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(AlgebraAnswerComponent)
     },
 })

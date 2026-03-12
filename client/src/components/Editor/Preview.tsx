@@ -2,6 +2,7 @@ import React from 'react';
 import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
+    Algebra,
     FreeText,
     FreeTextInline,
     GeoGebra, GeoGebraSlopeNode,
@@ -65,7 +66,7 @@ export const Preview: React.FC<PreviewProps> = ({ content, editorRef: previewEdi
             FreeText,
             FreeTextInline,
             NumericInput,
-            LineEquation,
+            LineEquation, Algebra,
             MCChoice, LatexDisplay, SingleChoice
         ],
         content: content || { type: 'doc', content: [] },

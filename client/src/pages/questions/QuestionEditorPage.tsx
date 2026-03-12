@@ -19,6 +19,7 @@ import {
 import QuestionLayout from '../../layouts/QuestionLayout';
 import MainLayout from '../../layouts/MainLayout.tsx';
 import {
+    Algebra,
     FreeText,
     FreeTextInline,
     GeoGebra, GeoGebraSlopeNode,
@@ -51,7 +52,7 @@ export default function QuestionEditorPage() {
             StarterKit.configure({bulletList: {keepMarks: true}, orderedList: {keepMarks: true}}),
             TextStyle, FontSize, FontFamily, Underline, TextAlign.configure({ types: ['heading', 'paragraph', 'bulletList', 'orderedList'] }),
             Link, Table.configure({resizable: true, allowTableNodeSelection: true}), TableRow, TableCell, TableHeader, InlineResizableImage,
-            MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebraSlopeNode, GeoGebra, LatexDisplay, SingleChoice
+            MCChoice, FreeText, FreeTextInline, NumericInput, LineEquation, GeoGebraSlopeNode, GeoGebra, LatexDisplay, SingleChoice, Algebra
         ],
         content: '<p>Erstelle hier deine Aufgabe...</p>',
     });
@@ -120,6 +121,14 @@ export default function QuestionEditorPage() {
         editor.chain().focus().insertContent({
             type: 'lineEquation',
             attrs: {id: uuidv4(), mode: 'lineEquation',},
+        }).run();
+    };
+
+    const addAlgebra = () => {
+        if (!editor) return;
+        editor.chain().focus().insertContent({
+            type: 'algebra',
+            attrs: {id: uuidv4(), mode: 'algebra',},
         }).run();
     };
 
@@ -264,6 +273,7 @@ export default function QuestionEditorPage() {
                                 <MenuItem onClick={addFreeText}>Freitext Block</MenuItem>
                                 <MenuItem onClick={addFreeTextInline}>Freitext Inline</MenuItem>
                                 <MenuItem onClick={addNumeric}>Numerisch</MenuItem>
+                                <MenuItem onClick={addAlgebra}>Algebra</MenuItem>
                                 <MenuItem onClick={addLineEquation}>Geradengleichung</MenuItem>
                                 <MenuItem onClick={addGeoGebraPoints}>GeoGebra Applet – Punkte</MenuItem>
                                 <MenuItem onClick={addGeoGebraLines}>GeoGebra Applet – Strecke, Gerade, etc.</MenuItem>

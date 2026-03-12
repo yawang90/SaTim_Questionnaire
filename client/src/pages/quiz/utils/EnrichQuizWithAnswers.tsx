@@ -20,11 +20,7 @@ export function enrichQuizWithAnswers(content: JSONContent, previousAnswers?: an
                     case "numeric":
                     case "freeText":
                     case "freeTextInline":
-                        newNode.attrs = {
-                            ...newNode.attrs,
-                            value: answerNode.value
-                        };
-                        break;
+                    case "algebra":
                     case "lineEquation":
                     case "geoGebraLines":
                     case "geoGebraPoints":
@@ -60,16 +56,7 @@ function buildFlatAnswerMap(previousAnswers?: PreviousAnswer[]) {
         switch (kind) {
             case "mc":
             case "sc":
-                answer.value?.forEach((choice: any) => {
-                    map.set(
-                        String(choice.id),
-                        {
-                            kind,
-                            value: choice.selected
-                        }
-                    );
-
-                });
+                answer.value?.forEach((choice: any) => {map.set(String(choice.id), {kind, value: choice.selected});});
                 break;
             case "numeric":
             case "freetext":

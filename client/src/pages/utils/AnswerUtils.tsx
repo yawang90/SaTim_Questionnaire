@@ -12,14 +12,19 @@ export type Answer =
     | LineEquationAnswer
     | GeoGebraPointsAnswer
     | GeoGebraLinesAnswer
-    | GeoGebraSlopeAnswer;
+    | GeoGebraSlopeAnswer
+    | AlgebraAnswer;
 
 export type LineEquationAnswer = {
     kind: "lineEquation";
     key: string;
     value: string;
 };
-
+export type AlgebraAnswer = {
+    kind: "algebra";
+    key: string;
+    value: string;
+};
 export type GeoGebraPoint = { name: string; x: number; y: number };
 export type GeoGebraLine = { name: string; m: number; c: number; point1: GeoGebraPoint; point2: GeoGebraPoint };
 export type GeoGebraSlope = { line1: string; point1Line1: GeoGebraPoint; point2Line1: GeoGebraPoint; line2: string; point1Line2: GeoGebraPoint, point2Line2: GeoGebraPoint };
@@ -51,7 +56,8 @@ export type Block =
     | { kind: "lineEquation"; key: string }
     | { kind: "geoGebraPoints"; key: string; attrs?: { maxPoints?: number }}
     | { kind: "geoGebraLines"; key: string; attrs?: { maxLines?: number }}
-    | {kind: "geoGebraSlope"; key: string;};
+    | {kind: "geoGebraSlope"; key: string;}
+    | {kind: "algebra"; key: string};
 
 export const mapQuestionsStatus = (
     status: string | null | undefined
@@ -128,6 +134,7 @@ export function parseContentToBlocks(json: JSONContent): Block[] {
             if (node.type === "freeText") blockMap[nodeId] = {kind: "freeText", key: nodeId};
             if (node.type === "freeTextInline") blockMap[nodeId] = {kind: "freeTextInline", key: nodeId};
             if (node.type === "numericInput") blockMap[nodeId] = {kind: "numeric", key: nodeId};
+            if (node.type === "algebra") blockMap[nodeId] = {kind: "algebra", key: nodeId};
             if (node.type === "lineEquation") blockMap[nodeId] = {kind: "lineEquation", key: nodeId};
             if (node.type === "geoGebra") {
                 const nodeKey = node.attrs?.id || uuidv4();
@@ -179,6 +186,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
             case "freeText":
             case "freeTextInline":
             case "lineEquation":
+            case "algebra":
             case "numeric":
                 return {kind: block.kind, key: block.key, value: ""};
             case "geoGebraPoints":
@@ -229,6 +237,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
                 case "freeText":
                 case "freeTextInline":
                 case "numeric":
+                case "algebra":
                 case "lineEquation":
                     { const inputEl = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
                         `[data-node-view-wrapper] [id="${block.key}"]`);

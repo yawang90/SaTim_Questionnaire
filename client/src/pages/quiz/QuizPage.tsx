@@ -145,6 +145,9 @@ export default function QuizPage() {
                 if (!Array.isArray(ans.value)) return false;
                 return ans.value.some((v: any) => v.name?.trim() !== '');
             }
+            if (ans.kind === 'algebra') {
+                return ans.value.trim() !== '';
+            }
             if (ans.kind === 'lineEquation') {
                 return ans.value.trim() !== '' && ans.value.trim() !== 'y=';
             }
@@ -298,7 +301,7 @@ export default function QuizPage() {
                             <Typography variant="body1">
                                 Vielen Dank für Ihre Teilnahme.
                             </Typography>
-                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/MAB-Demo/?uid=${userId}/?instance=${id}`}>
+                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/techniktest032026/?uid=${userId}/?instance=${id}`}>
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                         </Box>

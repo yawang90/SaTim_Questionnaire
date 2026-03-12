@@ -34,6 +34,7 @@ import {GeoGebraLineAnswer} from "../../components/Editor/AnswerEditor/GeoGebraL
 import {MathJax, MathJaxContext} from "better-react-mathjax";
 import type {LineConditions, PointConditions} from "../../components/Editor/AnswerEditor/AnswerTypes.tsx";
 import {checkLineEquationHasErrors, checkPointHasErrors} from "../../components/MathHelper/LineEquationValidator.tsx";
+import { AlgebraAnswer } from "../../components/Editor/AnswerEditor/AlgebraAnswer.tsx";
 
 
 export default function AnswerEditorPage() {
@@ -88,6 +89,7 @@ export default function AnswerEditorPage() {
                     break;
                 case "freeText":
                 case "freeTextInline":
+                case "algebra":
                     initial[b.key] = "";
                     break;
                 case "geoGebraPoints": {
@@ -186,29 +188,32 @@ export default function AnswerEditorPage() {
     const validateAnswersBeforeSave = () => {
         const errors: string[] = [];
         const hasValid = (conds: any[]) => conds.every(c => {return c.value?.toString().trim() !== "";});
-        blocks.forEach((b) => {
+        blocks.forEach((b, index) => {
             const val = answers[b.key];
             switch (b.kind) {
                 case "sc":
-                    if (val === null) errors.push(`Single Choice (${b.key}) braucht eine Auswahl.`);
+                    if (val === null) errors.push(`Single Choice (${index+1}) braucht eine Auswahl.`);
                     break;
                 case "numeric":
-                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Numerische Eingabe (${b.key}) braucht gültige Werte.`);
+                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Numerische Eingabe (${index+1}) braucht gültige Werte.`);
                     break;
                 case "lineEquation":
-                    if (!val?.m || !hasValid(val.m)) errors.push(`Geradengleichung : m benötigt eine Bedingung.`);
-                    if (!val?.c || !hasValid(val.c)) errors.push(`Geradengleichung : c benötigt eine Bedingung.`);
+                    if (!val?.m || !hasValid(val.m)) errors.push(`Geradengleichung (${index+1}): m benötigt eine Bedingung.`);
+                    if (!val?.c || !hasValid(val.c)) errors.push(`Geradengleichung (${index+1}): c benötigt eine Bedingung.`);
                     break;
                 case "freeText":
                 case "freeTextInline":
-                    if (!val || !val.trim()) errors.push(`Freitext (${b.key}) darf nicht leer sein.`);
+                    if (!val || !val.trim()) errors.push(`Freitext Eingabe (${index+1}) darf nicht leer sein.`);
+                    break;
+                case "algebra":
+                    if (!val || !val.trim()) errors.push(`Algebra Eingabe (${index+1}) darf nicht leer sein.`);
                     break;
                 case "geoGebraPoints":
                     for (let i = 0; i < (b.attrs?.maxPoints ?? 0); i++) {
                         const pointName = getGeoGebraPointName(i, b.key);
                         const conds = answers[pointName];
                         if (!conds || !hasValid(conds.x) || !hasValid(conds.y)) {
-                            errors.push(`GeoGebra Punkt ${pointName} (${b.key}) benötigt gültige Bedingungen für x und y.`);
+                            errors.push(`GeoGebra Punkt ${pointName} (${index+1}) benötigt gültige Bedingungen für x und y.`);
                         }
                     }
                     break;
@@ -217,12 +222,12 @@ export default function AnswerEditorPage() {
                         const lineName = getGeoGebraLineName(i, b.key);
                         const conds = answers[lineName];
                         if (!conds || !hasValid(conds.m) || !hasValid(conds.c)) {
-                            errors.push(`GeoGebra Linie ${lineName} (${b.key}) benötigt gültige Bedingungen für m und c.`);
+                            errors.push(`GeoGebra Linie ${lineName} (${index+1}) benötigt gültige Bedingungen für m und c.`);
                         }
                     }
                     break;
                 case "geoGebraSlope":
-                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Geogebra Steigung (${b.key}) braucht gültige Werte.`);
+                    if (!Array.isArray(val) || !hasValid(val)) errors.push(`Geogebra Steigung (${index+1}) braucht gültige Werte.`);
                     break;
             }
         });
@@ -321,11 +326,11 @@ export default function AnswerEditorPage() {
                                                     b.kind === "sc" ? `Single Choice (${b.key})` :
                                                         b.kind === "freeText" ? `Freitext (${idx + 1})` :
                                                             b.kind === "freeTextInline" ? `Freitext Inline (${idx + 1})` :
-                                                                b.kind === "numeric" ? `Numerische Eingabe (${idx + 1})` :
-                                                                    b.kind === "lineEquation" ? `Geradengleichung (${idx + 1})` :
-                                                                        b.kind === "geoGebraSlope" ? `GeoGebra Steigungsdreieck (${idx + 1})` :
-                                                                        b.kind === "geoGebraPoints" ? `GeoGebra Punkte (${idx + 1})` :
-                                                                            `GeoGebra Linien (${idx + 1})`}
+                                                                b.kind === "algebra" ? `Algebra Eingabe (${idx + 1})` :
+                                                                    b.kind === "numeric" ? `Numerische Eingabe (${idx + 1})` :
+                                                                        b.kind === "lineEquation" ? `Geradengleichung (${idx + 1})` :
+                                                                           b.kind === "geoGebraSlope" ? `GeoGebra Steigungsdreieck (${idx + 1})` :
+                                                                               b.kind === "geoGebraPoints" ? `GeoGebra Punkte (${idx + 1})` : `GeoGebra Linien (${idx + 1})`}
                                             </Typography>
                                         </AccordionSummary>
                                         <AccordionDetails>
@@ -374,6 +379,14 @@ export default function AnswerEditorPage() {
                                                 <NumericAnswer
                                                     conditions={answers[b.key] ?? [{operator: "=", value: ""}]}
                                                     onChange={(val) => handleAnswerChange(b.key, val)}
+                                                />
+                                            )}
+
+                                            {/* Algebra */}
+                                            {(b.kind === "algebra") && (
+                                                <AlgebraAnswer
+                                                    value={answers[b.key] ?? ""}
+                                                    onChange={(val:string) =>{handleAnswerChange(b.key, val)}}
                                                 />
                                             )}
 

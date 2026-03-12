@@ -9,6 +9,7 @@ import {LaTeXComponent} from "../LaTeX/LaTeXComponent.tsx";
 import {SingleChoiceEditorComponent} from "../SC/SingleChoiceEditorComponent.tsx";
 import {LineEquationEditorComponent} from "../LineEquation/LineEquationEditorComponent.tsx";
 import {GeoGebraSlopeEditorComponent} from "../GeoGebra/SlopeTriangle/GeoGebraSlopeEditorComponent.tsx";
+import {AlgebraEditorComponent} from "../Algebra/AlgebraEditorComponent.tsx";
 
 export const MCChoice = Node.create({
     name: 'mcChoice',
@@ -301,5 +302,34 @@ export const LineEquation = Node.create({
 
     addNodeView() {
         return ReactNodeViewRenderer(LineEquationEditorComponent)
+    },
+})
+
+export const Algebra = Node.create({
+    name: 'algebra',
+    group: 'inline',
+    inline: true,
+    atom: true,
+    selectable: true,
+    addAttributes() {
+        return {
+            id: { default: null },
+            placeholder: { default: 'Algebra Eingabe' },
+        }
+    },
+    parseHTML() {
+        return [{ tag: 'span[data-type="algebra"]' }]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'span',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'algebra',
+                class: 'algebra',
+            }),
+        ]
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(AlgebraEditorComponent)
     },
 })
