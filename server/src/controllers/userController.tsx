@@ -21,30 +21,32 @@ interface GetUserByIdQuery {
 }
 
 export const registerUser = async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
-    const { error } = registerValidationSchema.validate(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0]?.message });
-    }
+    res.status(500).json({ message: 'Database error' });
 
-    try {
-        if (!process.env.JWT_SECRET) {
-            throw new Error('JWT_SECRET not set');
-        }
-        const result = await saveNewUser(req.body);
-        const token = jwt.sign(
-            { userId: result.id.toString(), email: result.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-        res.status(201).json({
-            message: 'User registered successfully',
-            userId: result.id.toString(),
-            token,
-        });
-    } catch (err) {
-        console.error('Error registering user:', err);
-        res.status(500).json({ message: 'Database error' });
-    }
+    /* TODO enable again const { error } = registerValidationSchema.validate(req.body);
+     if (error) {
+         return res.status(400).json({ message: error.details[0]?.message });
+     }
+
+     try {
+         if (!process.env.JWT_SECRET) {
+             throw new Error('JWT_SECRET not set');
+         }
+         const result = await saveNewUser(req.body);
+         const token = jwt.sign(
+             { userId: result.id.toString(), email: result.email },
+             process.env.JWT_SECRET,
+             { expiresIn: '24h' }
+         );
+         res.status(201).json({
+             message: 'User registered successfully',
+             userId: result.id.toString(),
+             token,
+         });
+     } catch (err) {
+         console.error('Error registering user:', err);
+         res.status(500).json({ message: 'Database error' });
+     }*/
 };
 
 
