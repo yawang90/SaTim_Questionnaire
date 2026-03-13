@@ -21,7 +21,7 @@ interface GetUserByIdQuery {
 }
 
 export const registerUser = async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
-    res.status(500).json({ message: 'Database error' });
+    res.status(500).json({ message: 'Aktuell keine Registrierung möglich.' });
 
     /* TODO enable again const { error } = registerValidationSchema.validate(req.body);
      if (error) {
