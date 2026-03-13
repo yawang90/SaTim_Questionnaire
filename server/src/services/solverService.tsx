@@ -2,7 +2,7 @@ import prisma from "../config/prismaClient.js";
 import type {question} from "@prisma/client";
 import {ce} from "../index.js";
 
-type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation";
+type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation" | "algebra";
 
 interface CorrectAnswerBase {
     type: AnswerType;
@@ -39,6 +39,11 @@ interface GeoGebraLineAnswer extends CorrectAnswerBase {
     value: any;
 }
 
+interface AlgebraAnswer extends CorrectAnswerBase {
+    type: "algebra";
+    value: string;
+}
+
 interface LineEquationAnswer extends CorrectAnswerBase {
     type: "lineEquation";
     value: {
@@ -53,7 +58,7 @@ type NumericCondition = {
     logic?: "and" | "or";
 };
 
-type CorrectAnswer = | SingleChoiceAnswer | MultipleChoiceAnswer | NumericAnswer | LineEquationAnswer | FreeTextAnswer | GeoGebraPointAnswer | GeoGebraLineAnswer;
+type CorrectAnswer = | SingleChoiceAnswer | MultipleChoiceAnswer | NumericAnswer | LineEquationAnswer | FreeTextAnswer | GeoGebraPointAnswer | GeoGebraLineAnswer | AlgebraAnswer;
 
 type CorrectAnswersJson = Record<string, CorrectAnswer>;
 
@@ -198,6 +203,17 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                         isCorrect = true;
                         score += 1;
                     }
+                    break;
+                }
+                case "algebra": {
+                    try {
+                        if (checkAlgebraEquality(correctAnswer.value, userAnswer.value)) {
+                            isCorrect = true;
+                            score += 1;
+                        }
+                        break;
+                    } catch (err) {
+                        console.log("Algebra evaluation error:", err);}
                     break;
                 }
                 case "lineEquation": {
@@ -392,4 +408,19 @@ function substituteAndEvaluate(expressionLatex: string, variable: "m" | "c", val
         throw new Error(`Invalid numeric result for ${expressionLatex}`);
     }
     return result;
+}
+
+function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolean {
+    try {
+        const userExpr = ce.parse(userLatex, { syntax: "latex" });
+        const correctExpr = ce.parse(correctLatex, { syntax: "latex" });
+
+        const diff = ce.box(["Subtract", userExpr, correctExpr]).simplify().canonical;
+        const num = Number(diff.N().valueOf());
+        console.log(Math.abs(num)< 1e-12)
+        return Math.abs(num) < 1e-12;
+    } catch (err) {
+        console.log("Algebra comparison failed:", err);
+        return false;
+    }
 }
