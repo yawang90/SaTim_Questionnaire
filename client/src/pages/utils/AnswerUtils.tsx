@@ -213,8 +213,7 @@ export function extractAnswersFromJson(doc: JSONContent, blocks: Block[]): Answe
     const walk = (nodes: TipTapNode[]) => {
         for (const node of nodes) {
             if (!node || !node.type) continue;
-
-            const block = blocks.find((b) => b.key === node.attrs?.id);
+            const block = blocks.find((b) => b.key === node.attrs?.id || b.key === node.attrs?.groupId);
             if (!block) {
                 if (node.content) walk(node.content);
                 continue;
