@@ -78,9 +78,8 @@ export const findQuestionById = async (
 
     const appearsInBooklet = result.bookletQuestion.length > 0;
     const isFinished = result.status === "FINISHED";
-    const isEditable = !(appearsInBooklet && isFinished);
-
-    // remove relation if you don’t want to expose it
+    const isEditable = true;
+  // TODO enable again  const isEditable = !(appearsInBooklet && isFinished);
     const { bookletQuestion, ...questionData } = result;
 
     return {

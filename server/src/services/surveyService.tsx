@@ -261,8 +261,8 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
         const validIds = validQuestions.map(q => q.id);
         const unfinishedIds = validQuestions.filter(q => q.status !== question_status.FINISHED).map(q => q.id);
         const missing = questionIds.filter(id => !validIds.includes(id));
-
-        if (missing.length > 0 || unfinishedIds.length > 0) {
+//TODO enable again if (missing.length > 0 || unfinishedIds.length > 0) {
+        if (missing.length > 0) {
             errors.push({
                 bookletId,
                 missingQuestionIds: missing,
