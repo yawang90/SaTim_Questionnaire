@@ -3,7 +3,7 @@ import {
     endQuestionSessionHandler,
     getQuizHandler,
     skipQuestionHandler, startQuestionSessionHandler,
-    submitAnswerHandler,
+    submitAnswerHandler, submitFeedbackHandler,
     trackQuestionTimeHandler
 } from "../controllers/quizController.js";
 
@@ -15,5 +15,7 @@ router.post('/question/:questionId/skip', skipQuestionHandler);
 router.post('/track-time', trackQuestionTimeHandler);
 router.post('/session/start', startQuestionSessionHandler);
 router.post('/session/end', endQuestionSessionHandler);
+router.post('/feedback', submitFeedbackHandler);
+
 
 export default router;

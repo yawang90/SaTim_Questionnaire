@@ -23,6 +23,8 @@ export interface NextQuestion {
     previousAnswer?: any;
     skipped: boolean;
     skippedQuestions: number[];
+    isTwoTier: boolean;
+    feedback?: Record<string, string> | null;
 }
 
 export async function getQuiz(instanceId: string, userId: string, questionId?: number, freeParam?: string): Promise<NextQuestion> {
@@ -40,7 +42,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
         where: { surveyId: survey.id, instanceId: instance.id, userId },
-        include: { questionsAnswers: true, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
+        include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
@@ -53,7 +55,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 freeParam: freeParam ? freeParam: null,
                 questionIds: booklet.bookletQuestion.map(bq => bq.question.id),
             },
-            include: { questionsAnswers: true, booklet: { include: { bookletQuestion: true } } },
+            include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: true } } },
         });
     }
     let nextQuestion: QuizQuestion | null = null;
@@ -75,7 +77,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     } else {
         nextQuestion = await getNextUnansweredQuestion(answerRecord);
     }
-
+    let previousFeedback;
     let previousAnswer;
     if (nextQuestion) {
         previousAnswer = answerRecord.questionsAnswers.find(qa => qa.questionId === nextQuestion.id);
@@ -92,6 +94,14 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
             },
             update: {},
         });
+        if (previousAnswer?.feedbackAnswer) {
+            previousFeedback = Object.fromEntries(
+                previousAnswer.feedbackAnswer.map(f => [
+                    f.questionKey,
+                    f.selectedOption,
+                ])
+            );
+        }
         previousAnswer = qaRecord;
     }
     const answeredQuestionIds = answerRecord.questionsAnswers
@@ -103,7 +113,6 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
 
     const totalQuestions = answerRecord.questionIds.length;
     const answeredQuestions = answeredQuestionIds.length;
-
     let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion?.id, contentJson: nextQuestion?.contentJson} : null;
     return {
         surveyId: survey.id,
@@ -118,7 +127,9 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         answeredQuestionIds:answeredQuestionIds,
         skipped: previousAnswer ? previousAnswer.skipped : false,
         previousAnswer: previousAnswer ? previousAnswer.answerJson : null,
-        skippedQuestions: skippedQuestionIds
+        skippedQuestions: skippedQuestionIds,
+        isTwoTier: survey.isTwoTier,
+        feedback: previousFeedback? previousFeedback : null
     };
 }
 
@@ -329,3 +340,41 @@ export async function endQuestionSession(userId: string, questionId: number, ins
         }
     });
 }
+
+export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: { instanceId: number; questionId: number; userId: string; feedback: Record<string, string>; }) => {
+    const answerRecord = await prisma.answer.findFirst({
+        where: {userId, instanceId,},
+        include: {questionsAnswers: true,},
+    });
+    if (!answerRecord) {
+        throw new Error("ANSWER_RECORD_NOT_FOUND");
+    }
+    let questionAnswer = answerRecord.questionsAnswers.find(
+        qa => qa.questionId === questionId
+    );
+    if (!questionAnswer) {
+        throw new Error("ANSWER_QUESTIONS_RECORD_NOT_FOUND");
+    }
+    const operations = Object.entries(feedback).map(([key, value]) =>
+        prisma.feedbackAnswer.upsert({
+            where: {
+                questionAnswerId_questionKey: {
+                    questionAnswerId: questionAnswer.id,
+                    questionKey: key,
+                },
+            },
+            update: {
+                selectedOption: value,
+            },
+            create: {
+                questionAnswerId: questionAnswer.id,
+                questionKey: key,
+                selectedOption: value,
+            },
+        })
+    );
+
+    await prisma.$transaction(operations);
+
+    return { success: true };
+};

@@ -7,6 +7,7 @@ export interface CreateSurveyDTO {
     toDate?: string;
     mode: "adaptiv" | "design";
     status?: surveyStatus;
+    isTwoTier: boolean;
 }
 
 export interface SurveyResponse {
@@ -25,6 +26,7 @@ export interface SurveyResponse {
         validTo: string;
     }[];
     hasActiveInstance?: boolean;
+    isTwoTier: boolean;
 }
 
 // @ts-expect-error
@@ -47,7 +49,6 @@ export async function createSurvey(data: CreateSurveyDTO): Promise<SurveyRespons
         const message = await res.text();
         throw new Error(`Failed to create survey: ${message}`);
     }
-
     return res.json();
 }
 

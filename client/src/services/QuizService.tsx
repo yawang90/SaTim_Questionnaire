@@ -29,6 +29,8 @@ export interface Quiz {
     previousAnswer?: any;
     skipped: boolean;
     skippedQuestions: number[];
+    isTwoTier: boolean;
+    feedback: {[key: string]: string};
 }
 
 export interface LineEquationAnswer {
@@ -175,6 +177,32 @@ export async function endQuestionSession(instanceId: string, questionId: number,
     if (!res.ok) {
         const msg = await res.text();
         throw new Error(`Failed to end session: ${msg}`);
+    }
+
+    return res.json();
+}
+
+export async function submitTwoTierFeedback(
+    instanceId: string,
+    questionId: number,
+    userId: string,
+    feedback: Record<string, string>
+) {
+    const res = await fetch(`${API_BASE}/api/quiz/feedback`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            instanceId,
+            questionId,
+            userId,
+            feedback,
+        }),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to save feedback");
     }
 
     return res.json();

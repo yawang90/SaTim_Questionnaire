@@ -6,6 +6,11 @@ type PreviousAnswer = {
     value: any;
 };
 
+export const feedbackQuestions = [
+    { key: "q1", text: "War dir klar, was du bei dieser Aufgabe tun solltest?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] },
+    { key: "q2", text: "Konntest du deine Antwort so in das System eingeben, wie du wolltest?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] }
+];
+
 export function enrichQuizWithAnswers(content: JSONContent, previousAnswers?: any[]): JSONContent {
     const answerMap = buildFlatAnswerMap(previousAnswers);
     const walk = (node: any): any => {

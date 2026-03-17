@@ -23,6 +23,7 @@ interface SurveyInput {
         validFrom: string;
         validTo: string;
     }[];
+    isTwoTier: boolean
 }
 
 /**
@@ -30,7 +31,7 @@ interface SurveyInput {
  */
 export const createSurveyHandler = async (req: Request, res: Response) => {
     try {
-        const { title, description, mode, instances } = req.body as SurveyInput;
+        const { title, description, mode, instances, isTwoTier } = req.body as SurveyInput;
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
@@ -49,6 +50,7 @@ export const createSurveyHandler = async (req: Request, res: Response) => {
                 validFrom: new Date(i.validFrom),
                 validTo: new Date(i.validTo),
             })) || [],
+            isTwoTier: isTwoTier
         });
 
         res.status(201).json(newSurvey);

@@ -46,6 +46,7 @@ interface SurveyDetail {
     file1?: File | null;
     file2?: File | null;
     hasActiveInstance?: boolean;
+    isTwoTier: boolean;
 }
 
 const statusLabels: Record<SurveyDetail["status"], string> = {
@@ -96,7 +97,8 @@ const SurveyUpdatePage = () => {
                     mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                     file1: null,
                     file2: null,
-                    hasActiveInstance: data.hasActiveInstance
+                    hasActiveInstance: data.hasActiveInstance,
+                    isTwoTier: data.isTwoTier
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
@@ -184,6 +186,7 @@ const SurveyUpdatePage = () => {
                     <Typography variant="subtitle1"><strong>Titel:</strong> {survey.title}</Typography>
                     <Typography variant="subtitle1"><strong>Status:</strong> {statusLabels[survey.status]}</Typography>
                     <Typography variant="subtitle1"><strong>Modus:</strong> {survey.mode}</Typography>
+                    <Typography variant="subtitle1"><strong>Zweistufig:</strong> {survey.isTwoTier ? "Ja": "Nein"}</Typography>
                     <Typography variant="subtitle1" sx={{ mt: 2 }}><strong>Beschreibung:</strong></Typography>
                     <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", mb: 2 }}>{survey.description}</Typography>
 

@@ -7,7 +7,7 @@ import {
     type Quiz,
     type Quiz as QuizType,
     skipQuestion, startQuestionSession,
-    submitAnswer, trackQuestionTime
+    submitAnswer, submitTwoTierFeedback, trackQuestionTime
 } from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
@@ -26,7 +26,7 @@ import {
     parseContentToBlocks
 } from '../utils/AnswerUtils.tsx';
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import {enrichQuizWithAnswers} from "./utils/EnrichQuizWithAnswers.tsx";
+import {enrichQuizWithAnswers, feedbackQuestions} from "./utils/EnrichQuizWithAnswers.tsx";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -40,6 +40,7 @@ export default function QuizPage() {
     const [quizFinished, setQuizFinished] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [geoGebraAnswers, setGeoGebraAnswers] = useState<GeoGebraAnswer[]>([]);
+    const [feedback, setFeedback] = useState<{ [key: string]: string }>({});
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
@@ -116,6 +117,7 @@ export default function QuizPage() {
                 data.question.contentJson = contentWithAnswers;
             }
             setQuiz(data);
+            setFeedback(data.feedback || {});
             setQuizFinished(!data.question);
             if (!questionIds.length && data.questionIds) {
                 setQuestionIds(data.questionIds);
@@ -243,6 +245,27 @@ export default function QuizPage() {
             </GeneralLayout>
         );
 
+    const handleFeedbackChange = async (key: string, value: string) => {
+        if (!id || !quiz?.question?.id || !userId) return;
+        const updatedFeedback = {...feedback, [key]: value};
+        setFeedback(updatedFeedback);
+        try {
+            await submitTwoTierFeedback(id!, quiz!.question!.id, userId!, updatedFeedback);
+            setSnackbar({
+                open: true,
+                message: "Feedback gespeichert",
+                severity: "success",
+            });
+        } catch (err) {
+            console.error(err);
+            setSnackbar({
+                open: true,
+                message: "Feedback konnte nicht gespeichert werden.",
+                severity: "error",
+            });
+        }
+    };
+
     if (error) {
         return (
             <GeneralLayout>
@@ -305,10 +328,9 @@ export default function QuizPage() {
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                         </Box>
-                    ) : (quiz?.question && (
-                        <Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
+                    ) : (quiz?.question && (<Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
                 </Box>
-                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto' }}>
+                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
                         <Button
                             variant="outlined"
                             onClick={async () => {
@@ -328,12 +350,35 @@ export default function QuizPage() {
                             color="primary"
                             onClick={handleTestAnswers}
                             disabled={submitting || loading}>
-                            {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort abschicken"}
+                            {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort speichern"}
                         </Button>
                     </Box>
                 ) : (<></>)}
+                {quiz?.isTwoTier && !quizFinished  && (
+                    <><Box sx={{border: '2px solid black', borderRadius: 2, p: 2, mt: 3, maxWidth: 600, margin: 'auto', mb: 3}}>
+                        <Typography variant="h6"    sx={{mb: 2, borderBottom: '1px solid #ccc', pb: 1}}>Dein Feedback</Typography>
+                        {feedbackQuestions.map((q) => (
+                            <Box key={q.key}>
+                                <Typography variant="body1" sx={{ mb: 1 }}>
+                                    {q.text}
+                                </Typography>
+                                {q.options.map((opt) => (
+                                    <label key={opt} style={{ display: 'block', marginBottom: 4 }}>
+                                        <input
+                                            type="radio"
+                                            name={q.key}
+                                            value={opt}
+                                            checked={feedback?.[q.key] === opt}
+                                            onChange={(e) => handleFeedbackChange(q.key, e.target.value)}
+                                        />
+                                        {opt}
+                                    </label>
+                                ))}
+                            </Box>
+                        ))}</Box>
+                    </>)}
             </main>
-            <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
+            <Snackbar open={snackbar.open} autoHideDuration={1500} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
                 <Alert
                     onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
                     severity={snackbar.severity}

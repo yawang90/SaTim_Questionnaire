@@ -90,6 +90,7 @@ model survey {
   booklet                booklet[]
   bookletMappingExcelUrl String?
   bookletVersion         Int              @default(0)
+  isTwoTier              Boolean          @default(false)
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
@@ -169,6 +170,7 @@ model questionAnswer {
   skipped          Boolean                  @default(false)
   answer           answer                   @relation("BelongsToAnswer", fields: [answerId], references: [id])
   sessions         questionSolvingSession[]
+  feedbackAnswer   feedbackAnswer[]
 
   @@unique([answerId, questionId])
 }
@@ -181,4 +183,15 @@ model questionSolvingSession {
   questionAnswer   questionAnswer @relation(fields: [questionAnswerId], references: [id], onDelete: Cascade)
 
   @@index([questionAnswerId])
+}
+
+model feedbackAnswer {
+  id               Int            @id @default(autoincrement())
+  questionAnswerId Int
+  questionKey      String
+  selectedOption   String
+  createdAt        DateTime       @default(now())
+  questionAnswer   questionAnswer @relation(fields: [questionAnswerId], references: [id], onDelete: Cascade)
+
+  @@unique([questionAnswerId, questionKey])
 }

@@ -19,7 +19,7 @@ import {
     MenuItem,
     Radio,
     RadioGroup, Select,
-    Snackbar,
+    Snackbar, Switch,
     TextField, Tooltip,
     Typography,
 } from "@mui/material";
@@ -43,6 +43,7 @@ interface Survey {
         validTo: string;
     }[];
     hasActiveInstance?: boolean;
+    isTwoTier: boolean;
 }
 
 const DashboardPage = () => {
@@ -54,22 +55,21 @@ const DashboardPage = () => {
     const [creating, setCreating] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [snackbar, setSnackbar] = useState({open: false, message: "", severity: "success" as "success" | "error",});
-    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design"; }>({title: "", description: "", fromDate: "", toDate: "", mode: "design",});
+    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design"; isTwoTier: boolean }>({title: "", description: "", fromDate: "", toDate: "", mode: "design", isTwoTier: false});
 
     const handleCreateSurvey = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setCreating(true);
-
         try {
             const payload = {
                 title: newSurvey.title,
                 description: newSurvey.description,
                 mode: newSurvey.mode,
                 status: "IN_PROGRESS" as surveyStatus,
+                isTwoTier: newSurvey.isTwoTier
             };
 
             const created = await createSurvey(payload);
-
             const survey: Survey = {
                 id: created.id.toString(),
                 title: created.title,
@@ -77,11 +77,11 @@ const DashboardPage = () => {
                 createdAt: created.createdAt,
                 status: mapStatus(created.status ?? "IN_PROGRESS"),
                 mode: newSurvey.mode,
+                isTwoTier: created.isTwoTier
             };
             setSurveys([survey, ...surveys]);
             setSnackbar({open: true, message: "Erhebung erfolgreich erstellt!", severity: "success",});
-
-            setNewSurvey({title: "", description: "", fromDate: "", toDate: "", mode: "design",});
+            setNewSurvey({title: "", description: "", fromDate: "", toDate: "", mode: "design", isTwoTier: false});
             setIsDialogOpen(false);
         } catch (err) {
             console.log(err);
@@ -152,6 +152,7 @@ const DashboardPage = () => {
                             mode: s.mode.toLowerCase() as "adaptiv" | "design",
                             instances: s.instances,
                             hasActiveInstance: s.hasActiveInstance,
+                            isTwoTier: s.isTwoTier
                         };
                     })
                 );
@@ -213,6 +214,15 @@ const DashboardPage = () => {
                                 })}>
                                 <FormControlLabel value="design" control={<Radio />} label="Design Matrix"/>
                             </RadioGroup>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Zweistufiger Test
+                            </Typography>
+                            <FormControlLabel
+                                control={
+                                    <Switch checked={newSurvey.isTwoTier}
+                                        onChange={(e) =>
+                                            setNewSurvey({...newSurvey, isTwoTier: e.target.checked,})}/>
+                                } label={newSurvey.isTwoTier ? "Ja" : "Nein"}/>
                         </DialogContent>
                         <DialogActions>
                             <Button variant="outlined" onClick={() => setIsDialogOpen(false)}>
@@ -255,6 +265,9 @@ const DashboardPage = () => {
                                                 <CalendarToday fontSize="small" /> {"Erstellt am "}
                                                 {new Date(survey.createdAt).toLocaleDateString()}
                                             </Box>
+                                        </Box>
+                                        <Box  mt={1}>
+                                            {survey.isTwoTier && (<Chip label="Zweistufig" size="small"/>)}
                                         </Box>
                                     </CardContent>
                                     <CardActions>

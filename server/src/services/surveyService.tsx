@@ -18,6 +18,7 @@ interface CreateSurveyInput {
         validFrom: Date;
         validTo: Date;
     }[];
+    isTwoTier: boolean;
 }
 
 /**
@@ -63,6 +64,7 @@ export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => 
         status: data.status ?? "IN_PROGRESS",
         createdById: data.createdById,
         updatedById: data.updatedById,
+        isTwoTier: data.isTwoTier
     };
 
     if (data.description !== undefined) createData.description = data.description;
