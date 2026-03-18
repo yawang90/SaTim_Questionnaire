@@ -40,9 +40,12 @@ export default function QuestionsTablePage() {
     const [duplicating, setDuplicating] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [searchTitle, setSearchTitle] = useState<string>("");
+    const [filterCreatedBy, setFilterCreatedBy] = useState<string>("");
+    const [filterUpdatedBy, setFilterUpdatedBy] = useState<string>("");
 
     const transformedRows = rows.map((row) => {
-        const flatRow: Record<string, any> = { id: row.id, status: row.status, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
+        const flatRow: Record<string, any> = { id: row.id, status: row.status, title: (row as any).title, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
         row.metadata.forEach((meta) => {
             flatRow[meta.key] = meta.value;
         });
@@ -92,6 +95,15 @@ export default function QuestionsTablePage() {
     const filteredRows = transformedRows.filter((row) => {
         const searchId = parseInt(searchText, 10);
         const matchesId = searchText ? row.id === searchId : true;
+        const matchesTitle = searchTitle
+            ? row.title?.toLowerCase().includes(searchTitle.toLowerCase())
+            : true;
+        const matchesCreatedBy = filterCreatedBy
+            ? row.createdBy?.toLowerCase().includes(filterCreatedBy.toLowerCase())
+            : true;
+        const matchesUpdatedBy = filterUpdatedBy
+            ? row.updatedBy?.toLowerCase().includes(filterUpdatedBy.toLowerCase())
+            : true;
 
         let statusCode: string;
         switch (filterStatus) {
@@ -111,7 +123,13 @@ export default function QuestionsTablePage() {
                 statusCode = "";
         }
         const matchesStatus = !filterStatus || row.status === statusCode;
-        return matchesId && matchesStatus;
+        return (
+            matchesId &&
+            matchesTitle &&
+            matchesCreatedBy &&
+            matchesUpdatedBy &&
+            matchesStatus
+        );
     });
 
     const handleRowClick = async (id: GridRowId) => {
@@ -176,18 +194,38 @@ export default function QuestionsTablePage() {
                         Neue Aufgabe erstellen
                     </Button>
                 </Box>
-
+                {/* ---Filter--- */}
                 <Box display="flex" gap={2} mb={2} flexWrap="wrap">
                     <TextField
                         label="Suche nach ID"
-                        variant="outlined"
                         size="small"
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                     />
+                    <TextField
+                        label="Titel"
+                        size="small"
+                        value={searchTitle}
+                        onChange={(e) => setSearchTitle(e.target.value)}
+                    />
+                    <TextField
+                        label="Erstellt von"
+                        size="small"
+                        value={filterCreatedBy}
+                        onChange={(e) => setFilterCreatedBy(e.target.value)}
+                    />
+                    <TextField
+                        label="Geändert von"
+                        size="small"
+                        value={filterUpdatedBy}
+                        onChange={(e) => setFilterUpdatedBy(e.target.value)}
+                    />
                     <FormControl size="small" sx={{ minWidth: 150 }}>
                         <InputLabel>Status</InputLabel>
-                        <Select value={filterStatus} label="Serie" onChange={(e) => setFilterStatus(e.target.value)}>
+                        <Select
+                            value={filterStatus}
+                            label="Status"
+                            onChange={(e) => setFilterStatus(e.target.value)}>
                             <MenuItem value="">Alle</MenuItem>
                             <MenuItem value="In Bearbeitung">In Bearbeitung</MenuItem>
                             <MenuItem value="Gelöscht">Gelöscht</MenuItem>
@@ -196,6 +234,7 @@ export default function QuestionsTablePage() {
                         </Select>
                     </FormControl>
                 </Box>
+                {/* --- Table --- */}
                 <Box sx={{ flex: 1, width: "100%", display: "flex", flexDirection: "column" }}>
                     {(!loading) &&
                     <DataGrid
