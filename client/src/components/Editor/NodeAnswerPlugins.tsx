@@ -192,6 +192,9 @@ export const NumericInput = Node.create({
     addAttributes() {
         return {
             id: { default: null },
+            size: {
+                default: 'l',
+            },
             mode: {
                 default: 'numeric',
                 parseHTML: element => element.getAttribute('data-mode') || 'numeric',

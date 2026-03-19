@@ -6,6 +6,13 @@ import 'mathlive'
 export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [value, setValue] = useState(node.attrs.value || '')
+    const sizeMap: Record<'s' | 'm' | 'l', number> = {
+        s: 100,
+        m: 220,
+        l: 380,
+    }
+    const size = (node.attrs.size as 's' | 'm' | 'l') || 'l'
+    const width = sizeMap[size]
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -44,8 +51,8 @@ export const NumericAnswerComponent: React.FC<NodeViewProps> = ({ node, updateAt
                     size="small"
                     variant="outlined"
                     inputRef={textareaRef}
-                    sx={{ width: 380 }}
-                />
+                    sx={{ width , backgroundColor: "white"}}
+        />
         </NodeViewWrapper>
     )
 }
