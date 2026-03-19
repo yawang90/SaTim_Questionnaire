@@ -8,7 +8,8 @@ type PreviousAnswer = {
 
 export const feedbackQuestions = [
     { key: "q1", text: "War dir klar, was du bei dieser Aufgabe tun solltest?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] },
-    { key: "q2", text: "Konntest du deine Antwort so in das System eingeben, wie du wolltest?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] }
+    { key: "q2", text: "War die Eingabe der Antwort ohne Schwierigkeiten möglich?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] },
+    { key: "q3", text: "Bist du dir sicher, dass deine Antwort korrekt ist?", options: ["Ja, absolut", "Eher ja", "Eher nein", "Nein, gar nicht"] }
 ];
 
 export function enrichQuizWithAnswers(content: JSONContent, previousAnswers?: any[]): JSONContent {
