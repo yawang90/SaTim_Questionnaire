@@ -25,12 +25,8 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                                                                                     variant, onAnswerChange, value
                                                                                 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [answerPoints, setAnswerPoints] = useState<GeoGebraPoint[]>(
-        variant === 'points' ? (value as GeoGebraPoint[]) ?? [] : []
-    );
-    const [answerLines, setAnswerLines] = useState<GeoGebraLine[]>(
-        variant === 'lines' ? (value as GeoGebraLine[]) ?? [] : []
-    );
+    const [answerPoints, setAnswerPoints] = useState<GeoGebraPoint[]>(variant === 'points' ? (value as GeoGebraPoint[]) ?? [] : []);
+    const [answerLines, setAnswerLines] = useState<GeoGebraLine[]>(variant === 'lines' ? (value as GeoGebraLine[]) ?? [] : []);
     const [previousAnswerExists, setPreviousAnswerExists] = useState<boolean>(!!value)
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -250,6 +246,62 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         }]);
                     }
                 };
+                const resyncAll = () => {
+                    try {
+                        const allObjects = applet.getAllObjectNames();
+                        const newPoints: GeoGebraPoint[] = [];
+                        const newLines: GeoGebraLine[] = [];
+                        const newUserPoints: string[] = [];
+                        const newUserLines: string[] = [];
+                        allObjects.forEach((name: string) => {
+                            if (existingObjectsRef.current.has(name)) return;
+                            const type = applet.getObjectType(name);
+                            if (variant === 'points' && type === 'point') {
+                                try {
+                                    const x = applet.getXcoord(name);
+                                    const y = applet.getYcoord(name);
+                                    newPoints.push({ name, x, y });
+                                    newUserPoints.push(name);
+                                } catch { /* empty */ }
+                            }
+                            if (variant === 'lines' && ["line", "segment", "ray"].includes(type)) {
+                                try {
+                                    const def = applet.getCommandString(name);
+                                    const pts = def.match(/[A-Za-z0-9_]+/g);
+                                    if (pts && pts.length >= 3) {
+                                        const p1 = pts[1];
+                                        const p2 = pts[2];
+                                        const x1 = applet.getXcoord(p1);
+                                        const y1 = applet.getYcoord(p1);
+                                        const x2 = applet.getXcoord(p2);
+                                        const y2 = applet.getYcoord(p2);
+                                        const m = Math.abs(x2 - x1) > 1e-8 ? (y2 - y1) / (x2 - x1) : Infinity;
+                                        const c = m === Infinity ? x1 : y1 - m * x1;
+
+                                        newLines.push({
+                                            name,
+                                            m,
+                                            c,
+                                            point1: { name: p1, x: x1, y: y1 },
+                                            point2: { name: p2, x: x2, y: y2 }
+                                        });
+                                        newUserLines.push(name);
+                                    }
+                                } catch { /* empty */ }
+                            }
+                        });
+                        userPointsRef.current = newUserPoints;
+                        userLinesRef.current = newUserLines;
+                        if (variant === 'points') {
+                            setAnswerPoints(newPoints);
+                        }
+                        if (variant === 'lines') {
+                            setAnswerLines(newLines);
+                        }
+                    } catch (err) {
+                        console.error("resync failed", err);
+                    }
+                };
                 try {
                     applet.registerClearListener(() => {
                         userLinesRef.current.length = 0;
@@ -260,6 +312,11 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                     applet.registerAddListener((objName: string) => {
                         processPoint(objName);
                         processLine(objName);
+                    });
+                    applet.registerClientListener((event: any) => {
+                        if (event.type === "undo" || event.type === "redo") {
+                            resyncAll();
+                        }
                     });
                     applet.registerUpdateListener(() => {
                         if (variant === 'points') {
@@ -360,7 +417,7 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         <div style={{marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px"}}>
                             {answerLines.map((l) => (
                                 <div key={l.name}>
-                                    Linie {l.name} mit Werten M: {l.m === Infinity ? "∞" : l.m.toFixed(3)} und
+                                    Linie {l.name} mit Werten M: {l.m === Infinity ? "∞" : l.m?.toFixed(3)} und
                                     C: {l.c.toFixed(3)}
                                 </div>
                             ))}

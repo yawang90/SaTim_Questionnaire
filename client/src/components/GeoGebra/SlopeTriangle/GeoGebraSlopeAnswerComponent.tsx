@@ -84,6 +84,8 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
                 point2Line2: lines[1].point2
             }
             onAnswerChange?.({kind: 'slope', value: geoGebraSlopeAnswer});
+        } else {
+            onAnswerChange?.({ kind: 'slope', value: null });
         }
         }, [lines, onAnswerChange]);
 
@@ -149,6 +151,11 @@ export const GeoGebraSlopeAnswerComponent: React.FC<GeoGebraAnswerComponentProps
                 });
                 applet.registerClearListener(() => {
                     setLines([]);
+                });
+                applet.registerClientListener((event: any) => {
+                    if (event.type === "undo" || event.type === "redo") {
+                        resyncLines(applet);
+                    }
                 });
             }};
         const ggbApplet = new (window as any).GGBApplet(params, true);
