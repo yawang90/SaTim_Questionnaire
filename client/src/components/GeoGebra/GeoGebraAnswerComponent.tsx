@@ -416,10 +416,11 @@ export const GeoGebraAnswerComponent: React.FC<GeoGebraAnswerComponentProps> = (
                         <strong>Erfasste Linien:</strong>
                         <div style={{marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px"}}>
                             {answerLines.map((l) => (
-                                <div key={l.name}>
-                                    Linie {l.name} mit Werten M: {l.m === Infinity ? "∞" : l.m?.toFixed(3)} und
-                                    C: {l.c.toFixed(3)}
-                                </div>
+                                    <div key={l.name}>
+                                        <strong>Linie {l.name}:</strong>
+                                       <div>Punkt 1: ({l.point1.x.toFixed(3)}, {l.point1.y.toFixed(3)})</div>
+                                       <div>Punkt 2: ({l.point2.x.toFixed(3)}, {l.point2.y.toFixed(3)})</div>
+                                    </div>
                             ))}
                         </div>
                     </div>
