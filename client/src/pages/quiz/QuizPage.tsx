@@ -324,7 +324,7 @@ export default function QuizPage() {
                             <Typography variant="body1">
                                 Vielen Dank für Ihre Teilnahme.
                             </Typography>
-                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/Erhebung032026_1/?uid=${userId}/?instance=${id}`}>
+                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`}>
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                         </Box>
