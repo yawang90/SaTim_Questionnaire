@@ -42,7 +42,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     if (!survey) throw new Error("Test nicht gefunden.");
     let answerRecord = await prisma.answer.findFirst({
         where: { surveyId: survey.id, instanceId: instance.id, userId },
-        include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
+        include: { questionsAnswers: {include: {feedbackAnswer: true}}, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
@@ -75,7 +75,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         });
         nextQuestion = await prisma.question.findUnique({ where: { id: questionId } });
     } else {
-        nextQuestion = await getNextUnansweredQuestion(answerRecord);
+        nextQuestion = await getUnansweredQuestion(answerRecord);
     }
     let previousFeedback;
     let previousAnswer;
@@ -154,6 +154,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         data: {
             answerJson,
             skipped: false,
+            answered: true,
             solvingTimeEnd: new Date()
         },
     });
@@ -161,20 +162,14 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
     return updatedQA;
 }
 
-async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: number | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; skipped: boolean }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
-    const answeredQuestionIds = new Set(
-        answerRecord.questionsAnswers
-            .filter(qa => qa.answerJson !== null || qa.skipped)
-            .map(qa => qa.questionId)
-    );
-    const unansweredQuestionId = answerRecord.questionIds.find(
-        questionId => !answeredQuestionIds.has(questionId)
-    );
-    if (!unansweredQuestionId) {
+async function getUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; answered: boolean; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: number | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; skipped: boolean }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
+    const unansweredQuestionId = answerRecord.questionsAnswers.filter(qa => !qa.answered || !qa.skipped).map(qa => qa.questionId);
+    const nextQuestionId = unansweredQuestionId.at(0);
+    if (nextQuestionId === undefined) {
         return null;
     }
     const question = await prisma.question.findUnique({
-        where: { id: unansweredQuestionId },
+        where: { id: nextQuestionId},
     });
     if (!question) {
         return null;
@@ -373,8 +368,6 @@ export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: 
             },
         })
     );
-
     await prisma.$transaction(operations);
-
     return { success: true };
 };

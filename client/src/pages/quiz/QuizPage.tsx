@@ -313,7 +313,11 @@ export default function QuizPage() {
                         })}
                     </Box>
                     <Box sx={{ color: "white", ml: 2 }}>
-                        {"userId:" + userId}</Box>
+                        <Stack spacing={0.5}>
+                            <Typography variant="body2">UserId: {userId}</Typography>
+                            <Typography variant="body2">AufgabenId: {quiz?.question?.id}</Typography>
+                        </Stack>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
