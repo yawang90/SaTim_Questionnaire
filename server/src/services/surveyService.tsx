@@ -378,7 +378,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             .filter(Boolean)
             .map(date => new Date(date).getTime())
             .reduce((min, ts) => Math.min(min, ts), Infinity);
-        const earliestStartDate = earliestStart !== Infinity ? new Date(earliestStart) : null;
+        const earliestStartDate = earliestStart !== Infinity ? formatSwissDate(new Date(earliestStart).toISOString()) : null;
 
         const row: any = {
             SchuelerID_System: answer.userId,
@@ -421,8 +421,8 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
             row[`Aufgabe_${questionId}_RawResponse`] = JSON.stringify(qa.answerJson ?? []);
             row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
-            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart ? new Date(qa.solvingTimeStart) : "";
-            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd ? new Date(qa.solvingTimeEnd) : "";
+            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart ? formatSwissDate(qa.solvingTimeStart.toISOString()) : "";
+            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd ? formatSwissDate(qa.solvingTimeEnd.toISOString()) : "";
             row[`Aufgabe_${questionId}_Zeit_MS`] = qa.solvedTime ?? "";
             row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
         }
@@ -513,4 +513,19 @@ function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQues
         }
     }
     return bookletMap;
+}
+
+function formatSwissDate(isoString: string | Date | null | undefined): string {
+    if (!isoString) return "";
+
+    const date = typeof isoString === "string" ? new Date(isoString) : isoString;
+    return date.toLocaleString("de-CH", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    }).replace(",", "");
 }
