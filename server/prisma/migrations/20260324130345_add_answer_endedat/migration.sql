@@ -7,9 +7,3 @@
 */
 -- AlterTable
 ALTER TABLE "answer" ADD COLUMN     "endedAt" TIMESTAMP(3);
-
--- AlterTable
-ALTER TABLE "questionAnswer" DROP COLUMN "answered";
-
--- DropTable
-DROP TABLE "public"."quizUser";
