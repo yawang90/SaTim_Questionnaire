@@ -317,19 +317,7 @@ export default function QuizPage() {
                 </Toolbar>
             </AppBar>
 
-            <main style={{padding: '2rem', marginTop: 80}}>
-                <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
-                    {quizFinished ? (
-                        <Box sx={{ textAlign: 'center', py: 6 }}>
-                            <Typography variant="body1">
-                                Vielen Dank für Ihre Teilnahme.
-                            </Typography>
-                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`}>
-                                Bitte füllen Sie jetzt diese Umfrage aus!
-                            </Button>
-                        </Box>
-                    ) : (quiz?.question && (<Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
-                </Box>
+            <main style={{padding: '2rem'}}>
                 {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
                         <Button
                             variant="outlined"
@@ -354,6 +342,19 @@ export default function QuizPage() {
                         </Button>
                     </Box>
                 ) : (<></>)}
+                <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
+
+                    {quizFinished ? (
+                        <Box sx={{ textAlign: 'center', py: 6 }}>
+                            <Typography variant="body1">
+                                Vielen Dank für Ihre Teilnahme.
+                            </Typography>
+                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`}>
+                                Bitte füllen Sie jetzt diese Umfrage aus!
+                            </Button>
+                        </Box>
+                    ) : (quiz?.question && (<Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
+                </Box>
                 {quiz?.isTwoTier && !quizFinished  && (
                     <><Box sx={{border: '2px solid black', borderRadius: 2, p: 2, mt: 3, maxWidth: 600, margin: 'auto', mb: 3}}>
                         <Typography variant="h6"    sx={{mb: 2, borderBottom: '1px solid #ccc', pb: 1}}>Dein Feedback</Typography>
@@ -377,6 +378,30 @@ export default function QuizPage() {
                             </Box>
                         ))}</Box>
                     </>)}
+                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
+                        <Button
+                            variant="outlined"
+                            onClick={async () => {
+                                if (currentIndex > 0) {
+                                    const prevQuestionId = questionIds[currentIndex - 1];
+                                    await fetchQuizData(prevQuestionId);
+                                }
+                            }}
+                            disabled={currentIndex === 0}>
+                            Zurück
+                        </Button>
+                        <Button variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
+                            Überspringen
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleTestAnswers}
+                            disabled={submitting || loading}>
+                            {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort speichern"}
+                        </Button>
+                    </Box>
+                ) : (<></>)}
             </main>
             <Snackbar open={snackbar.open} autoHideDuration={1500} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
                 <Alert
