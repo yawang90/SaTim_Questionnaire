@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    endQuestionSessionHandler,
+    endQuestionSessionHandler, endQuizSessionHandler,
     getQuizHandler,
     skipQuestionHandler, startQuestionSessionHandler,
     submitAnswerHandler, submitFeedbackHandler,
@@ -16,6 +16,7 @@ router.post('/track-time', trackQuestionTimeHandler);
 router.post('/session/start', startQuestionSessionHandler);
 router.post('/session/end', endQuestionSessionHandler);
 router.post('/feedback', submitFeedbackHandler);
+router.post('/end', endQuizSessionHandler);
 
 
 export default router;

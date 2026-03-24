@@ -148,6 +148,7 @@ model answer {
   questionsAnswers questionAnswer[] @relation("BelongsToAnswer")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  endedAt          DateTime?
   freeParam        String?
 
   survey   survey         @relation("BelogsToSurvey", fields: [surveyId], references: [id])

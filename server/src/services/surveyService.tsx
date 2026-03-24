@@ -373,6 +373,13 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
         for (const bq of answer.booklet.bookletQuestion) {
             bookletPositionMap.set(bq.questionId, bq.position);
         }
+        const earliestStart = answer.questionsAnswers
+            .map(qA => qA.solvingTimeStart)
+            .filter(Boolean)
+            .map(date => new Date(date).getTime())
+            .reduce((min, ts) => Math.min(min, ts), Infinity);
+        const earliestStartDate = earliestStart !== Infinity ? new Date(earliestStart) : null;
+
         const row: any = {
             SchuelerID_System: answer.userId,
             GruppenID_ausLink: instance.id,
@@ -380,6 +387,8 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             Booklet_ID: answer.booklet.bookletId,
             Booklet_Version: answer.booklet.version,
             Freier_Parameter: answer.freeParam,
+            Erhebung_StartedAt: earliestStartDate,
+            Erhebung_EndedAt: answer.endedAt
         };
         for (const questionId of allQuestionIds) {
             if (!bookletQuestionSet.has(questionId)) {
@@ -412,8 +421,8 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
             row[`Aufgabe_${questionId}_RawResponse`] = JSON.stringify(qa.answerJson ?? []);
             row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
-            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart?.toISOString() ?? "";
-            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd?.toISOString() ?? "";
+            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart ? new Date(qa.solvingTimeStart) : "";
+            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd ? new Date(qa.solvingTimeEnd) : "";
             row[`Aufgabe_${questionId}_Zeit_MS`] = qa.solvedTime ?? "";
             row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
         }

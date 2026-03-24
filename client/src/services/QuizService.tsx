@@ -182,6 +182,24 @@ export async function endQuestionSession(instanceId: string, questionId: number,
     return res.json();
 }
 
+
+export async function endQuizSession(userId: string, instanceId: string) {
+    const res = await fetch(`${API_BASE}/api/quiz/end`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            userId,
+            instanceId})
+    });
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to end session: ${msg}`);
+    }
+    return res.json();
+}
+
 export async function submitTwoTierFeedback(
     instanceId: string,
     questionId: number,

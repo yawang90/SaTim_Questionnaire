@@ -1,6 +1,6 @@
 import type {Request, Response} from "express";
 import {
-    endQuestionSession,
+    endQuestionSession, endQuizSession,
     getQuiz, saveFeedback,
     skipQuestion,
     startQuestionSession,
@@ -144,5 +144,19 @@ export const submitFeedbackHandler = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Failed to save feedback" });
+    }
+};
+
+export const endQuizSessionHandler = async (req: Request, res: Response) => {
+    try {
+        const { userId, instanceId } = req.body;
+        if (!userId || !instanceId) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+        await endQuizSession(userId, Number(instanceId));
+        res.status(200).json({ success: true });
+    } catch (err: any) {
+        console.error("Error ending question session:", err);
+        res.status(500).json({ error: "Failed to end session" });
     }
 };

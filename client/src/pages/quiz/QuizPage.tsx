@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {useParams, useSearchParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
 import {
-    type AnswerDTO, endQuestionSession,
+    type AnswerDTO, endQuestionSession, endQuizSession,
     getQuiz,
     type Quiz,
     type Quiz as QuizType,
@@ -65,6 +65,16 @@ export default function QuizPage() {
         });
     };
 
+    const handleSosciRedirect = async () => {
+        if (!userId || !id) return;
+        try {
+            await endQuizSession(userId, id);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            window.location.href = `https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`;
+        }
+    };
     useEffect(() => {
         if (!quiz?.question || !quiz?.question?.id || !userId || !id) return;
         startQuestionSession(id, quiz.question.id, userId).catch(console.error);
@@ -313,7 +323,11 @@ export default function QuizPage() {
                         })}
                     </Box>
                     <Box sx={{ color: "white", ml: 2 }}>
-                        {"userId:" + userId}</Box>
+                        <Stack spacing={0.5}>
+                            <Typography variant="body2">UserId: {userId}</Typography>
+                            <Typography variant="body2">AufgabenId: {quiz?.question?.id}</Typography>
+                        </Stack>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
@@ -349,7 +363,7 @@ export default function QuizPage() {
                             <Typography variant="body1">
                                 Vielen Dank für Ihre Teilnahme.
                             </Typography>
-                            <Button variant="contained" color="primary" href={`https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`}>
+                            <Button variant="contained" color="primary" onClick={handleSosciRedirect}>
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                         </Box>

@@ -341,6 +341,19 @@ export async function endQuestionSession(userId: string, questionId: number, ins
     });
 }
 
+export async function endQuizSession(userId: string, instanceId: number) {
+    const answer = await prisma.answer.findFirst({
+        where: { userId, instanceId }
+    });
+    if (!answer) return;
+    await prisma.answer.update({
+        where: { id: answer.id },
+        data: {
+            endedAt: new Date(),
+        },
+    });
+}
+
 export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: { instanceId: number; questionId: number; userId: string; feedback: Record<string, string>; }) => {
     const answerRecord = await prisma.answer.findFirst({
         where: {userId, instanceId,},
