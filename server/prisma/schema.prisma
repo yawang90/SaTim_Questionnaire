@@ -169,6 +169,7 @@ model questionAnswer {
   solvingTimeStart DateTime                 @default(now())
   solvingTimeEnd   DateTime?
   skipped          Boolean                  @default(false)
+  solved           Boolean                  @default(false)
   answer           answer                   @relation("BelongsToAnswer", fields: [answerId], references: [id])
   sessions         questionSolvingSession[]
   feedbackAnswer   feedbackAnswer[]

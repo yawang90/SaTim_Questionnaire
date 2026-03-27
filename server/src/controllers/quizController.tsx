@@ -16,10 +16,11 @@ export const getQuizHandler = async (req: Request, res: Response) => {
         const id = req.params.id;
         const userId = req.body.userId as string;
         const questionId = req.body.questionId ? Number(req.body.questionId) : undefined;
+        const nextQuestionId = req.body.nextQuestionId ? Number(req.body.nextQuestionId) : undefined;
         const freeParam = req.body.freeParam ? req.body.freeParam as string: undefined;
         if (!id) return res.status(400).json({ error: "Quiz ID is required" });
         if (!userId) return res.status(400).json({ error: "User ID is required" });
-        const quiz = await getQuiz(id, userId, questionId, freeParam);
+        const quiz = await getQuiz(id, userId, questionId, nextQuestionId, freeParam);
         if (!quiz) return res.status(404).json({ error: "Quiz not found" });
         res.status(200).json(quiz);
     } catch (err: any) {
@@ -38,11 +39,11 @@ export const submitAnswerHandler = async (req: Request, res: Response) => {
     try {
         const questionId = Number(req.params.questionId);
         const userId = req.query.userId as string;
-        const { answer, instanceId } = req.body;
+        const { answer, instanceId, solved } = req.body;
         if (!questionId || !userId || answer === undefined) {
             return res.status(400).json({ error: "Missing required fields" });
         }
-        const result = await submitQuizAnswer(userId, questionId, Number(instanceId), answer);
+        const result = await submitQuizAnswer(userId, questionId, Number(instanceId), answer, solved);
         res.status(200).json({ success: true, result });
     } catch (err: any) {
         if (err.message === "QUESTION_ALREADY_ANSWERED") {

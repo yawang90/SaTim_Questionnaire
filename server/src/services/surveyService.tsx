@@ -350,7 +350,11 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
     const answers = await prisma.answer.findMany({
         where: { surveyId, instanceId: { in: instanceIds } },
         include: {
-            questionsAnswers: true,
+            questionsAnswers: {
+                include: {
+                    feedbackAnswer: true
+                }
+            },
             booklet: {
                 include: {
                     bookletQuestion: true
@@ -395,7 +399,9 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                 row[`Aufgabe_${questionId}_SystemID`] = "";
                 row[`Aufgabe_${questionId}_Position`] = "";
                 row[`Aufgabe_${questionId}_RawResponse`] = "";
+                row[`Aufgabe_${questionId}_CorrectResponse`] = "";
                 row[`Aufgabe_${questionId}_Score`] = "";
+                row[`Aufgabe_${questionId}_Feedback`] = "";
                 row[`Aufgabe_${questionId}_StartedAt`] = "";
                 row[`Aufgabe_${questionId}_FinishedAt`] = "";
                 row[`Aufgabe_${questionId}_Zeit_MS`] = "";
@@ -407,7 +413,9 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                 row[`Aufgabe_${questionId}_SystemID`] = questionId;
                 row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
                 row[`Aufgabe_${questionId}_RawResponse`] = "";
+                row[`Aufgabe_${questionId}_CorrectResponse`] = "";
                 row[`Aufgabe_${questionId}_Score`] = "";
+                row[`Aufgabe_${questionId}_Feedback`] = "";
                 row[`Aufgabe_${questionId}_StartedAt`] = "";
                 row[`Aufgabe_${questionId}_FinishedAt`] = "";
                 row[`Aufgabe_${questionId}_Zeit_MS`] = "";
@@ -420,9 +428,11 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             row[`Aufgabe_${questionId}_SystemID`] = qa.questionId;
             row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
             row[`Aufgabe_${questionId}_RawResponse`] = JSON.stringify(qa.answerJson ?? []);
+            row[`Aufgabe_${questionId}_CorrectResponse`] = JSON.stringify(result?.correctAnswers ?? []);
+            //  row[`Aufgabe_${questionId}_RawResponse`] = formatUserAnswer(answerArray);
+           // row[`Aufgabe_${questionId}_CorrectResponse`] = formatCorrectAnswer(result?.correctAnswers);
             row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
-            row[`Aufgabe_${questionId}_StartedAt`] = qa.solvingTimeStart ? formatSwissDate(qa.solvingTimeStart.toISOString()) : "";
-            row[`Aufgabe_${questionId}_FinishedAt`] = qa.solvingTimeEnd ? formatSwissDate(qa.solvingTimeEnd.toISOString()) : "";
+            row[`Aufgabe_${questionId}_Feedback`] = formatFeedback(qa.feedbackAnswer ?? []);
             row[`Aufgabe_${questionId}_Zeit_MS`] = qa.solvedTime ?? "";
             row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
         }
@@ -528,4 +538,111 @@ function formatSwissDate(isoString: string | Date | null | undefined): string {
         second: "2-digit",
         hour12: false,
     }).replace(",", "");
+}
+
+function formatFeedback(feedbackArray: any[]): string {
+    const questionKeys = ["q1", "q2", "q3"];
+    return questionKeys
+        .map(key => {
+            const fb = feedbackArray.find(f => f.questionKey === key);
+            return fb ? `[${key}: "${fb.selectedOption}"]` : `[${key}]`;
+        })
+        .join(", ");
+}
+
+function formatUserAnswer(answerArray: any[]): string {
+    if (!Array.isArray(answerArray) || !answerArray.length) return "[]";
+    return answerArray
+        .map(ans => {
+            switch (ans.kind) {
+                case "mc":
+                case "sc":
+                    if (!Array.isArray(ans.value)) return "[]";
+                    return `[${ans.value
+                        .map((v: any) => `["${v.choiceText}":${v.selected}]`)
+                        .join(",")}]`;
+                case "numeric":
+                case "algebra":
+                case "lineEquation":
+                case "freeText":
+                case "freeTextInline":
+                    return `[${ans.value ? `"${ans.value}"` : ""}]`;
+                case "geoGebraPoints":
+                    return `[${ans.value
+                        .map((v: any) => `["p1":${v.x}, ${v.y}]`)
+                        .join(",")}]`;
+                case "geoGebraLines":
+                    return `[${ans.value
+                        .map((v: any) => `["c":${v.c}, "m":${v.m}, "p1":${v.point1.x}, ${v.point1.y}, "p2":${v.point2.x}, ${v.point2.y}]`)
+                        .join(",")}]`;
+                case "geoGebraSlope":
+                    return `[${ans.value ? `["l1": p1 - ${ans.value.point1Line1?.x}, ${ans.value.point1Line1?.y} zu p2 - ${ans.value.point2Line1?.x}, ${ans.value.point2Line1?.y}, "l2": p1 - ${ans.value.point1Line2?.x}, ${ans.value.point1Line2?.y} zu p2 - ${ans.value.point2Line2?.x}, ${ans.value.point2Line2?.y}]` : ""}]`;
+                default:
+                    return `[${ans.value ?? ""}]`;
+            }
+        })
+        .join(", ");
+}
+
+function formatCorrectAnswer(input: any): string {
+    const answerArray = normalizeCorrectAnswer(input);
+    if (!answerArray.length) return "[]";
+
+    return answerArray
+        .map(ans => {
+            switch (ans.type) {
+                case "mc":
+                    return `[${ans.value
+                        .map((id: string) => `["${id}":true]`)
+                        .join(",")}]`;
+
+                case "sc":
+                    return `[["${ans.value}":true]]`;
+
+                case "numeric":
+                case "algebra":
+                case "freeText":
+                case "freeTextInline":
+                    return `[${ans.value ? `"${ans.value}"` : ""}]`;
+
+                case "lineEquation":
+                    return `[m:${ans.value?.m?.[0]?.value ?? ""}, c:${ans.value?.c?.[0]?.value ?? ""}]`;
+
+                case "geoGebraSlope":
+                    return `[${ans.value
+                        ?.map((v: any) => v.value)
+                        .join(",") ?? ""}]`;
+
+                case "geoGebraPoints":
+                    return Object.entries(ans.value || {})
+                        .map(([pointName, coords]: any) => {
+                            const x = coords.x?.map((v: any) => v.value).join("|") ?? "";
+                            const y = coords.y?.map((v: any) => v.value).join("|") ?? "";
+                            return `[${pointName}: x=${x}, y=${y}]`;
+                        })
+                        .join(", ");
+
+                case "geoGebraLines":
+                    return Object.entries(ans.value || {})
+                        .map(([lineName, line]: any) => {
+                            const m = line.m?.map((v: any) => v.value).join("|") ?? "";
+                            const c = line.c?.map((v: any) => v.value).join("|") ?? "";
+                            return `[${lineName}: m=${m}, c=${c}]`;
+                        })
+                        .join(", ");
+
+                default:
+                    return `[${JSON.stringify(ans.value ?? "")}]`;
+            }
+        })
+        .join(", ");
+}
+
+function normalizeCorrectAnswer(input: any): any[] {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    return Object.entries(input).map(([key, val]: any) => ({
+        key,
+        ...val
+    }));
 }

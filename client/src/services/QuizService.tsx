@@ -52,6 +52,7 @@ export interface AnswerDTO {
     questionId: number;
     instanceId: string;
     answer: AnswerValue[];
+    solved: boolean
 }
 
 /**
@@ -59,10 +60,11 @@ export interface AnswerDTO {
  * @param id Quiz ID
  * @param userId Cookie Session ID
  * @param questionId
+ * @param nextQuestionId
  * @param freeParam
  * @returns Quiz object
  */
-export async function getQuiz(id: string, userId: string, questionId?: number, freeParam?: string | null): Promise<Quiz> {
+export async function getQuiz(id: string, userId: string, questionId?: number, nextQuestionId?: number, freeParam?: string | null): Promise<Quiz> {
     const url = new URL(`${API_BASE}/api/quiz/instance/${id}`);
     const res = await fetch(url.toString(), {
         method: "POST",
@@ -72,7 +74,8 @@ export async function getQuiz(id: string, userId: string, questionId?: number, f
         body: JSON.stringify({
             userId,
             freeParam: freeParam,
-            questionId: questionId
+            questionId: questionId,
+            nextQuestionId: nextQuestionId
         })
     });
     if (!res.ok) {

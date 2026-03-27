@@ -78,6 +78,7 @@ export interface EvaluateResult {
     score: number;
     total: number;
     details: EvaluateDetail[];
+    correctAnswers: any;
 }
 
 export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult| null> => {
@@ -249,7 +250,8 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
     return {
         score,
         total,
-        details
+        details,
+        correctAnswers
     };
 };
 
@@ -417,7 +419,6 @@ function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolea
 
         const diff = ce.box(["Subtract", userExpr, correctExpr]).simplify().canonical;
         const num = Number(diff.N().valueOf());
-        console.log(Math.abs(num)< 1e-12)
         return Math.abs(num) < 1e-12;
     } catch (err) {
         console.log("Algebra comparison failed:", err);

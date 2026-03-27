@@ -1,6 +1,5 @@
-import type { JsonValue } from "@prisma/client/runtime/library";
 import prisma from "../config/prismaClient.js";
-import type { Prisma } from "@prisma/client";
+import type {Prisma} from "@prisma/client";
 
 export interface QuizQuestion {
     id: number;
@@ -25,9 +24,10 @@ export interface NextQuestion {
     skippedQuestions: number[];
     isTwoTier: boolean;
     feedback?: Record<string, string> | null;
+    solved: boolean;
 }
 
-export async function getQuiz(instanceId: string, userId: string, questionId?: number, freeParam?: string): Promise<NextQuestion> {
+export async function getQuiz(instanceId: string, userId: string, questionId?: number, nextQuestionId?: number, freeParam?: string): Promise<NextQuestion> {
     const instance = await prisma.surveyInstance.findUnique({
         where: {id: Number(instanceId)},
     });
@@ -57,25 +57,31 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
             },
             include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: true } } },
         });
+        for (const questionId of answerRecord.questionIds) {
+            await prisma.questionAnswer.create({
+                data: {
+                    answerId: answerRecord.id,
+                    questionId: questionId,
+                },
+            });
+        }
     }
     let nextQuestion: QuizQuestion | null = null;
     if (questionId !== undefined) {
-        const qa = await prisma.questionAnswer.upsert({
-            where: {
-                answerId_questionId: {
-                    answerId: answerRecord.id,
-                    questionId,
-                },
-            },
-            create: {
-                answerId: answerRecord.id,
-                questionId,
-            },
-            update: {},
-        });
         nextQuestion = await prisma.question.findUnique({ where: { id: questionId } });
     } else {
-        nextQuestion = await getNextUnansweredQuestion(answerRecord);
+        if (nextQuestionId !== undefined) {
+            const i = answerRecord.questionIds.indexOf(nextQuestionId);
+            const nextId = answerRecord.questionIds[i + 1];
+            if (nextId) {
+                nextQuestion = await prisma.question.findUnique({where: { id: nextId},});
+            }
+        } else {
+            const firstId = answerRecord.questionIds[0];
+            if (firstId) {
+                nextQuestion = await prisma.question.findUnique({where: { id: firstId},});
+            }
+        }
     }
     let previousFeedback;
     let previousAnswer;
@@ -105,12 +111,11 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         previousAnswer = qaRecord;
     }
     const answeredQuestionIds = answerRecord.questionsAnswers
-        .filter(qa => qa.answerJson !== null)
+        .filter(qa => qa.solved || qa.skipped)
         .map(qa => qa.questionId);
     const skippedQuestionIds = answerRecord.questionsAnswers
         .filter(qa => qa.skipped === true)
         .map(qa => qa.questionId);
-
     const totalQuestions = answerRecord.questionIds.length;
     const answeredQuestions = answeredQuestionIds.length;
     let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion?.id, contentJson: nextQuestion?.contentJson} : null;
@@ -126,6 +131,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         questionIds: answerRecord.questionIds,
         answeredQuestionIds:answeredQuestionIds,
         skipped: previousAnswer ? previousAnswer.skipped : false,
+        solved: previousAnswer ? previousAnswer.solved : false,
         previousAnswer: previousAnswer ? previousAnswer.answerJson : null,
         skippedQuestions: skippedQuestionIds,
         isTwoTier: survey.isTwoTier,
@@ -133,7 +139,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     };
 }
 
-export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue) {
+export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue, isSolved: boolean) {
     const answerRecord = await prisma.answer.findFirst({
         where: {userId, instanceId,},
         include: {questionsAnswers: true,},
@@ -153,37 +159,13 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         },
         data: {
             answerJson,
-            skipped: false,
+            skipped: isSolved ? false : questionAnswer.skipped,
+            solved: isSolved,
             solvingTimeEnd: new Date()
         },
     });
 
     return updatedQA;
-}
-
-async function getNextUnansweredQuestion(answerRecord: { questionsAnswers: { id: number; createdAt: Date; answerId: number; questionId: number; answerJson: JsonValue | null; solvedTime: number | null; solvingTimeStart: Date; solvingTimeEnd: Date | null; skipped: boolean }[]; } & { id: number; surveyId: number; createdAt: Date; updatedAt: Date; instanceId: number; bookletId: number; userId: string; questionIds: number[]; }): Promise<QuizQuestion | null> {
-    const answeredQuestionIds = new Set(
-        answerRecord.questionsAnswers
-            .filter(qa => qa.answerJson !== null || qa.skipped)
-            .map(qa => qa.questionId)
-    );
-    const unansweredQuestionId = answerRecord.questionIds.find(
-        questionId => !answeredQuestionIds.has(questionId)
-    );
-    if (!unansweredQuestionId) {
-        return null;
-    }
-    const question = await prisma.question.findUnique({
-        where: { id: unansweredQuestionId },
-    });
-    if (!question) {
-        return null;
-    }
-    return {
-        id: question.id,
-        contentJson: question.contentJson,
-        contentHtml: question.contentHtml
-    };
 }
 
 async function assignBookletToUser(surveyId: number) {
@@ -239,7 +221,7 @@ export async function skipQuestion(userId: string, questionId: number, instanceI
         where: { id: qa.id },
         data: {
             skipped: true,
-            answerJson: {},
+            solved: false,
             solvingTimeEnd: new Date()
         },
     });

@@ -2,12 +2,17 @@ import React, {useEffect, useState} from 'react';
 import {useParams, useSearchParams} from "react-router-dom";
 import {v4 as uuidv4} from "uuid";
 import {
-    type AnswerDTO, endQuestionSession, endQuizSession,
+    type AnswerDTO,
+    endQuestionSession,
+    endQuizSession,
     getQuiz,
     type Quiz,
     type Quiz as QuizType,
-    skipQuestion, startQuestionSession,
-    submitAnswer, submitTwoTierFeedback, trackQuestionTime
+    skipQuestion,
+    startQuestionSession,
+    submitAnswer,
+    submitTwoTierFeedback,
+    trackQuestionTime
 } from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 import type {useEditor} from "@tiptap/react";
@@ -18,7 +23,6 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import {Alert, Button, CircularProgress, Paper, Snackbar, Stack, Tooltip} from '@mui/material';
 import {
-    type Answer,
     type Block,
     extractAnswersFromJson,
     type LineEquationAnswer,
@@ -27,6 +31,10 @@ import {
 } from '../utils/AnswerUtils.tsx';
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import {enrichQuizWithAnswers, feedbackQuestions} from "./utils/EnrichQuizWithAnswers.tsx";
+import SaveIcon from "@mui/icons-material/Save";
+import SkipNextIcon from "@mui/icons-material/SkipNext";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 export default function QuizPage() {
     const { id } = useParams<{ id: string }>();
@@ -44,7 +52,7 @@ export default function QuizPage() {
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
-        severity: 'error' | 'success' | 'info'
+        severity: 'error' | 'success' | 'info' | 'warning'
     }>({
         open: false,
         message: '',
@@ -75,6 +83,7 @@ export default function QuizPage() {
             window.location.href = `https://www.soscisurvey.de/Erhebung032026_1/?ref=${userId}`;
         }
     };
+
     useEffect(() => {
         if (!quiz?.question || !quiz?.question?.id || !userId || !id) return;
         startQuestionSession(id, quiz.question.id, userId).catch(console.error);
@@ -111,24 +120,27 @@ export default function QuizPage() {
         fetchQuizData();
     }, [userId, id]);
 
-    const fetchQuizData = async (qid?: number) => {
+    const fetchQuizData = async (qid?: number, nextQid?: number) => {
         if (!userId || !id) return;
         setLoading(true);
         setError(null);
         try {
             let data: Quiz;
             if (qid) {
-                data = await getQuiz(id, userId, qid, freeParam);
+                data = await getQuiz(id, userId, qid, undefined, freeParam);
             } else {
-                data = await getQuiz(id, userId, undefined, freeParam);
-            }
+                if (nextQid) {
+                    data = await getQuiz(id, userId, undefined, nextQid, freeParam);
+                } else {
+                    data = await getQuiz(id, userId, undefined, undefined, freeParam);
+                }}
             if (data?.question) {
                 const contentWithAnswers = enrichQuizWithAnswers(typeof data.question.contentJson === "string" ? JSON.parse(data.question.contentJson) : data.question.contentJson, data.previousAnswer);
                 data.question.contentJson = contentWithAnswers;
             }
             setQuiz(data);
             setFeedback(data.feedback || {});
-            setQuizFinished(!data.question);
+            setQuizFinished(data.answeredQuestions === data.totalQuestions);
             if (!questionIds.length && data.questionIds) {
                 setQuestionIds(data.questionIds);
             }
@@ -148,48 +160,13 @@ export default function QuizPage() {
         }
     };
 
-    function validateAnswerExists(extractedAnswers: Answer[]) {
-        const isFilled = (ans: Answer) => {
-            if (ans.kind === 'geoGebraSlope') {
-                return ( ans.value != null && ans.value?.line1?.trim() !== "" && ans.value?.line2?.trim() !== "");
-            }
-            if (ans.kind === 'geoGebraPoints' || ans.kind === 'geoGebraLines') {
-                if (!Array.isArray(ans.value)) return false;
-                return ans.value.some((v: any) => v.name?.trim() !== '');
-            }
-            if (ans.kind === 'algebra') {
-                return ans.value.trim() !== '';
-            }
-            if (ans.kind === 'lineEquation') {
-                return ans.value.trim() !== '' && ans.value.trim() !== 'y=';
-            }
-            if (ans.kind === 'sc') {
-                if (!Array.isArray(ans.value)) return false;
-                return ans.value.some(v => v.selected);
-            }
-            if (Array.isArray(ans.value)) return ans.value.length > 0;
-            return ans.value !== null && ans.value !== '';
-        };
-        const allFilled = extractedAnswers.every(isFilled);
-        return allFilled;
-    }
-
-    const handleTestAnswers = async () => {
+    const handleTestAnswers = async (solved: boolean) => {
         if (!editorRef.current || !quiz || !quiz.question || !userId) return;
         const question = quiz.question;
-        const parsedBlocks: Block[] = parseContentToBlocks(
-            typeof question.contentJson === 'string'
-                ? JSON.parse(question.contentJson)
-                : question.contentJson
-        );
+        const parsedBlocks: Block[] = parseContentToBlocks(typeof question.contentJson === 'string' ? JSON.parse(question.contentJson) : question.contentJson);
         const editorJson = editorRef.current.getJSON();
         let extractedAnswers = extractAnswersFromJson(editorJson, parsedBlocks);
         extractedAnswers = mergeGeoGebraAnswers(extractedAnswers, geoGebraAnswers);
-        const answerExists = validateAnswerExists(extractedAnswers);
-        if (!answerExists) {
-            setSnackbar({open: true, message: `Bitte beantworten Sie die Frage(n).`, severity: 'error',});
-            return;
-        }
         if (!id) return;
         const answerDTO: AnswerDTO = {
             questionId: question.id,
@@ -201,11 +178,15 @@ export default function QuizPage() {
                     return { value: a.value, key: a.key, kind: a.kind } as any;
                 }
             }),
+            solved: solved || quiz.previousAnswer?.solved
         };
         try {
             setSubmitting(true);
             await submitAnswer(answerDTO, userId);
-            await fetchQuizData();
+            if (solved) {
+                setSnackbar({open: true, message: `Die Antwort ist gespeichert, du kannst sie jederzeit wieder ändern.`, severity: 'success',});
+            }
+            await fetchQuizData(answerDTO.questionId)
         } catch (err) {
             console.error(err);
             setSnackbar({open: true, message: `Fehler beim Absenden der Antwort.`, severity: 'error',});
@@ -218,8 +199,10 @@ export default function QuizPage() {
         if (!quiz?.question || !userId || !id) return;
         try {
             setSubmitting(true);
+            await handleTestAnswers(false);
             await skipQuestion(quiz.question.id, id, userId);
-            await fetchQuizData();
+            setSnackbar({open: true, message: `Die Aufgabe wurde übersprungen, du kannst sie jederzeit wieder ändern.`, severity: 'warning',});
+            await fetchQuizData(quiz.question.id)
         } catch (err) {
             console.error(err);
             setSnackbar({open: true, message: "Fehler beim Überspringen der Frage.", severity: "error",});
@@ -240,7 +223,7 @@ export default function QuizPage() {
     }
 
     useEffect(() => {
-        const interval = setInterval(() => {flushQuestionTime()}, 60000)
+        const interval = setInterval(() => {flushQuestionTime()}, 2000)
         return () => clearInterval(interval)
     }, [quiz, userId, id])
 
@@ -261,11 +244,6 @@ export default function QuizPage() {
         setFeedback(updatedFeedback);
         try {
             await submitTwoTierFeedback(id!, quiz!.question!.id, userId!, updatedFeedback);
-            setSnackbar({
-                open: true,
-                message: "Feedback gespeichert",
-                severity: "success",
-            });
         } catch (err) {
             console.error(err);
             setSnackbar({
@@ -310,7 +288,7 @@ export default function QuizPage() {
                             }
                             return (
                                 <Tooltip title={title} arrow>
-                                <Button key={qid} size="small" variant={isCurrent ? "contained" : "outlined"} onClick={() => fetchQuizData(qid)} sx={{color: "white", borderColor: "white", backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent", minWidth: 36, position: "relative", "&:hover": {backgroundColor: "rgba(255,255,255,0.1)", borderColor: "white",},}}>
+                                <Button key={qid} size="small" variant={isCurrent ? "outlined" : "contained"} onClick={async () => {await handleTestAnswers(false); await fetchQuizData(qid)}} sx={{color: "white", borderColor: "white", backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent", minWidth: 36, position: "relative", "&:hover": {backgroundColor: "grey", borderColor: "white",},}}>
                                     Aufgabe {index + 1}
                                     {isAnswered && !isSkipped &&(
                                         <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "green", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontSize: 12, fontWeight: "bold",
@@ -332,28 +310,62 @@ export default function QuizPage() {
             </AppBar>
 
             <main style={{padding: '2rem'}}>
-                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
-                        <Button
-                            variant="outlined"
-                            onClick={async () => {
-                                if (currentIndex > 0) {
-                                    const prevQuestionId = questionIds[currentIndex - 1];
-                                    await fetchQuizData(prevQuestionId);
-                                }
-                            }}
-                            disabled={currentIndex === 0}>
-                            Zurück
-                        </Button>
-                        <Button variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
-                            Überspringen
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleTestAnswers}
-                            disabled={submitting || loading}>
-                            {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort speichern"}
-                        </Button>
+                {!quizFinished ? (
+                    <Box sx={{mt: 4, display: "flex", alignItems: "center", margin: "auto", mb: 4,}}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            <Button
+                                variant="outlined"
+                                onClick={async () => {
+                                    await handleTestAnswers(false);
+                                    if (currentIndex > 0) {
+                                        const prevQuestionId = questionIds[currentIndex - 1];
+                                        await fetchQuizData(prevQuestionId);
+                                    }
+                                }}
+                                startIcon={<ArrowBackIcon />}
+                                disabled={currentIndex === 0}>
+                                Zurück
+                            </Button>
+
+                            <Button
+                                variant="outlined"
+                                onClick={async () => {
+                                    await handleTestAnswers(false);
+                                    if (currentIndex < questionIds.length - 1) {
+                                        const nextQuestionId = questionIds[currentIndex + 1];
+                                        await fetchQuizData(nextQuestionId);
+                                    }
+                                }}
+                                endIcon={<ArrowForwardIcon />}
+                                disabled={currentIndex >= questionIds.length - 1}>
+                                Weiter
+                            </Button>
+                        </Box>
+
+                        <Box sx={{display: "flex", gap: 1, mx: "auto",}}>
+                            <Button
+                                startIcon={<SkipNextIcon />}
+                                variant="outlined"
+                                color="warning"
+                                onClick={handleSkip}
+                                disabled={submitting}>
+                                Überspringen
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => {handleTestAnswers(true)}}
+                                disabled={submitting || loading}
+                                startIcon={!submitting ? <SaveIcon /> : null}>
+                                {submitting ? (
+                                    <CircularProgress size={24} color="inherit" />
+                                ) : (
+                                    "Antwort speichern"
+                                )}
+                            </Button>
+                        </Box>
+                        <Box sx={{ width: 300 }} />
                     </Box>
                 ) : (<></>)}
                 <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
@@ -365,6 +377,10 @@ export default function QuizPage() {
                             </Typography>
                             <Button variant="contained" color="primary" onClick={handleSosciRedirect}>
                                 Bitte füllen Sie jetzt diese Umfrage aus!
+                            </Button>
+                            <Box sx={{pb: 4}}></Box>
+                            <Button color="secondary" onClick={() => {setQuizFinished(false)}}>
+                                Zurück zu den Aufgaben
                             </Button>
                         </Box>
                     ) : (quiz?.question && (<Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
@@ -393,31 +409,21 @@ export default function QuizPage() {
                         ))}</Box>
                     </>)}
                 {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
-                        <Button
-                            variant="outlined"
-                            onClick={async () => {
-                                if (currentIndex > 0) {
-                                    const prevQuestionId = questionIds[currentIndex - 1];
-                                    await fetchQuizData(prevQuestionId);
-                                }
-                            }}
-                            disabled={currentIndex === 0}>
-                            Zurück
-                        </Button>
-                        <Button variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
+                        <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
                             Überspringen
                         </Button>
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={handleTestAnswers}
-                            disabled={submitting || loading}>
+                            onClick={() => {handleTestAnswers(true)}}
+                            disabled={submitting || loading}
+                            startIcon={!submitting ? <SaveIcon /> : null}>
                             {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort speichern"}
                         </Button>
                     </Box>
                 ) : (<></>)}
             </main>
-            <Snackbar open={snackbar.open} autoHideDuration={1500} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{vertical: "bottom", horizontal: "center"}}>
+            <Snackbar open={snackbar.open} autoHideDuration={1500} onClose={() => setSnackbar((prev) => ({...prev, open: false}))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
                 <Alert
                     onClose={() => setSnackbar((prev) => ({...prev, open: false}))}
                     severity={snackbar.severity}
