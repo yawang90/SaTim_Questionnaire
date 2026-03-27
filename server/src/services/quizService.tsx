@@ -373,3 +373,14 @@ export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: 
 
     return { success: true };
 };
+
+export const syncAnonymousUser = async (externalId: string) => {
+    const user = await prisma.anonymousUser.upsert({
+        where: { externalId },
+        update: {},
+        create: {
+            externalId,
+        },
+    });
+    return user;
+};

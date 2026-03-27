@@ -197,3 +197,10 @@ model feedbackAnswer {
 
   @@unique([questionAnswerId, questionKey])
 }
+
+model anonymousUser {
+  id         Int      @id @default(autoincrement())
+  externalId String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

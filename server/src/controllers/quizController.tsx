@@ -4,7 +4,7 @@ import {
     getQuiz, saveFeedback,
     skipQuestion,
     startQuestionSession,
-    submitQuizAnswer,
+    submitQuizAnswer, syncAnonymousUser,
     trackQuestionTime
 } from "../services/quizService.js";
 
@@ -159,5 +159,19 @@ export const endQuizSessionHandler = async (req: Request, res: Response) => {
     } catch (err: any) {
         console.error("Error ending question session:", err);
         res.status(500).json({ error: "Failed to end session" });
+    }
+};
+
+export const syncAnonymousUserHandler = async (req: Request, res: Response) => {
+    try {
+        const { externalId } = req.body;
+        if (!externalId) {
+            return res.status(400).json({ error: "externalId is required" });
+        }
+        const user = await syncAnonymousUser(externalId);
+        res.status(200).json(user);
+    } catch (err: any) {
+        console.error("Error syncing anonymous user:", err);
+        res.status(500).json({ error: "Failed to sync anonymous user" });
     }
 };

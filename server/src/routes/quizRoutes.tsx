@@ -3,7 +3,7 @@ import {
     endQuestionSessionHandler, endQuizSessionHandler,
     getQuizHandler,
     skipQuestionHandler, startQuestionSessionHandler,
-    submitAnswerHandler, submitFeedbackHandler,
+    submitAnswerHandler, submitFeedbackHandler, syncAnonymousUserHandler,
     trackQuestionTimeHandler
 } from "../controllers/quizController.js";
 
@@ -17,6 +17,7 @@ router.post('/session/start', startQuestionSessionHandler);
 router.post('/session/end', endQuestionSessionHandler);
 router.post('/feedback', submitFeedbackHandler);
 router.post('/end', endQuizSessionHandler);
+router.post('/anonymous-user', syncAnonymousUserHandler);
 
 
 export default router;

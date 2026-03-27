@@ -383,9 +383,14 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             .map(date => new Date(date).getTime())
             .reduce((min, ts) => Math.min(min, ts), Infinity);
         const earliestStartDate = earliestStart !== Infinity ? formatSwissDate(new Date(earliestStart).toISOString()) : null;
+        const user = await prisma.anonymousUser.findUnique({
+            where: { externalId: answer.userId },
+            select: { id: true },
+        });
 
         const row: any = {
             SchuelerID_System: answer.userId,
+            SchuelerID_Extern: user ? user.id : "",
             GruppenID_ausLink: instance.id,
             GruppenBezeichnung: instance.name,
             Booklet_ID: answer.booklet.bookletId,

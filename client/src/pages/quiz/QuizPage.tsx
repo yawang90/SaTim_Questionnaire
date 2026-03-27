@@ -11,7 +11,7 @@ import {
     skipQuestion,
     startQuestionSession,
     submitAnswer,
-    submitTwoTierFeedback,
+    submitTwoTierFeedback, syncAnonymousUser,
     trackQuestionTime
 } from "../../services/QuizService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
@@ -41,6 +41,7 @@ export default function QuizPage() {
     const [searchParams] = useSearchParams();
     const freeParam = searchParams.get("freeParam");
     const [userId, setUserId] = useState<string | null>(null);
+    const [internalUserId, setInternalUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [quiz, setQuiz] = useState<QuizType | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -102,18 +103,27 @@ export default function QuizPage() {
     }, [quiz, quiz?.question, quiz?.question?.id, id, userId]);
 
     useEffect(() => {
-        const key = "quizUserId";
-        const expiryKey = "quizUserIdExpiry";
-        let storedUser = localStorage.getItem(key);
-        const expiry = localStorage.getItem(expiryKey);
-        const now = new Date().getTime();
-        if (!storedUser || !expiry || now > parseInt(expiry)) {
-            storedUser = uuidv4();
-            const fourteenDays = 14 * 24 * 60 * 60 * 1000;
-            localStorage.setItem(key, storedUser);
-            localStorage.setItem(expiryKey, (now + fourteenDays).toString());
-        }
-        setUserId(storedUser);
+        const initUser = async () => {
+            const key = "quizUserId";
+            const expiryKey = "quizUserIdExpiry";
+            let storedUser = localStorage.getItem(key);
+            const expiry = localStorage.getItem(expiryKey);
+            const now = new Date().getTime();
+            if (!storedUser || !expiry || now > parseInt(expiry)) {
+                storedUser = uuidv4();
+                const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+                localStorage.setItem(key, storedUser);
+                localStorage.setItem(expiryKey, (now + fourteenDays).toString());
+            }
+            setUserId(storedUser);
+            try {
+                const user = await syncAnonymousUser(storedUser);
+                setInternalUserId(user.id);
+            } catch (err) {
+                console.error("Failed to sync user:", err);
+            }
+        };
+        initUser();
     }, []);
 
     useEffect(() => {
@@ -302,7 +312,7 @@ export default function QuizPage() {
                     </Box>
                     <Box sx={{ color: "white", ml: 2 }}>
                         <Stack spacing={0.5}>
-                            <Typography variant="body2">UserId: {userId}</Typography>
+                            <Typography variant="body2">UserId: {internalUserId ?? userId}</Typography>
                             <Typography variant="body2">AufgabenId: {quiz?.question?.id}</Typography>
                         </Stack>
                     </Box>

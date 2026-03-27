@@ -55,6 +55,11 @@ export interface AnswerDTO {
     solved: boolean
 }
 
+export interface AnonymousUser {
+    id: string;
+    externalId: string;
+}
+
 /**
  * Fetch a quiz by id
  * @param id Quiz ID
@@ -224,6 +229,23 @@ export async function submitTwoTierFeedback(
 
     if (!res.ok) {
         throw new Error("Failed to save feedback");
+    }
+
+    return res.json();
+}
+
+export async function syncAnonymousUser(externalId: string): Promise<AnonymousUser> {
+    const res = await fetch(`${API_BASE}/api/quiz/anonymous-user`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ externalId }),
+    });
+
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to sync anonymous user: ${msg}`);
     }
 
     return res.json();
