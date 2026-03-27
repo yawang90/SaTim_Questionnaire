@@ -288,7 +288,7 @@ export default function QuizPage() {
                             }
                             return (
                                 <Tooltip title={title} arrow>
-                                <Button key={qid} size="small" variant={isCurrent ? "outlined" : "contained"} onClick={async () => {await handleTestAnswers(false); await fetchQuizData(qid)}} sx={{color: "white", borderColor: "white", backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent", minWidth: 36, position: "relative", "&:hover": {backgroundColor: "grey", borderColor: "white",},}}>
+                                <Button key={qid} size="small" variant={isCurrent ? "outlined" : "contained"} onClick={async () => {await handleTestAnswers(false); await fetchQuizData(qid); setQuizFinished(false)}} sx={{color: "white", borderColor: "white", backgroundColor: isCurrent ? "rgba(255,255,255,0.2)" : "transparent", minWidth: 36, position: "relative", "&:hover": {backgroundColor: "grey", borderColor: "white",},}}>
                                     Aufgabe {index + 1}
                                     {isAnswered && !isSkipped &&(
                                         <Box component="span" sx={{position: "absolute", top: -4, right: -4, width: 16, height: 16, backgroundColor: "green", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center", color: "white", fontSize: 12, fontWeight: "bold",

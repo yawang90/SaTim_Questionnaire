@@ -57,14 +57,6 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
             },
             include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: true } } },
         });
-        for (const questionId of answerRecord.questionIds) {
-            await prisma.questionAnswer.create({
-                data: {
-                    answerId: answerRecord.id,
-                    questionId: questionId,
-                },
-            });
-        }
     }
     let nextQuestion: QuizQuestion | null = null;
     if (questionId !== undefined) {
@@ -87,6 +79,14 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     let previousAnswer;
     if (nextQuestion) {
         previousAnswer = answerRecord.questionsAnswers.find(qa => qa.questionId === nextQuestion.id);
+        if (!previousAnswer) {
+            await prisma.questionAnswer.create({
+                data: {
+                    answerId: answerRecord.id,
+                    questionId: nextQuestion.id,
+                },
+            });
+        }
         const qaRecord = await prisma.questionAnswer.upsert({
             where: {
                 answerId_questionId: {

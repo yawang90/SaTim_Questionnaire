@@ -404,7 +404,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                 row[`Aufgabe_${questionId}_Feedback`] = "";
                 row[`Aufgabe_${questionId}_StartedAt`] = "";
                 row[`Aufgabe_${questionId}_FinishedAt`] = "";
-                row[`Aufgabe_${questionId}_Zeit_MS`] = "";
+                row[`Aufgabe_${questionId}_Zeit_Sekunden`] = "";
                 row[`Aufgabe_${questionId}_Skipped`] = "";
                 continue;
             }
@@ -418,7 +418,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                 row[`Aufgabe_${questionId}_Feedback`] = "";
                 row[`Aufgabe_${questionId}_StartedAt`] = "";
                 row[`Aufgabe_${questionId}_FinishedAt`] = "";
-                row[`Aufgabe_${questionId}_Zeit_MS`] = "";
+                row[`Aufgabe_${questionId}_Zeit_Sekunden`] = "";
                 row[`Aufgabe_${questionId}_Skipped`] = "";
                 continue;
             }
@@ -433,7 +433,7 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
            // row[`Aufgabe_${questionId}_CorrectResponse`] = formatCorrectAnswer(result?.correctAnswers);
             row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
             row[`Aufgabe_${questionId}_Feedback`] = formatFeedback(qa.feedbackAnswer ?? []);
-            row[`Aufgabe_${questionId}_Zeit_MS`] = qa.solvedTime ?? "";
+            row[`Aufgabe_${questionId}_Zeit_Sekunden`] = qa.solvedTime ?? "";
             row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
         }
         rows.push(row);
