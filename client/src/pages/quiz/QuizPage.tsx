@@ -341,17 +341,10 @@ export default function QuizPage() {
                                 Weiter
                             </Button>
                         </Box>
-
                         <Box sx={{display: "flex", gap: 1, mx: "auto",}}>
-                            <Button
-                                startIcon={<SkipNextIcon />}
-                                variant="outlined"
-                                color="warning"
-                                onClick={handleSkip}
-                                disabled={submitting}>
+                            <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
                                 Überspringen
                             </Button>
-
                             <Button
                                 variant="contained"
                                 color="primary"
@@ -408,7 +401,9 @@ export default function QuizPage() {
                             </Box>
                         ))}</Box>
                     </>)}
-                {!quizFinished ? (<Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', maxWidth: 600, margin: 'auto', mb: 4 }}>
+                {!quizFinished ? (
+                    <Box sx={{mt: 4, display: "flex", alignItems: "center", margin: "auto", mb: 4,}}>
+                        <Box sx={{display: "flex", gap: 1, mx: "auto",}}>
                         <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
                             Überspringen
                         </Button>
@@ -419,7 +414,7 @@ export default function QuizPage() {
                             disabled={submitting || loading}
                             startIcon={!submitting ? <SaveIcon /> : null}>
                             {submitting ? <CircularProgress size={24} color="inherit" /> : "Antwort speichern"}
-                        </Button>
+                        </Button></Box>
                     </Box>
                 ) : (<></>)}
             </main>
