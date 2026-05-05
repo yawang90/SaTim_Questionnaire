@@ -439,11 +439,12 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
                     correct: result?.correctAnswers[key]
                 };
             });
+            const scoreVector = result?.score ?? [];
             row[`Aufgabe_${questionId}_SystemID`] = qa.questionId;
             row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
             row[`Aufgabe_${questionId}_RawResponse`] = orderedCorrect.map(x => x.user ? formatUserAnswer([x.user]) : "[]").join(", ");
             row[`Aufgabe_${questionId}_CorrectResponse`] = orderedCorrect.map(x => formatCorrectAnswer({ [x.key]: x.correct })).join(", ");
-            row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
+            row[`Aufgabe_${questionId}_Score`] = scoreVector.join(", ");
             row[`Aufgabe_${questionId}_Feedback`] = formatFeedback(qa.feedbackAnswer ?? []);
             row[`Aufgabe_${questionId}_Zeit_Sekunden`] = qa.solvedTime ?? "";
             row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";

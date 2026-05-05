@@ -75,7 +75,7 @@ export interface EvaluateDetail {
 }
 
 export interface EvaluateResult {
-    score: number;
+    score: number[];
     total: number;
     details: EvaluateDetail[];
     correctAnswers: any;
@@ -87,20 +87,17 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
             where: {id: questionId},
             select: {id: true, correctAnswers: true, contentJson: true}
         });
-
     if (!questionEntry) {
         console.log("Question not found at evaluateAnswers.");
         return null;
     }
-
     const correctAnswers = questionEntry.correctAnswers as CorrectAnswersJson | null;
-
     if (!correctAnswers || typeof correctAnswers !== "object") {
         console.log("No correct answers found for this question");
         return null;
     }
 
-    let score = 0;
+    const score: number[] = [];
     const total = Object.keys(correctAnswers).length;
     const details: EvaluateDetail[] = [];
     const returnCorrectAnswers = JSON.parse(JSON.stringify(correctAnswers));
@@ -131,7 +128,6 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
 
                     if (selected === correctAnswer.value) {
                         isCorrect = true;
-                        score += 1;
                     }
                     break;
                 }
@@ -163,33 +159,24 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                                 check = userVal >= condValue - EPS;
                                 break;
                         }
-
                         if (condition.logic === "and") result = result && check;
                         else result = result || check;
                     }
-
                     if (result) {
                         isCorrect = true;
-                        score += 1;
                     }
-
                     break;
                 }
                 case "freeText":
                 case "freeTextInline":
-                    if (
-                        correctAnswer.value.trim().toLowerCase() ===
-                        String(userAnswer.value).trim().toLowerCase()
-                    ) {
+                    if (correctAnswer.value.trim().toLowerCase() === String(userAnswer.value).trim().toLowerCase()) {
                         isCorrect = true;
-                        score += 1;
                     }
                     break;
                 case "geoGebraPoints": {
                     const ok = checkGeoGebraPoints(correctAnswer.value, userAnswer.value);
                     if (ok) {
                         isCorrect = true;
-                        score += 1;
                     }
                     break;
                 }
@@ -197,7 +184,6 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                     const ok = checkGeoGebraLines(correctAnswer.value, userAnswer.value);
                     if (ok) {
                         isCorrect = true;
-                        score += 1;
                     }
                     break;
                 }
@@ -205,9 +191,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                     try {
                         if (checkAlgebraEquality(correctAnswer.value, userAnswer.value)) {
                             isCorrect = true;
-                            score += 1;
                         }
-                        break;
                     } catch (err) {
                         console.log("Algebra evaluation error:", err);}
                     break;
@@ -224,7 +208,6 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                             const answerIsCorrect = checkAndSubstituteLineEquation(userM, userC, m, c);
                             if (answerIsCorrect) {
                                 isCorrect = true;
-                                score += 1;
                             }
                         }
                     } catch (err) {
@@ -235,6 +218,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                 }
             }
         }
+        score.push(isCorrect ? 1 : 0);
         details.push({
             key,
             given: userAnswer?.value ?? null,
@@ -409,8 +393,10 @@ function substituteAndEvaluate(expressionLatex: string, variable: "m" | "c", val
 
 function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolean {
     try {
-        const userExpr = ce.parse(userLatex, { syntax: "latex" });
-        const correctExpr = ce.parse(correctLatex, { syntax: "latex" });
+        const normalizedUser = normalizeLatexInput(userLatex);
+        const normalizedCorrect = normalizeLatexInput(correctLatex);
+        const userExpr = ce.parse(normalizedUser, { syntax: "latex" });
+        const correctExpr = ce.parse(normalizedCorrect, { syntax: "latex" });
 
         const diff = ce.box(["Subtract", userExpr, correctExpr]).simplify().canonical;
         const num = Number(diff.N().valueOf());
@@ -419,6 +405,17 @@ function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolea
         console.log("Algebra comparison failed:", err);
         return false;
     }
+}
+
+function normalizeLatexInput(input: string): string {
+    if (!input) return "";
+    let cleaned = input.replace(/\s+/g, "");
+    const match = cleaned.match(/^[a-zA-Z0-9_()]+=(.+)$/);
+    if (match) {
+        return match[1] ?? "";
+    }
+
+    return cleaned;
 }
 
 function getSCIndex(doc: any, targetId: string, type: string): number | null {
