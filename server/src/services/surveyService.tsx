@@ -430,12 +430,19 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
             const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
             const result = await evaluateAnswersService(questionId, userAnswerInput);
+            const correctOrder = Object.keys(result?.correctAnswers ?? {});
+            const userMap = new Map(answerArray?.map(a => [a.key, a]));
+            const orderedCorrect = correctOrder.map(key => {
+                return {
+                    key,
+                    user: userMap.get(key) ?? null,
+                    correct: result?.correctAnswers[key]
+                };
+            });
             row[`Aufgabe_${questionId}_SystemID`] = qa.questionId;
             row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
-            row[`Aufgabe_${questionId}_RawResponse`] = JSON.stringify(qa.answerJson ?? []);
-            row[`Aufgabe_${questionId}_CorrectResponse`] = JSON.stringify(result?.correctAnswers ?? []);
-            //  row[`Aufgabe_${questionId}_RawResponse`] = formatUserAnswer(answerArray);
-           // row[`Aufgabe_${questionId}_CorrectResponse`] = formatCorrectAnswer(result?.correctAnswers);
+            row[`Aufgabe_${questionId}_RawResponse`] = orderedCorrect.map(x => x.user ? formatUserAnswer([x.user]) : "[]").join(", ");
+            row[`Aufgabe_${questionId}_CorrectResponse`] = orderedCorrect.map(x => formatCorrectAnswer({ [x.key]: x.correct })).join(", ");
             row[`Aufgabe_${questionId}_Score`] = result?.score ?? "";
             row[`Aufgabe_${questionId}_Feedback`] = formatFeedback(qa.feedbackAnswer ?? []);
             row[`Aufgabe_${questionId}_Zeit_Sekunden`] = qa.solvedTime ?? "";
@@ -563,18 +570,20 @@ function formatUserAnswer(answerArray: any[]): string {
                 case "mc":
                 case "sc":
                     if (!Array.isArray(ans.value)) return "[]";
-                    return `[${ans.value
-                        .map((v: any) => `["${v.choiceText}":${v.selected}]`)
-                        .join(",")}]`;
+                    const result = ans.value
+                        .map((v: any, i: number) => (v.selected ? i + 1 : null))
+                        .filter((v: number | null) => v !== null);
+                    return result.length ? `[${result.join(", ")}]` : "[]";
                 case "numeric":
                 case "algebra":
                 case "lineEquation":
                 case "freeText":
                 case "freeTextInline":
-                    return `[${ans.value ? `"${ans.value}"` : ""}]`;
+                    return `[${ans.value ? `${ans.value}` : ""}]`;
                 case "geoGebraPoints":
+                    let index2 = 1;
                     return `[${ans.value
-                        .map((v: any) => `["p1":${v.x}, ${v.y}]`)
+                        .map((v: any) => `[${index2++}${v.x}, ${v.y}]`)
                         .join(",")}]`;
                 case "geoGebraLines":
                     return `[${ans.value
@@ -597,45 +606,36 @@ function formatCorrectAnswer(input: any): string {
         .map(ans => {
             switch (ans.type) {
                 case "mc":
-                    return `[${ans.value
-                        .map((id: string) => `["${id}":true]`)
-                        .join(",")}]`;
-
+                    if (!Array.isArray(ans.value)) return "[]";
+                    let index = 1;
+                    return `[${ans.value.map(() => `${index++}`).join(", ")}]`;
                 case "sc":
-                    return `[["${ans.value}":true]]`;
-
-                case "numeric":
+                    return `[${ans.value ? `${ans.value}` : ""}]`;
                 case "algebra":
                 case "freeText":
                 case "freeTextInline":
-                    return `[${ans.value ? `"${ans.value}"` : ""}]`;
-
+                    return `[${ans.value ? `${ans.value}` : ""}]`;
                 case "lineEquation":
                     return `[m:${ans.value?.m?.[0]?.value ?? ""}, c:${ans.value?.c?.[0]?.value ?? ""}]`;
-
+                case "numeric":
                 case "geoGebraSlope":
-                    return `[${ans.value
-                        ?.map((v: any) => v.value)
-                        .join(",") ?? ""}]`;
-
+                    return `[${ans.value?.map((v: any) => v.value).join(", ") ?? ""}]`;
                 case "geoGebraPoints":
-                    return Object.entries(ans.value || {})
-                        .map(([pointName, coords]: any) => {
+                    let index2 = 1;
+                    return Object.entries(ans.value || {}).map(([pointName, coords]: any) => {
                             const x = coords.x?.map((v: any) => v.value).join("|") ?? "";
                             const y = coords.y?.map((v: any) => v.value).join("|") ?? "";
-                            return `[${pointName}: x=${x}, y=${y}]`;
-                        })
+                            return `[${index2++}: x=${x}, y=${y}]`;})
                         .join(", ");
-
                 case "geoGebraLines":
+                    let index3 = 1;
                     return Object.entries(ans.value || {})
                         .map(([lineName, line]: any) => {
                             const m = line.m?.map((v: any) => v.value).join("|") ?? "";
                             const c = line.c?.map((v: any) => v.value).join("|") ?? "";
-                            return `[${lineName}: m=${m}, c=${c}]`;
+                            return `[${index3++}: m=${m}, c=${c}]`;
                         })
                         .join(", ");
-
                 default:
                     return `[${JSON.stringify(ans.value ?? "")}]`;
             }

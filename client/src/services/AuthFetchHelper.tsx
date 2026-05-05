@@ -9,7 +9,7 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
 
     if (response.status === 401 || response.status === 403) {
         localStorage.removeItem("token");
-        window.location.href = "/";
+        window.location.href = "/login";
         return Promise.reject(new Error("Unauthorized"));
     }
 

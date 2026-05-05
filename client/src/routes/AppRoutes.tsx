@@ -26,11 +26,11 @@ function AppRoutes() {
                 <Route path="/editor/:id" element={<EditorPage />} />
                 <Route path="/answers/:id" element={<AnswerEditorPage />} />
                 <Route path="/preview/:id" element={<AnswerPreviewPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
 
                 // public pages, no login
                 <Route path="/quiz/:id" element={<QuizPage/>} />
                 <Route path="/table" element={<QuestionsTablePage />} />
-                <Route path="/profile" element={<ProfilePage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>

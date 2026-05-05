@@ -81,11 +81,11 @@ export interface EvaluateResult {
     correctAnswers: any;
 }
 
-export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult| null> => {
-    const questionEntry: Pick<question, "id" | "correctAnswers"> | null =
+export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult | null> => {
+    const questionEntry: Pick<question, "id" | "correctAnswers" | "contentJson"> | null =
         await prisma.question.findUnique({
             where: {id: questionId},
-            select: {id: true, correctAnswers: true}
+            select: {id: true, correctAnswers: true, contentJson: true}
         });
 
     if (!questionEntry) {
@@ -103,38 +103,33 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
     let score = 0;
     const total = Object.keys(correctAnswers).length;
     const details: EvaluateDetail[] = [];
-
+    const returnCorrectAnswers = JSON.parse(JSON.stringify(correctAnswers));
     for (const key of Object.keys(correctAnswers)) {
         const correctAnswer = correctAnswers[key];
         const userAnswer = userAnswers.find(a => a.key === key);
-
+        const returnCorrectAnswer = returnCorrectAnswers[key];
         let isCorrect = false;
-
+        if (returnCorrectAnswer && questionEntry.contentJson) {
+            if (correctAnswer?.type === "sc") {
+                const index = getSCIndex(questionEntry.contentJson, correctAnswer.value, "singleChoice");
+                if (index !== null) {
+                    returnCorrectAnswer.value = index;
+                }
+            }
+            if (correctAnswer?.type === "mc") {
+                const indices = getMCIndeces(questionEntry.contentJson, correctAnswer.value);
+                returnCorrectAnswer.value = indices;
+            }
+        }
         if (userAnswer && correctAnswer) {
             switch (correctAnswer.type) {
+                case "mc":
                 case "sc": {
                     const selected =
                         (userAnswer.value as { id: string; selected: boolean }[])
                             .find(a => a.selected)?.id;
 
                     if (selected === correctAnswer.value) {
-                        isCorrect = true;
-                        score += 1;
-                    }
-                    break;
-                }
-                case "mc": {
-                    const selectedIds = (userAnswer.value as { id: string; selected: boolean }[])
-                        .filter(a => a.selected)
-                        .map(a => a.id);
-
-                    const correctSet = new Set(correctAnswer.value);
-                    const userSet = new Set(selectedIds);
-
-                    const sameSize = correctSet.size === userSet.size;
-                    const sameElements = [...correctSet].every(id => userSet.has(id));
-
-                    if (sameSize && sameElements) {
                         isCorrect = true;
                         score += 1;
                     }
@@ -243,7 +238,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
         details.push({
             key,
             given: userAnswer?.value ?? null,
-            expected: correctAnswer?.value,
+            expected: returnCorrectAnswer?.value,
             correct: isCorrect
         });
     }
@@ -251,7 +246,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
         score,
         total,
         details,
-        correctAnswers
+        correctAnswers: returnCorrectAnswers
     };
 };
 
@@ -424,4 +419,30 @@ function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolea
         console.log("Algebra comparison failed:", err);
         return false;
     }
+}
+
+function getSCIndex(doc: any, targetId: string, type: string): number | null {
+    let result: number | null = null;
+    function traverse(node: any) {
+        if (!node || result !== null) return;
+        if (Array.isArray(node.content)) {
+            const choices = node.content.filter(
+                (child: any) => child.type === type);
+            if (choices.length > 0) {
+                const index = choices.findIndex((c: any) => c.attrs?.id === targetId);
+                if (index !== -1) {
+                    result = index + 1;
+                    return;
+                }
+            }
+            node.content.forEach(traverse);
+        }
+    }
+    traverse(doc);
+    return result;
+}
+function getMCIndeces(doc: any, targetIds: string[]): number[] {
+    return targetIds
+        .map(id => getSCIndex(doc, id, "multipleChoice"))
+        .filter((v): v is number => v !== null);
 }
