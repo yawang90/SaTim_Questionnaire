@@ -29,7 +29,7 @@ export interface FullUser {
     email: string;
 }
 
-export const registerUser = async (formData: RegisterFormData): Promise<User> => {
+export const registerUser = async (formData: RegisterFormData): Promise<{ message: any, token: string, userId: string }> => {
     const res = await authFetch(`${API_URL}/api/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

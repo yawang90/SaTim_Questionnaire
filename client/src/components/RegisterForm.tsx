@@ -55,13 +55,8 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
             };
 
             const user = await registerUser(payload);
-            login(user.id, user.token);
+            login(user.userId, user.token);
 
-            setSnackbar({
-                open: true,
-                message: t("registerForm.successMessage"),
-                severity: "success",
-            });
             onSuccess?.();
         } catch (err: any) {
             setSnackbar({
