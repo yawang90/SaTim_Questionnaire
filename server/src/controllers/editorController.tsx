@@ -16,7 +16,6 @@ interface FieldInput {
 
 interface QuestionFormInput {
     formData: FieldInput[];
-    group_id: number;
 }
 
 interface QuestionContentInput {
@@ -40,7 +39,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 
 export const createQuestionsForm = async (req: Request, res: Response) => {
     try {
-        const { formData, group_id } = req.body as QuestionFormInput;
+        const { formData } = req.body as QuestionFormInput;
 
         if (!formData || !Array.isArray(formData)) {
             return res.status(400).json({ error: "Invalid form data" });

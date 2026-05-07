@@ -53,7 +53,6 @@ export const createQuestionMeta = async (data: CreateQuestionInput): Promise<que
             metadata: data.metadata,
             createdById: data.createdById,
             updatedById: data.updatedById,
-            group_id: data.group_id,
             status: question_status.ACTIVE
         },
     });
@@ -119,7 +118,6 @@ export const updateQuestionContentById = async (id: number, data: UpdateQuestion
  */
 export const getQuestionsByGroupId = async (groupId: number) => {
     return prisma.question.findMany({
-        where: {group_id: groupId},
         orderBy: {createdAt: "desc"},
         include: {
             createdBy: {
@@ -180,7 +178,6 @@ export const duplicateQuestionById = async (id: number, userId: number): Promise
     const duplicate = await prisma.question.create({
         data: {
             metadata,
-            group_id: original.group_id,
             createdById: userId,
             updatedById: userId,
             status: question_status.ACTIVE,

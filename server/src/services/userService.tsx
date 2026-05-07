@@ -20,18 +20,10 @@ export const saveNewUser = async ({first_name, last_name, email, password}: NewU
             email,
             password: hashedPassword,
             roles: ["GENERAL"],
-            group_access: {
-                create: [
-                    {
-                        group_id: 999,
-                    },
-                ],
-            },
         },
         select: {
             id: true,
             email: true,
-            group_access: true,
         },
     });
 };

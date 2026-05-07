@@ -14,7 +14,6 @@ model users {
   email                  String           @unique
   password               String
   roles                  String[]
-  group_access           group_access[]
   createdQuestions       question[]       @relation("CreatedQuestions")
   updatedQuestions       question[]       @relation("UpdatedQuestions")
   surveys                survey[]         @relation("CreatedSurveys")
@@ -22,13 +21,32 @@ model users {
   surveyInstances        surveyInstance[] @relation("CreatedSurveyInstances")
   updatedSurveyInstances surveyInstance[] @relation("UpdatedSurveyInstances")
   booklets               booklet[]        @relation("CreatedBooklets")
+
+  team_access team_access[]
 }
 
-model group_access {
-  id       Int   @id @default(autoincrement())
-  group_id Int
-  user_id  Int
-  users    users @relation(fields: [user_id], references: [id])
+model team {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  users           team_access[]
+  questions       question[]
+  surveys         survey[]
+  surveyInstances surveyInstance[]
+}
+
+model team_access {
+  id Int @id @default(autoincrement())
+
+  team_id Int
+  user_id Int
+
+  team team  @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, user_id])
 }
 
 model question {
@@ -36,7 +54,6 @@ model question {
   metadata       Json
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  group_id       Int
   status         question_status
   contentJson    Json?
   contentHtml    String?
@@ -48,6 +65,9 @@ model question {
   createdBy       users             @relation("CreatedQuestions", fields: [createdById], references: [id])
   updatedBy       users             @relation("UpdatedQuestions", fields: [updatedById], references: [id])
   bookletQuestion bookletQuestion[]
+
+  team_id Int?
+  team    team? @relation(fields: [team_id], references: [id])
 }
 
 model bookletQuestion {
@@ -95,6 +115,9 @@ model survey {
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
   answer    answer[] @relation("BelogsToSurvey")
+
+  team_id Int?
+  team    team? @relation(fields: [team_id], references: [id])
 }
 
 model surveyInstance {
@@ -113,6 +136,9 @@ model surveyInstance {
   createdBy users    @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
   answer    answer[] @relation("BelongsToInstance")
+
+  team_id Int?
+  team    team? @relation(fields: [team_id], references: [id])
 }
 
 enum survey_mode {
