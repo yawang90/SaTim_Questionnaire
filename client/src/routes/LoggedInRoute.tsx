@@ -1,6 +1,6 @@
-import {useState, useEffect, type ReactNode} from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import {type ReactNode} from 'react';
+import {Navigate} from 'react-router-dom';
+import {useAuth} from '../contexts/AuthContext';
 
 interface LoggedInRouteProps {
     children: ReactNode;
@@ -8,15 +8,10 @@ interface LoggedInRouteProps {
 
 const LoggedInRoute = ({ children }: LoggedInRouteProps) => {
     const { isLoggedIn } = useAuth();
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setLoading(false);
-    }, [isLoggedIn]);
-
-    if (loading) return null;
-
-    return isLoggedIn ? <>{children}</> : <Navigate to="/" replace />;
+    if (!isLoggedIn) {
+        return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
 };
 
 export default LoggedInRoute;

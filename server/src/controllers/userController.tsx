@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import {registerValidationSchema} from "../validation/userValidation.js";
-import {findUser, loginUserService, saveNewUser} from "../services/userService.js";
+import {findUser, loginUserService, saveNewUser, searchUsersService} from "../services/userService.js";
 import type {Request, Response} from 'express';
 
 interface RegisterRequestBody {
@@ -21,8 +21,7 @@ interface GetUserByIdQuery {
 }
 
 export const registerUser = async (req: Request<{}, {}, RegisterRequestBody>, res: Response) => {
-    res.status(500).json({ message: 'Aktuell keine Registrierung möglich.' });
-    /* TODO enable again const { error } = registerValidationSchema.validate(req.body);
+   const { error } = registerValidationSchema.validate(req.body);
      if (error) {
          return res.status(400).json({ message: error.details[0]?.message });
      }
@@ -44,7 +43,7 @@ export const registerUser = async (req: Request<{}, {}, RegisterRequestBody>, re
      } catch (err) {
          console.error('Error registering user:', err);
          res.status(500).json({ message: 'Database error' });
-     }*/
+     }
 };
 
 
@@ -92,5 +91,25 @@ export const getUserById = async (req: Request<{}, {}, {}, GetUserByIdQuery>, re
     } catch (err) {
         console.error('Error fetching user by ID:', err);
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+interface SearchUsersQuery {
+    query?: string;
+}
+
+export const searchUsers = async (req: Request<{}, {}, {}, SearchUsersQuery>, res: Response) => {
+    const { query } = req.query;
+
+    if (!query) {
+        return res.status(400).json({ message: "Missing query" });
+    }
+
+    try {
+        const users = await searchUsersService(query);
+        res.status(200).json(users);
+    } catch (err) {
+        console.error("Error searching users:", err);
+        res.status(500).json({ message: "Server error" });
     }
 };

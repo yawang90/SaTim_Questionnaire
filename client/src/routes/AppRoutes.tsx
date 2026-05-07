@@ -11,6 +11,9 @@ import MetaDataPage from "../pages/questions/MetaDataPage.tsx";
 import SurveyUpdatePage from "../pages/survey/SurveyUpdatePage.tsx";
 import SurveyInstancePage from "../pages/survey/SurveyInstancePage.tsx";
 import QuizPage from "../pages/quiz/QuizPage.tsx";
+import TeamPage from '../pages/TeamPage.tsx';
+import LoggedInRoute from './LoggedInRoute.tsx';
+import NoTeamPage from '../pages/NoTeamPage.tsx';
 
 function AppRoutes() {
     return (
@@ -18,20 +21,24 @@ function AppRoutes() {
             <Routes>
                 <Route path="/" element={<LandingPage />} />
 
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/survey/:id" element={<SurveyUpdatePage />} />
-                <Route path="/survey/details/:id" element={<SurveyInstancePage />} />
-
-                <Route path="/meta/:id?" element={<MetaDataPage />} />
-                <Route path="/editor/:id" element={<EditorPage />} />
-                <Route path="/answers/:id" element={<AnswerEditorPage />} />
-                <Route path="/preview/:id" element={<AnswerPreviewPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-
-                // public pages, no login
-                <Route path="/quiz/:id" element={<QuizPage/>} />
+                {/* PUBLIC */}
+                <Route path="/quiz/:id" element={<QuizPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
+                <Route path="/noTeam" element={<NoTeamPage />} />
 
+                {/* PROTECTED */}
+                <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />
+                <Route path="/survey/:id" element={<LoggedInRoute><SurveyUpdatePage /></LoggedInRoute>} />
+                <Route path="/survey/details/:id" element={<LoggedInRoute><SurveyInstancePage /></LoggedInRoute>} />
+                <Route path="/meta/:id?" element={<LoggedInRoute><MetaDataPage /></LoggedInRoute>} />
+                <Route path="/editor/:id" element={<LoggedInRoute><EditorPage /></LoggedInRoute>} />
+                <Route path="/answers/:id" element={<LoggedInRoute><AnswerEditorPage /></LoggedInRoute>} />
+                <Route path="/preview/:id" element={<LoggedInRoute><AnswerPreviewPage /></LoggedInRoute>} />
+
+                <Route path="/profile" element={<LoggedInRoute><ProfilePage /></LoggedInRoute>} />
+                <Route path="/team" element={<LoggedInRoute><TeamPage /></LoggedInRoute>} />
+
+                {/* PUBLIC */}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>

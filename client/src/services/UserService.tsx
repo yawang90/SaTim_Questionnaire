@@ -70,12 +70,11 @@ export const getUserById = async (userId: string): Promise<FullUser> => {
     return await res.json();
 };
 
-export const findUsersByNameOrEmail = async (nameOrEmail: string, projectId: string): Promise<User[]> => {
+export const searchUsers = async (query: string) => {
     const token = localStorage.getItem("token");
-    const res = await authFetch(
-        `${API_URL}/api/users/search?query=${encodeURIComponent(nameOrEmail)}&projectId=${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const res = await authFetch(`${API_URL}/api/users/search?query=${encodeURIComponent(query)}`, {headers: {Authorization: `Bearer ${token}`,},});
+
     if (!res.ok) throw new Error("Search failed");
+
     return await res.json();
 };

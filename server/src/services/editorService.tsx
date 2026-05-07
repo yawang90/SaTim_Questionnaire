@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import prisma from "../config/prismaClient.js";
 import {type question, question_status} from "@prisma/client";
 import {supabase} from "../supabaseClient.js";
+import {getUserTeam} from "./teamServices.js";
 
 interface CreateQuestionInput {
     metadata: Record<string, any>;
@@ -122,7 +123,7 @@ export const updateQuestionContentById = async (id: number, data: UpdateQuestion
 /**
  * Get all questions belonging to a group
  */
-export const getQuestionsByGroupId = async (userId: number) => {
+export const getQuestionsFromTeam = async (userId: number) => {
     const teamId = await getUserTeam(userId);
 
     return prisma.question.findMany({
@@ -202,15 +203,3 @@ export const duplicateQuestionById = async (id: number, userId: number): Promise
 
     return duplicate;
 };
-
-async function getUserTeam(userId: number) {
-    const userTeams = await prisma.team_access.findMany({
-        where: {user_id: userId},
-        select: {team_id: true},
-    });
-    const teamId = userTeams[0]?.team_id;
-    if (teamId === undefined) {
-        throw new Error("No TeamId found!");
-    }
-    return teamId;
-}

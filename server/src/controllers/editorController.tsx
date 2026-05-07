@@ -2,7 +2,7 @@ import type {Request, Response} from 'express';
 import {
     createQuestionMeta, duplicateQuestionById,
     findQuestionById,
-    getQuestionsByGroupId, saveImage, updateQuestionAnswersById,
+    getQuestionsFromTeam, saveImage, updateQuestionAnswersById,
     updateQuestionContentById,
     updateQuestionMetaById, updateQuestionStatusById
 } from "../services/editorService.js";
@@ -119,7 +119,7 @@ export const loadAllQuestions = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: 'Not authenticated' });
 
-        const questions = await getQuestionsByGroupId(userId);
+        const questions = await getQuestionsFromTeam(userId);
         res.json(questions);
     } catch (err) {
         console.error("Error loading questions:", err);
