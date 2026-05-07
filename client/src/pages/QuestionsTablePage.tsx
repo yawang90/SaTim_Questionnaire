@@ -12,8 +12,6 @@ import { useNavigate } from "react-router-dom";
 import {duplicateQuestion, loadAllQuestions, loadQuestionForm, type Question} from "../services/EditorService.tsx";
 import {type FullUser, getUserById} from "../services/UserService.tsx";
 
-const groupId = "999";
-
 type QuestionRow = {
     id: number;
     status: string;
@@ -81,7 +79,7 @@ export default function QuestionsTablePage() {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const data: QuestionRow[] = await loadAllQuestions(groupId);
+                const data: QuestionRow[] = await loadAllQuestions();
                 setRows(data);
             } catch (error) {
                 console.error("Aufgaben konnten nicht geladen werden: ", error);
@@ -163,7 +161,7 @@ export default function QuestionsTablePage() {
             const duplicatedQuestion = await duplicateQuestion(selectedQuestion.id);
             setSnackbarMessage(`Aufgabe ${duplicatedQuestion.id} erfolgreich dupliziert`);
             setSnackbarOpen(true);
-            const data: QuestionRow[] = await loadAllQuestions(groupId);
+            const data: QuestionRow[] = await loadAllQuestions();
             setRows(data);
         } catch (error) {
             console.error("Fehler beim Duplizieren:", error);

@@ -7,7 +7,6 @@ interface CreateQuestionInput {
     metadata: Record<string, any>;
     createdById: number;
     updatedById: number;
-    group_id: number;
 }
 
 interface UpdateQuestionInput {
@@ -24,6 +23,7 @@ interface UpdateMetadataInput {
 type QuestionWithEditFlag = question & {
     isEditable: boolean;
 };
+
 export const saveImage = async (file: Express.Multer.File): Promise<string> => {
     const safeName = file.originalname.replace(/\s+/g, "_");
     const fileName = `${Date.now()}_${safeName}`;
@@ -48,24 +48,26 @@ export const saveImage = async (file: Express.Multer.File): Promise<string> => {
  * Create a new metadata entry
  */
 export const createQuestionMeta = async (data: CreateQuestionInput): Promise<question> => {
+    const teamId = await getUserTeam(data.createdById);
     return prisma.question.create({
         data: {
             metadata: data.metadata,
             createdById: data.createdById,
             updatedById: data.updatedById,
-            status: question_status.ACTIVE
+            status: question_status.ACTIVE,
+            team_id: teamId
         },
     });
 };
+
 /**
  * Find a metadata entry by ID
  */
-export const findQuestionById = async (
-    id: number
-): Promise<QuestionWithEditFlag | null> => {
+export const findQuestionById = async (id: number, userId: number): Promise<QuestionWithEditFlag | null> => {
+    const teamId = await getUserTeam(userId);
 
     const result = await prisma.question.findUnique({
-        where: { id },
+        where: { id , team_id: teamId},
         include: {
             bookletQuestion: {
                 select: { questionId: true }
@@ -90,8 +92,10 @@ export const findQuestionById = async (
  * Update question metadata
  */
 export const updateQuestionMetaById = async (id: number, data: UpdateMetadataInput): Promise<question> => {
+    const teamId = await getUserTeam(data.updatedById);
+
     return prisma.question.update({
-        where: { id },
+        where: { id , team_id : teamId},
         data: {
             metadata: data.metadata,
             updatedById: data.updatedById,
@@ -103,8 +107,10 @@ export const updateQuestionMetaById = async (id: number, data: UpdateMetadataInp
  * Update question content (JSON + HTML)
  */
 export const updateQuestionContentById = async (id: number, data: UpdateQuestionInput): Promise<question> => {
+    const teamId = await getUserTeam(data.updatedById);
+
     return prisma.question.update({
-        where: { id },
+        where: { id , team_id: teamId},
         data: {
             contentJson: data.contentJson,
             contentHtml: data.contentHtml,
@@ -116,8 +122,11 @@ export const updateQuestionContentById = async (id: number, data: UpdateQuestion
 /**
  * Get all questions belonging to a group
  */
-export const getQuestionsByGroupId = async (groupId: number) => {
+export const getQuestionsByGroupId = async (userId: number) => {
+    const teamId = await getUserTeam(userId);
+
     return prisma.question.findMany({
+        where: { team_id: teamId},
         orderBy: {createdAt: "desc"},
         include: {
             createdBy: {
@@ -134,18 +143,19 @@ export const getQuestionsByGroupId = async (groupId: number) => {
  * Update the correct answers JSON for a question
  */
 export async function updateQuestionAnswersById(id: number, data: { updatedById: number; answersJson: any }) {
+    const teamId = await getUserTeam(data.updatedById);
+
     return prisma.question.update({
-        where: { id },
+        where: { id, team_id: teamId },
         data: {correctAnswers: data.answersJson, updatedById: data.updatedById,},
     });
 }
 
-export const updateQuestionStatusById = async (
-    id: number,
-    { updatedById, status }: { updatedById: number; status: question_status}
-) => {
+export const updateQuestionStatusById = async (id: number, { updatedById, status }: { updatedById: number; status: question_status}) => {
+    const teamId = await getUserTeam(updatedById);
+
     return prisma.question.update({
-        where: { id },
+        where: { id , team_id: teamId},
         data: {
             status,
             updatedById,
@@ -155,6 +165,8 @@ export const updateQuestionStatusById = async (
 };
 
 export const duplicateQuestionById = async (id: number, userId: number): Promise<question> => {
+    const teamId = await getUserTeam(userId);
+
     const original = await prisma.question.findUnique({
         where: { id },
     });
@@ -177,6 +189,7 @@ export const duplicateQuestionById = async (id: number, userId: number): Promise
 
     const duplicate = await prisma.question.create({
         data: {
+            team_id: teamId,
             metadata,
             createdById: userId,
             updatedById: userId,
@@ -189,3 +202,15 @@ export const duplicateQuestionById = async (id: number, userId: number): Promise
 
     return duplicate;
 };
+
+async function getUserTeam(userId: number) {
+    const userTeams = await prisma.team_access.findMany({
+        where: {user_id: userId},
+        select: {team_id: true},
+    });
+    const teamId = userTeams[0]?.team_id;
+    if (teamId === undefined) {
+        throw new Error("No TeamId found!");
+    }
+    return teamId;
+}

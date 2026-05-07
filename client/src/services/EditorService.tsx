@@ -32,14 +32,10 @@ async function handleResponse(response: Response) {
 /**
  * Save new metadata entry
  * @param formData - The metadata key/value object
- * @param groupId
  */
-export async function createQuestionForm(formData: Record<string, any>, groupId: string) {
+export async function createQuestionForm(formData: Record<string, any>) {
     const token = localStorage.getItem("token");
-    const payload = {
-        formData: formData,
-        group_id: groupId
-    };
+    const payload = {formData: formData};
     const response = await authFetch(`${API_URL}/api/editor/question`, {
         method: "POST",
         headers: {
@@ -107,11 +103,10 @@ export async function updateQuestionContent(id: string, contentJson: object, con
 
 /**
  * Load all questions for a specific group
- * @param groupId - The ID of the group
  */
-export async function loadAllQuestions(groupId: string) {
+export async function loadAllQuestions() {
     const token = localStorage.getItem("token");
-    const response = await authFetch(`${API_URL}/api/editor/questions?groupId=${groupId}`, {
+    const response = await authFetch(`${API_URL}/api/editor/questions`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

@@ -28,7 +28,6 @@ import {
 import QuestionLayout from "../../layouts/QuestionLayout.tsx";
 
 type FieldType = "text" | "textarea" | "checkbox" | "select";
-const groupId = "999";
 
 export interface MetaField {
     key: string;
@@ -99,7 +98,7 @@ export default function MetaDataPage() {
                 });
                 navigate(`/editor/${questionResponse.id}`);
             } else {
-                const questionResponse = await createQuestionForm(formSchema, groupId);
+                const questionResponse = await createQuestionForm(formSchema);
                 setSnackbar({
                     open: true,
                     message: "Aufgabe erfolgreich gespeichert!",
