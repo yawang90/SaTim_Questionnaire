@@ -47,7 +47,7 @@ export const createQuestionsForm = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const newQuestion = await createQuestionMeta({metadata: formData, createdById: userId, updatedById: userId, group_id: Number(group_id)});
+        const newQuestion = await createQuestionMeta({metadata: formData, createdById: userId, updatedById: userId, group_id: 999});
 
         res.status(201).json(newQuestion);
     } catch (err) {
