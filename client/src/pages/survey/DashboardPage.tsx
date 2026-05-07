@@ -27,6 +27,7 @@ import {Add, BarChart, CalendarToday} from "@mui/icons-material";
 import {useNavigate} from "react-router-dom";
 import {createSurvey, getSurveys} from "../../services/SurveyService.tsx";
 import type {surveyStatus} from "./SurveyUpdatePage.tsx";
+import {getUserTeam} from "../../services/TeamService.tsx";
 
 interface Survey {
     id: string;
@@ -49,6 +50,7 @@ interface Survey {
 const DashboardPage = () => {
     const navigate = useNavigate();
     const [statusFilter, setStatusFilter] = useState<Survey["status"] | "ALL">("ALL");
+    const [teamId, setTeamId] = useState<number | null>(null);
 
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [loading, setLoading] = useState(true);
@@ -56,6 +58,19 @@ const DashboardPage = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [snackbar, setSnackbar] = useState({open: false, message: "", severity: "success" as "success" | "error",});
     const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design"; isTwoTier: boolean }>({title: "", description: "", fromDate: "", toDate: "", mode: "design", isTwoTier: false});
+
+    useEffect(() => {
+        const loadTeam = async () => {
+            try {
+                const team = await getUserTeam();
+                setTeamId(team.id);
+            } catch {
+                setTeamId(null);
+            }
+        };
+
+        loadTeam();
+    }, []);
 
     const handleCreateSurvey = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -169,6 +184,22 @@ const DashboardPage = () => {
         };
         fetchSurveys();
     }, []);
+
+    if (teamId === null) {
+        return (
+            <MainLayout>
+                <Box textAlign="center" py={10}>
+                    <Typography variant="h5">
+                        Kein Team gefunden
+                    </Typography>
+
+                    <Typography color="text.secondary" mt={1}>
+                        Sie sind aktuell keinem Team zugeordnet. Bitte kontaktieren Sie einen Team Administrator, um Zugriff zu erhalten.
+                    </Typography>
+                </Box>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
