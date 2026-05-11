@@ -8,7 +8,7 @@ import {
     createSurveyInstance,
     getSurveyInstances,
     updateSurveyInstanceById,
-    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId, getSurveyExport,
+    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId, getSurveyExport, getQuestionsByIds,
 } from "../services/surveyService.js";
 
 /**
@@ -285,5 +285,26 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
     } catch (err) {
         console.error("Survey export failed:", err);
         res.status(500).json({ message: "Export fehlgeschlagen" });
+    }
+};
+
+export const getQuestionsByIdsHandler = async (req: Request, res: Response) => {
+    try {
+        const { ids } = req.body as { ids: number[] };
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({
+                message: "Question IDs are required"
+            });
+        }
+        const questions = await getQuestionsByIds(ids);
+
+        res.status(200).json(questions);
+    } catch (err) {
+        console.error("Error fetching questions:", err);
+
+        res.status(500).json({
+            message: "Failed to fetch questions"
+        });
     }
 };

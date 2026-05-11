@@ -2,14 +2,6 @@ import type {GeoGebraLine, GeoGebraPoint} from "../pages/utils/AnswerUtils.tsx";
 // @ts-ignore
 const API_BASE = import.meta.env.VITE_API_URL;
 
-export interface QuizQuestion {
-    id: number;
-    text: string;
-    options?: string[];
-    contentJson: JSON;
-    type: "text" | "single-choice" | "multi-choice";
-}
-
 export interface Quiz {
     surveyId: number;
     surveyTitle: string;

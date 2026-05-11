@@ -1,4 +1,3 @@
-import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {
     Alert,
@@ -18,12 +17,16 @@ import {
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
-    type Booklet,
+    type Booklet, getQuestionsByIds,
     getSurveyBooklets,
     getSurveyById,
     updateSurvey,
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
+import {FileDownload} from "@mui/icons-material";
+import { useEffect, useRef, useState } from "react";
+import html2pdf from "html2pdf.js";
+import QuestionPdfPreview from "./QuestionPdfPreview.tsx";
 
 export type surveyStatus = "ACTIVE" | "PREPARED" | "IN_PROGRESS" | "FINISHED";
 
@@ -31,6 +34,11 @@ interface UserRef {
     id: number;
     first_name: string;
     last_name: string;
+}
+
+interface Question {
+    id: number;
+    contentJson: any;
 }
 
 interface SurveyDetail {
@@ -75,6 +83,10 @@ const SurveyUpdatePage = () => {
     const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+    const [exportQuestions, setExportQuestions] = useState<Question[]>([]);
+    const [exportOpen, setExportOpen] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const exportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -171,6 +183,22 @@ const SurveyUpdatePage = () => {
     const uniqueQuestionCount = Array.from(
         new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.id)))
     ).length;
+
+    const handleExportClick = async () => {
+        const uniqueQuestionIds = Array.from(
+            new Set(
+                booklets.flatMap(b =>
+                    b.bookletQuestion.map(q => q.questionId)
+                )
+            )
+        );
+        const questions = await getQuestionsByIds(uniqueQuestionIds);
+        setExportQuestions(questions);
+        setExportOpen(true);
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+    };
+
 
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
@@ -274,8 +302,11 @@ const SurveyUpdatePage = () => {
                         <Typography sx={{ pb: 1 }}>  {booklets.length > 0 && `Anzahl Slots: ${uniqueQuestionCount}`}</Typography>
                         <Typography sx={{ pb: 1 }}>  {booklets.length > 0 && `Anzahl Booklets: ${booklets.length}`}</Typography>
 
-                        <Button variant="outlined" onClick={() => setBookletDialogOpen(true)}>
+                        <Button variant="outlined" sx={{mr: 2}} onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
+                        </Button>
+                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving}>
+                            Booklet Items exportieren
                         </Button>
                         <Dialog open={bookletDialogOpen} onClose={() => setBookletDialogOpen(false)} fullScreen maxWidth="sm">
                             <DialogTitle>Booklets</DialogTitle>
@@ -363,6 +394,76 @@ const SurveyUpdatePage = () => {
                     <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
                 </Snackbar>
             </Box>
+            <Dialog open={exportOpen} fullWidth maxWidth="md">
+                <DialogTitle>PDF Export Vorschau</DialogTitle>
+
+                <DialogContent>
+                    {exporting && (
+                        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                            <LinearProgress sx={{ width: "100%" }} />
+                        </Box>
+                    )}
+
+                    <Box ref={exportRef} sx={{ backgroundColor: "white", p: 2 }}>
+                        {exportQuestions.map((q, i) => (
+                            <Box key={q.id}    sx={{
+                                mb: 4,
+                                breakBefore: i === 0 ? "auto" : "page",
+                                pageBreakBefore: i === 0 ? "auto" : "always",
+                                breakInside: "avoid",
+                            }}>
+                                <Typography variant="h5">
+                                    Aufgabe {i + 1}
+                                </Typography>
+                                <QuestionPdfPreview content={q.contentJson} />
+                            </Box>
+                        ))}
+                    </Box>
+                </DialogContent>
+
+                <DialogActions>
+                    <Button onClick={() => setExportOpen(false)} disabled={exporting}>
+                        Schliessen
+                    </Button>
+
+                    <Button
+                        startIcon={<FileDownload />}
+                        variant="contained"
+                        disabled={exporting}
+                        onClick={async () => {
+                            try {
+                                setExporting(true);
+
+                                await document.fonts.ready;
+
+                                const el = exportRef.current;
+                                if (!el) return;
+
+                                await html2pdf()
+                                    .set({
+                                        margin: 10,
+                                        filename: `${survey?.title}_items.pdf`,
+                                        html2canvas: {
+                                            scale: 2,
+                                            useCORS: true,
+                                            backgroundColor: "#fff",
+                                        },
+                                        jsPDF: {
+                                            unit: "mm",
+                                            format: "a4",
+                                        }
+                                    })
+                                    .from(el)
+                                    .save();
+
+                            } finally {
+                                setExporting(false);
+                            }
+                        }}>
+                        Exportieren
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </MainLayout>
     );
 };

@@ -321,9 +321,20 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
     });
 };
 
-/**
- * Export survey answers for selected instances, including question scores
- */
+export const getQuestionsByIds = async (ids: number[]) => {
+    return prisma.question.findMany({
+        where: {
+            id: {
+                in: ids
+            }
+        },
+        select: {
+            id: true,
+            contentJson: true
+        }
+    });
+};
+
 /**
  * Export survey answers for selected instances, including question scores
  */

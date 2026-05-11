@@ -29,6 +29,11 @@ export interface SurveyResponse {
     isTwoTier: boolean;
 }
 
+export interface QuestionExport {
+    id: number;
+    contentJson: any;
+}
+
 // @ts-expect-error
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -290,4 +295,27 @@ export async function getSurveyExport(instanceIds: number[], surveyId: number) {
         throw new Error(`Export failed: ${errorText}`);
     }
     return res.blob();
+}
+
+export async function getQuestionsByIds(ids: number[]): Promise<QuestionExport[]> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("User not authenticated");
+    const res = await fetch(
+        `${API_BASE}/api/survey/questions`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ ids }),
+        }
+    );
+
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to fetch questions: ${msg}`);
+    }
+
+    return res.json();
 }
