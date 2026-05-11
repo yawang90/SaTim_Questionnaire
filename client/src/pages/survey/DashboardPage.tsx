@@ -185,7 +185,7 @@ const DashboardPage = () => {
         fetchSurveys();
     }, []);
 
-    if (teamId === null) {
+    if (!loading && teamId === null) {
         return (
             <MainLayout>
                 <Box textAlign="center" py={10}>
