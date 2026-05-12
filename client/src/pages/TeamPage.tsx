@@ -165,7 +165,7 @@ const TeamPage = () => {
 
                 <DialogActions>
                     <Button onClick={() => setOpenAddDialog(false)}>
-                        Schliessen
+                        Schließen
                     </Button>
                 </DialogActions>
             </Dialog>

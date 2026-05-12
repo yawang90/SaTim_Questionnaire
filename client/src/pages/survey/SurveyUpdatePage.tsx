@@ -2,7 +2,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {
     Alert,
     Box,
-    Button,
+    Button, CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -87,6 +87,7 @@ const SurveyUpdatePage = () => {
     const [exportOpen, setExportOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
     const exportRef = useRef<HTMLDivElement>(null);
+    const [preparingExport, setPreparingExport] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -185,18 +186,25 @@ const SurveyUpdatePage = () => {
     ).length;
 
     const handleExportClick = async () => {
-        const uniqueQuestionIds = Array.from(
-            new Set(
-                booklets.flatMap(b =>
-                    b.bookletQuestion.map(q => q.questionId)
-                )
-            )
-        );
-        const questions = await getQuestionsByIds(uniqueQuestionIds);
-        setExportQuestions(questions);
-        setExportOpen(true);
-        await new Promise(requestAnimationFrame);
-        await new Promise(requestAnimationFrame);
+        try {
+            setPreparingExport(true);
+            const uniqueQuestionIds = Array.from(
+                new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.questionId)))
+            );
+            const questions = await getQuestionsByIds(uniqueQuestionIds);
+            setExportQuestions(questions);
+            await new Promise(requestAnimationFrame);
+            setExportOpen(true);
+        } catch (err) {
+            console.log(err);
+            setSnackbar({
+                open: true,
+                message: "Fehler beim Laden der Exportdaten.",
+                severity: "error",
+            });
+        } finally {
+            setPreparingExport(false);
+        }
     };
 
 
@@ -305,8 +313,15 @@ const SurveyUpdatePage = () => {
                         <Button variant="outlined" sx={{mr: 2}} onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
-                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving}>
-                            Booklet Items exportieren
+                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
+                            {preparingExport ? (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CircularProgress size={20} />
+                                    Laden...
+                                </Box>) : (
+                                <>Booklet Items exportieren
+                                </>
+                            )}
                         </Button>
                         <Dialog open={bookletDialogOpen} onClose={() => setBookletDialogOpen(false)} fullScreen maxWidth="sm">
                             <DialogTitle>Booklets</DialogTitle>
@@ -396,14 +411,12 @@ const SurveyUpdatePage = () => {
             </Box>
             <Dialog open={exportOpen} fullWidth maxWidth="md">
                 <DialogTitle>PDF Export Vorschau</DialogTitle>
-
                 <DialogContent>
                     {exporting && (
                         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                            <LinearProgress sx={{ width: "100%" }} />
+                            <CircularProgress sx={{ width: "100%" }} />
                         </Box>
                     )}
-
                     <Box ref={exportRef} sx={{ backgroundColor: "white", p: 2 }}>
                         {exportQuestions.map((q, i) => (
                             <Box key={q.id}    sx={{
@@ -423,7 +436,7 @@ const SurveyUpdatePage = () => {
 
                 <DialogActions>
                     <Button onClick={() => setExportOpen(false)} disabled={exporting}>
-                        Schliessen
+                        Schließen
                     </Button>
 
                     <Button
@@ -444,7 +457,7 @@ const SurveyUpdatePage = () => {
                                         margin: 10,
                                         filename: `${survey?.title}_items.pdf`,
                                         html2canvas: {
-                                            scale: 2,
+                                            scale: 1,
                                             useCORS: true,
                                             backgroundColor: "#fff",
                                         },
