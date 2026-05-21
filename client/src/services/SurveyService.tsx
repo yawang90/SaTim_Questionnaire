@@ -319,3 +319,28 @@ export async function getQuestionsByIds(ids: number[]): Promise<QuestionExport[]
 
     return res.json();
 }
+
+export async function getQuestionDetailsByIds(ids: number[], surveyTitle: string, surveyId: number): Promise<Blob> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("User not authenticated");
+    }
+    const res = await fetch(
+        `${API_BASE}/api/survey/questionDetails`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ ids, surveyTitle, surveyId}),
+        }
+    );
+
+    if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Failed to fetch questions excel export: ${msg}`);
+    }
+
+    return await res.blob();
+}

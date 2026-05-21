@@ -1,14 +1,19 @@
-import type { Request, Response } from "express";
+import type {Request, Response} from "express";
 import {
     createSurvey,
-    getAllSurveys,
-    getSurveyById,
-    updateSurveyById,
-    deleteSurveyById,
     createSurveyInstance,
+    deleteSurveyById,
+    deleteSurveyInstanceById,
+    getAllSurveys,
+    getBookletsBySurveyId,
+    getQuestionDetailsExport,
+    getQuestionsByIds,
+    getSurveyById,
+    getSurveyExport,
     getSurveyInstances,
+    processSurveyExcels,
+    updateSurveyById,
     updateSurveyInstanceById,
-    deleteSurveyInstanceById, processSurveyExcels, getBookletsBySurveyId, getSurveyExport, getQuestionsByIds,
 } from "../services/surveyService.js";
 
 /**
@@ -273,14 +278,8 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
 
         const excelBuffer = await getSurveyExport(surveyId, instanceIds);
 
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename=Erhebung_${surveyId}.xlsx`
-        );
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
+        res.setHeader("Content-Disposition", `attachment; filename=Erhebung_${surveyId}.xlsx`);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.send(excelBuffer);
     } catch (err) {
         console.error("Survey export failed:", err);
@@ -292,11 +291,7 @@ export const getQuestionsByIdsHandler = async (req: Request, res: Response) => {
     try {
         const { ids } = req.body as { ids: number[] };
 
-        if (!Array.isArray(ids) || ids.length === 0) {
-            return res.status(400).json({
-                message: "Question IDs are required"
-            });
-        }
+        if (!Array.isArray(ids) || ids.length === 0) {return res.status(400).json({message: "Question IDs are required"});}
         const questions = await getQuestionsByIds(ids);
 
         res.status(200).json(questions);
@@ -306,5 +301,23 @@ export const getQuestionsByIdsHandler = async (req: Request, res: Response) => {
         res.status(500).json({
             message: "Failed to fetch questions"
         });
+    }
+};
+
+export const getQuestionDetailsByIdsHandler = async (req: Request, res: Response) => {
+    try {
+        const { ids, surveyTitle, surveyId } = req.body as { ids: number[]; surveyTitle: string, surveyId: number };
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({message: "Question IDs are required to fetch details"});
+        }
+
+        const buffer = await getQuestionDetailsExport(ids, surveyId, surveyTitle);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename=Erhebung_${surveyTitle}.xlsx`);
+        res.send(buffer);
+    } catch (err) {
+        console.error("Error exporting question details:", err);
+        res.status(500).json({message: "Failed to export question details"});
     }
 };

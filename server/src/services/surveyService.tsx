@@ -1,8 +1,7 @@
 import prisma from "../config/prismaClient.js";
-import {question_status, type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
+import {Prisma, question_status, type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
 import XLSX from "xlsx";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
-
 /**
  * Interface for creating a new survey
  */
@@ -335,6 +334,95 @@ export const getQuestionsByIds = async (ids: number[]) => {
     });
 };
 
+export const getQuestionDetailsExport = async (ids: number[], surveyId: number, surveyTitle: string): Promise<Buffer> => {
+    const questions = await prisma.question.findMany({
+        where: {
+            id: {
+                in: ids
+            }
+        },
+        include: {
+            bookletQuestion: {
+                where: {
+                    booklet: {
+                        surveyId
+                    }
+                },
+                include: {
+                    booklet: {
+                        select: {
+                            id: true,
+                            bookletId: true,
+                            version: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const answers = await prisma.answer.findMany({
+        where: {
+            surveyId,
+            questionsAnswers: {
+                some: {
+                    questionId: {
+                        in: ids
+                    }
+                }
+            }
+        },
+        include: {
+            questionsAnswers: true
+        }
+    });
+    const answerCountMap = new Map<number, number>();
+    const fullScoreMap = new Map<number, number>();
+
+    for (const answer of answers) {
+        for (const qa of answer.questionsAnswers) {
+            const qid = qa.questionId;
+            if (!ids.includes(qid)) continue;
+            answerCountMap.set(qid, (answerCountMap.get(qid) ?? 0) + 1);
+            if (qa.solved) {
+                fullScoreMap.set(qid, (fullScoreMap.get(qid) ?? 0) + 1);
+            }
+        }
+    }
+
+    const metadataMaps = questions.map(q => extractMetadataMap(q.metadata));
+    const allHeaders = Array.from(new Set(metadataMaps.flatMap(m => Object.keys(m))));
+
+    const rows = questions.map((question, index) => {
+        const meta = extractMetadataMap(question.metadata as any);
+        const fullScoreCount = fullScoreMap.get(question.id) ?? 0;
+        const total = answerCountMap.get(question.id) ?? 0;
+        const row: any = {
+            Downloaded: surveyTitle,
+            ID: question.id,
+            Booklet: [...new Set(question.bookletQuestion.map(bq => bq.booklet.bookletId))].join(", "),
+            Antwortformat: [...new Set(extractAnswerTypes(question.contentJson))].map(type => ANSWER_TYPE_LABELS[type] ?? type).join(", "),
+            "Max Points": extractAnswerTypes(question.contentJson).length,
+            "Richtige Antworten": fullScoreCount,
+            "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) : "0",
+            ...meta,
+        };
+        for (const key of allHeaders) {row[key] = meta?.[key] ?? "";}
+        return row;
+    });
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "QuestionDetails"
+    );
+    return XLSX.write(workbook, {
+        type: "buffer",
+        bookType: "xlsx"
+    });
+};
+
 /**
  * Export survey answers for selected instances, including question scores
  */
@@ -662,4 +750,62 @@ function normalizeCorrectAnswer(input: any): any[] {
         key,
         ...val
     }));
+}
+
+const extractAnswerTypes = (contentJson: any): string[] => {
+    if (!contentJson) return [];
+    const allowedTypes = new Set(["algebra", "mcChoice", "numericInput", "freeText", "singleChoice", "freeTextInline", "lineEquation", "geoGebra", "geoGebraSlope"]);
+    const found: string[] = [];
+    const traverse = (node: any) => {
+        if (!node) return;
+        if (Array.isArray(node)) {
+            node.forEach(traverse);
+            return;
+        }
+        if (typeof node === "object") {
+            if (
+                typeof node.type === "string" &&
+                allowedTypes.has(node.type)
+            ) {
+                found.push(node.type);
+            }
+            Object.values(node).forEach(traverse);
+        }
+    };
+    traverse(contentJson);
+    return [...found];
+};
+
+const ANSWER_TYPE_LABELS: Record<string, string> = {
+    algebra: "Algebra",
+    mcChoice: "Multiple Choice",
+    numericInput: "Numerische Eingabe",
+    freeText: "Freitext",
+    singleChoice : "Single Choice",
+    freeTextInline : "Freitext",
+    lineEquation: "Lineare Gleichung",
+    geoGebra: "Geogebra",
+    geoGebraSlope: "Geogebra Steigungsdreick"
+};
+
+function extractMetadataMap(metadata: Prisma.JsonValue): Record<string, string> {
+    if (!metadata) return {};
+    if (!Array.isArray(metadata)) return {};
+
+    const map: Record<string, string> = {};
+
+    for (const item of metadata as any[]) {
+        if (!item || typeof item !== "object") continue;
+
+        const label = item.label ?? item.key;
+        let value = item.value;
+
+        if (item.type === "checkbox" && item.optionsValue && typeof item.optionsValue === "object") {
+            value = Object.entries(item.optionsValue).filter(([_, checked]) => checked).map(([key]) => key).join(", ");
+        }
+
+        map[String(label)] = value === undefined || value === null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+    }
+
+    return map;
 }

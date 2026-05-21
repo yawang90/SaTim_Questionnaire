@@ -12,7 +12,7 @@ import {
     uploadSurveyExcelsHandler,
     getSurveyBookletsHandler,
     getSurveyExportHandler,
-    getQuestionsByIdsHandler,
+    getQuestionsByIdsHandler, getQuestionDetailsByIdsHandler,
 } from "../controllers/surveyController.js";
 import { authenticateToken } from "../auth/authenticate.js";
 import multer from "multer";
@@ -38,6 +38,7 @@ router.get("/:id/booklets", getSurveyBookletsHandler);
 router.post("/:id/export", getSurveyExportHandler);
 
 router.post("/questions", getQuestionsByIdsHandler);
+router.post("/questionDetails", getQuestionDetailsByIdsHandler);
 
 router.post(
     "/:id/upload-excels",

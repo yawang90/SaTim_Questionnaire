@@ -2,29 +2,34 @@ import {useNavigate, useParams} from "react-router-dom";
 import {
     Alert,
     Box,
-    Button, CircularProgress,
+    Button,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
-    DialogTitle, Divider,
+    DialogTitle,
+    Divider,
     Grid,
     LinearProgress,
     MenuItem,
     Paper,
     Snackbar,
-    TextField, Tooltip,
+    TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
-    type Booklet, getQuestionsByIds,
+    type Booklet,
+    getQuestionDetailsByIds,
+    getQuestionsByIds,
     getSurveyBooklets,
     getSurveyById,
     updateSurvey,
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
 import {FileDownload} from "@mui/icons-material";
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import html2pdf from "html2pdf.js";
 import QuestionPdfPreview from "./QuestionPdfPreview.tsx";
 
@@ -88,6 +93,7 @@ const SurveyUpdatePage = () => {
     const [exporting, setExporting] = useState(false);
     const exportRef = useRef<HTMLDivElement>(null);
     const [preparingExport, setPreparingExport] = useState(false);
+    const [excelExport, setExcelExport] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -207,6 +213,38 @@ const SurveyUpdatePage = () => {
         }
     };
 
+    const handleExcelExportClick = async () => {
+        try {
+            if (!survey) return;
+            setExcelExport(true);
+            const uniqueQuestionIds = Array.from(
+                new Set(
+                    booklets.flatMap(b =>
+                        b.bookletQuestion.map(q => q.questionId)
+                    )
+                )
+            );
+            const blob = await getQuestionDetailsByIds(uniqueQuestionIds, survey.title, survey.id);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "question-details.xlsx";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.log(err);
+            setSnackbar({
+                open: true,
+                message: "Fehler beim Laden der Aufgaben Details.",
+                severity: "error",
+            });
+        } finally {
+            setExcelExport(false);
+        }
+    };
+
 
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
@@ -313,13 +351,23 @@ const SurveyUpdatePage = () => {
                         <Button variant="outlined" sx={{mr: 2}} onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
-                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
+                        <Button variant="outlined" sx={{mr: 2}} startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
                             {preparingExport ? (
                                 <Box display="flex" alignItems="center" gap={1}>
                                     <CircularProgress size={20} />
                                     Laden...
                                 </Box>) : (
-                                <>Booklet Items exportieren
+                                <>Booklet Items (PDF)
+                                </>
+                            )}
+                        </Button>
+                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExcelExportClick} disabled={saving || excelExport}>
+                            {excelExport ? (
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <CircularProgress size={20} />
+                                    Laden...
+                                </Box>) : (
+                                <>Aufgaben Details (XLSX)
                                 </>
                             )}
                         </Button>
@@ -414,7 +462,7 @@ const SurveyUpdatePage = () => {
                 <DialogContent>
                     {exporting && (
                         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                            <CircularProgress sx={{ width: "100%" }} />
+                            <LinearProgress sx={{ width: "100%" }} />
                         </Box>
                     )}
                     <Box ref={exportRef} sx={{ backgroundColor: "white", p: 2 }}>
