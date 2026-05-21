@@ -170,6 +170,7 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
 
 async function assignBookletToUser(surveyId: number) {
     return prisma.$transaction(async tx => {
+
         const booklets = await tx.booklet.findMany({
             where: { surveyId },
             include: {
@@ -179,6 +180,9 @@ async function assignBookletToUser(surveyId: number) {
                         question: true,
                     },
                 },
+                answer: {
+                    select: { id: true },
+                },
             },
         });
 
@@ -186,19 +190,35 @@ async function assignBookletToUser(surveyId: number) {
             throw new Error("No booklets found");
         }
 
-        const minAssigned = Math.min(...booklets.map(b => b.assignedCount));
-        const leastAssigned = booklets.filter(
-            b => b.assignedCount === minAssigned
-        );
+        const grouped = new Map<number, { totalAssigned: number; latestVersion: typeof booklets[number]; }>();
+
+        for (const booklet of booklets) {
+            const assignmentCount = booklet.answer.length;
+            const existing = grouped.get(booklet.bookletId);
+            if (existing) {
+                existing.totalAssigned += assignmentCount;
+                if (booklet.version > existing.latestVersion.version) {
+                    existing.latestVersion = booklet;
+                }
+            } else {
+                grouped.set(booklet.bookletId, {
+                    totalAssigned: assignmentCount,
+                    latestVersion: booklet,
+                });
+            }
+        }
+        const minAssigned = Math.min(...Array.from(grouped.values()).map(g => g.totalAssigned));
+
+        const leastAssigned = Array.from(grouped.values()).filter(g => g.totalAssigned === minAssigned);
 
         const selected =
-            leastAssigned[Math.floor(Math.random() * leastAssigned.length)];
-        if (!selected) throw new Error("No selected booklet");
-        await tx.booklet.update({
-            where: { id: selected.id },
-            data: { assignedCount: { increment: 1 } },
-        });
+            leastAssigned[
+                Math.floor(Math.random() * leastAssigned.length)
+                ]?.latestVersion;
 
+        if (!selected) {
+            throw new Error("No selected booklet");
+        }
         return selected;
     });
 }
