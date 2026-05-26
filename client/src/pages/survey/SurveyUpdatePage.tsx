@@ -228,7 +228,7 @@ const SurveyUpdatePage = () => {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = "question-details.xlsx";
+            link.download = survey.title+"_Aufgaben.xlsx";
             document.body.appendChild(link);
             link.click();
             link.remove();
