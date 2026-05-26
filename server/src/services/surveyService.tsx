@@ -397,11 +397,12 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
         const meta = extractMetadataMap(question.metadata as any);
         const fullScoreCount = fullScoreMap.get(question.id) ?? 0;
         const total = answerCountMap.get(question.id) ?? 0;
+        const answerTypes = new Set(extractAnswerTypes(question.contentJson));
         const row: any = {
             Downloaded: surveyTitle,
             ID: question.id,
             Booklet: [...new Set(question.bookletQuestion.map(bq => bq.booklet.bookletId))].join(", "),
-            Antwortformat: [...new Set(extractAnswerTypes(question.contentJson))].map(type => ANSWER_TYPE_LABELS[type] ?? type).join(", "),
+            "Antwort Formate": [...new Set(extractAnswerTypes(question.contentJson).map(type => ANSWER_TYPE_LABELS[type] ?? type))].join(", "),
             "Max Points": extractAnswerTypes(question.contentJson).length,
             "Richtige Antworten": fullScoreCount,
             "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) : "0",
