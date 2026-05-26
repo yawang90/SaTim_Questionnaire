@@ -397,7 +397,6 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
         const meta = extractMetadataMap(question.metadata as any);
         const fullScoreCount = fullScoreMap.get(question.id) ?? 0;
         const total = answerCountMap.get(question.id) ?? 0;
-        const answerTypes = new Set(extractAnswerTypes(question.contentJson));
         const row: any = {
             Downloaded: surveyTitle,
             ID: question.id,
