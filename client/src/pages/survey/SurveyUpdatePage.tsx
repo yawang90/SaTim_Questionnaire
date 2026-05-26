@@ -467,14 +467,9 @@ const SurveyUpdatePage = () => {
                     )}
                     <Box ref={exportRef} sx={{ backgroundColor: "white", p: 2 }}>
                         {exportQuestions.map((q, i) => (
-                            <Box key={q.id}    sx={{
-                                mb: 4,
-                                breakBefore: i === 0 ? "auto" : "page",
-                                pageBreakBefore: i === 0 ? "auto" : "always",
-                                breakInside: "avoid",
-                            }}>
+                            <Box key={q.id}    sx={{mb: 4, breakBefore: i === 0 ? "auto" : "page", pageBreakBefore: i === 0 ? "auto" : "always", breakInside: "avoid",}}>
                                 <Typography variant="h5">
-                                    Aufgabe {i + 1}
+                                    Aufgabe {i + 1} - ID {q.id}
                                 </Typography>
                                 <QuestionPdfPreview content={q.contentJson} />
                             </Box>
