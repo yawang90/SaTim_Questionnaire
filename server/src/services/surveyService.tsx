@@ -406,7 +406,7 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
             "Antwort Formate": [...new Set(extractAnswerTypes(question.contentJson).map(type => ANSWER_TYPE_LABELS[type] ?? type))].join(", "),
             "Max Points": maxPoints,
             "Richtige Antworten": fullScoreCount,
-            "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) : "0",
+            "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) + "% (von total " + total +")": "0" + "% (von total " + total +")",
             ...meta,
         };
         for (const key of allHeaders) {row[key] = meta?.[key] ?? "";}
