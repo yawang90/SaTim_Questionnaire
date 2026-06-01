@@ -363,11 +363,24 @@ function checkGeoGebraLines(correct: Record<string, any>, user: { m: number; c: 
 
 function getLineEquationCoeffs(latex: string): { m: number; c: number } | null {
     try {
-        const expr = ce.parse(latex, { syntax: "latex" });
+        let expr = ce.parse(latex, { syntax: "latex" });
+        if (!expr.isFunctionExpression || expr.operator !== "Equal") {
+            expr = ce.parse(`y=${latex}`, {syntax: "latex"});
+        }
         if (!expr.isFunctionExpression || expr.operator !== "Equal") return null;
+        const lhs = expr.op1;
         const rhs = expr.op2;
-        const c = Number(rhs.subs({ x: 0 }).simplify().N().valueOf());
-        const m = Number(rhs.subs({ x: 1 }).simplify().N().valueOf()) - c;
+        let lineExpr;
+
+        if (lhs.symbol === "y") {
+            lineExpr = rhs;
+        } else if (rhs.symbol === "y") {
+            lineExpr = lhs;
+        } else {
+            return null;
+        }
+        const c = Number(lineExpr.subs({ x: 0 }).simplify().N().valueOf());
+        const m = Number(lineExpr.subs({ x: 1 }).simplify().N().valueOf()) - c;
         return { m, c };
     } catch (err) {
         console.log(err);
