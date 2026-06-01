@@ -376,40 +376,42 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
             questionsAnswers: true
         }
     });
-    const answerCountMap = new Map<number, number>();
-    const fullScoreMap = new Map<number, number>();
-
-    for (const answer of answers) {
-        for (const qa of answer.questionsAnswers) {
-            const qid = qa.questionId;
-            if (!ids.includes(qid)) continue;
-            answerCountMap.set(qid, (answerCountMap.get(qid) ?? 0) + 1);
-            if (qa.solved) {
-                fullScoreMap.set(qid, (fullScoreMap.get(qid) ?? 0) + 1);
-            }
-        }
-    }
-
     const metadataMaps = questions.map(q => extractMetadataMap(q.metadata));
     const allHeaders = Array.from(new Set(metadataMaps.flatMap(m => Object.keys(m))));
-
-    const rows = questions.map((question, index) => {
+    const rows = await Promise.all(
+        questions.map(async (question, index) => {
         const meta = extractMetadataMap(question.metadata as any);
-        const fullScoreCount = fullScoreMap.get(question.id) ?? 0;
-        const total = answerCountMap.get(question.id) ?? 0;
+        let total = 0;
+        let fullScoreCount = 0;
+        const maxPoints = extractAnswerTypes(question.contentJson).length;
+        for (const answer of answers) {
+            for (const qa of answer.questionsAnswers) {
+                const qid = qa.questionId;
+                if (question.id !== qid) continue;
+                total = total + 1;
+                if (qa.solved) {
+                    const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
+                    const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
+                    const result = await evaluateAnswersService(qid, userAnswerInput);
+                    const achievedScore = Array.isArray(result?.score) ? result.score.reduce((sum, num) => sum + num, 0) : 0;
+                    const correct = achievedScore === maxPoints;
+                    if (correct) fullScoreCount = fullScoreCount + 1;
+                }
+            }
+        }
         const row: any = {
             Downloaded: surveyTitle,
             ID: question.id,
             Booklet: [...new Set(question.bookletQuestion.map(bq => bq.booklet.bookletId))].join(", "),
             "Antwort Formate": [...new Set(extractAnswerTypes(question.contentJson).map(type => ANSWER_TYPE_LABELS[type] ?? type))].join(", "),
-            "Max Points": extractAnswerTypes(question.contentJson).length,
+            "Max Points": maxPoints,
             "Richtige Antworten": fullScoreCount,
             "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) : "0",
             ...meta,
         };
         for (const key of allHeaders) {row[key] = meta?.[key] ?? "";}
         return row;
-    });
+    }));
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(
@@ -755,28 +757,33 @@ function normalizeCorrectAnswer(input: any): any[] {
 const extractAnswerTypes = (contentJson: any): string[] => {
     if (!contentJson) return [];
     const allowedTypes = new Set(["algebra", "mcChoice", "numericInput", "freeText", "singleChoice", "freeTextInline", "lineEquation", "geoGebra", "geoGebraSlope"]);
-    const found: string[] = [];
-    const traverse = (node: any) => {
-        if (!node) return;
-        if (Array.isArray(node)) {
-            node.forEach(traverse);
-            return;
-        }
-        if (typeof node === "object") {
-            if (
-                typeof node.type === "string" &&
-                allowedTypes.has(node.type)
-            ) {
-                found.push(node.type);
-            }
-            Object.values(node).forEach(traverse);
-        }
-    };
-    traverse(contentJson);
-    return [...found];
-};
+        const found: string[] = [];
+        const countedGroups = new Set<string>();
+        const traverse = (node: any) => {
+            if (!node) return;
+            if (Array.isArray(node)) {node.forEach(traverse);return;}
 
-const ANSWER_TYPE_LABELS: Record<string, string> = {
+            if (typeof node === "object") {
+                if (typeof node.type === "string" && allowedTypes.has(node.type)) {
+                    if (node.type === "mcChoice" || node.type === "singleChoice") {
+                        const groupId = node.attrs?.groupId;
+                        const uniqueKey = `${node.type}:${groupId ?? node.attrs?.id}`;
+                        if (!countedGroups.has(uniqueKey)) {
+                            countedGroups.add(uniqueKey);
+                            found.push(node.type === "mcChoice" ? "mc" : "sc");
+                        }
+                    } else {
+                        found.push(node.type);
+                    }
+                }
+                Object.values(node).forEach(traverse);
+            }
+        };
+        traverse(contentJson);
+        return found;
+    };
+
+    const ANSWER_TYPE_LABELS: Record<string, string> = {
     algebra: "Algebra",
     mcChoice: "Multiple Choice",
     numericInput: "Numerische Eingabe",

@@ -120,12 +120,18 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
         }
         if (userAnswer && correctAnswer) {
             switch (correctAnswer.type) {
-                case "mc":
+                case "mc": {
+                    const selectedIds = (userAnswer.value as { id: string; selected: boolean; }[]).filter(a => a.selected).map(a => a.id);
+                    const correctIds = correctAnswer.value as string[];
+                    const sameLength = selectedIds.length === correctIds.length;
+                    const allCorrect = selectedIds.every(id => correctIds.includes(id));
+                    if (sameLength && allCorrect) {
+                        isCorrect = true;
+                    }
+                    break;
+                }
                 case "sc": {
-                    const selected =
-                        (userAnswer.value as { id: string; selected: boolean }[])
-                            .find(a => a.selected)?.id;
-
+                    const selected = (userAnswer.value as { id: string; selected: boolean }[]).find(a => a.selected)?.id;
                     if (selected === correctAnswer.value) {
                         isCorrect = true;
                     }
