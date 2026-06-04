@@ -3,7 +3,7 @@ import {
     Alert,
     Box, Button, Chip,
     CircularProgress, Dialog, DialogActions,
-    DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Snackbar, TextField, Typography,
+    DialogContent, DialogTitle, FormControl, IconButton, InputLabel, MenuItem, Select, Snackbar, TextField, Typography,
 } from "@mui/material";
 import MainLayout from "../layouts/MainLayout.tsx";
 import {DataGrid, type GridColDef, type GridRowId} from "@mui/x-data-grid";
@@ -11,6 +11,9 @@ import { Add } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import {duplicateQuestion, loadAllQuestions, loadQuestionForm, type Question} from "../services/EditorService.tsx";
 import {type FullUser, getUserById} from "../services/UserService.tsx";
+import CloseIcon from "@mui/icons-material/Close";
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import {Preview} from "../components/Editor/Preview.tsx";
 
 type QuestionRow = {
     id: number;
@@ -41,6 +44,7 @@ export default function QuestionsTablePage() {
     const [searchTitle, setSearchTitle] = useState<string>("");
     const [filterCreatedBy, setFilterCreatedBy] = useState<string>("");
     const [filterUpdatedBy, setFilterUpdatedBy] = useState<string>("");
+    const [previewOpen, setPreviewOpen] = useState(false);
 
     const transformedRows = rows.map((row) => {
         const flatRow: Record<string, any> = { id: row.id, status: row.status, title: (row as any).title, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
@@ -251,7 +255,7 @@ export default function QuestionsTablePage() {
                 </Box>
                 {/* --- Question Details Dialog --- */}
                 <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Aufgabendetails</DialogTitle>
+                    <DialogTitle sx={{display: "flex", justifyContent: "space-between", alignItems: "center",}}>Aufgabendetails   <IconButton onClick={() => setDialogOpen(false)}><CloseIcon /></IconButton></DialogTitle>
                     <DialogContent dividers>
                         { selectedQuestion ? (
                             <Box display="flex" flexDirection="column" gap={1.5}>
@@ -275,8 +279,8 @@ export default function QuestionsTablePage() {
                                         <Typography variant="body2" color="textSecondary"><strong>Zuletzt bearbeitet am:</strong>{" "}{new Date(selectedQuestion.updatedAt!).toLocaleString()}</Typography></>
                             </Box>) : (<Typography>Keine Details verfügbar.</Typography>)}
                     </DialogContent>
-                    <DialogActions sx={{ display: "flex", justifyContent: "space-between", px: 3 }}>
-                        <Button variant="outlined" onClick={() => setDialogOpen(false)}>Schließen</Button>
+                    <DialogActions sx={{justifyContent: "center"}}>
+                        <Button variant="outlined" onClick={() => setPreviewOpen(true)} startIcon={<VisibilityIcon/>}>Vorschau</Button>
                         <Button variant="outlined" onClick={handleDuplicateQuestion} disabled={duplicating}>
                             {duplicating ? <CircularProgress color="inherit" /> : "Aufgabe duplizieren"}
                         </Button>
@@ -284,6 +288,26 @@ export default function QuestionsTablePage() {
                             if (selectedQuestion) {
                                 navigate(`/meta/${selectedQuestion.id}`);}
                         }}>Aufgabe bearbeiten
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                {/* --- Preview Dialog --- */}
+                <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
+                    <DialogTitle>Vorschau</DialogTitle>
+                    <DialogContent dividers>
+                        {selectedQuestion ? (
+                            <Box display="flex" flexDirection="column" gap={2}>
+                                <Typography variant="h5">
+                                    {selectedQuestion.title}
+                                </Typography>
+                                <Typography variant="body1">
+                                    <Preview content={selectedQuestion.contentJson}/>
+                                </Typography>
+                            </Box>) : (<Typography>Keine Vorschau verfügbar.</Typography>)}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setPreviewOpen(false)}>
+                            Schließen
                         </Button>
                     </DialogActions>
                 </Dialog>

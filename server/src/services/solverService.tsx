@@ -2,7 +2,7 @@ import prisma from "../config/prismaClient.js";
 import type {question} from "@prisma/client";
 import {ce} from "../index.js";
 
-type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation" | "algebra";
+type AnswerType = "sc" | "mc" | "numeric" | "freeText" | "geoGebraPoints" | "geoGebraLines" | "freeTextInline" | "lineEquation" | "algebra" | "geoGebraSlope";
 
 interface CorrectAnswerBase {
     type: AnswerType;
@@ -52,13 +52,18 @@ interface LineEquationAnswer extends CorrectAnswerBase {
     };
 }
 
+interface GeoGebraSlopeAnswer extends CorrectAnswerBase {
+    type: "geoGebraSlope";
+    value: any;
+}
+
 type NumericCondition = {
     value: string;
     operator: "=" | "<" | ">" | "<=" | ">=";
     logic?: "and" | "or";
 };
 
-type CorrectAnswer = | SingleChoiceAnswer | MultipleChoiceAnswer | NumericAnswer | LineEquationAnswer | FreeTextAnswer | GeoGebraPointAnswer | GeoGebraLineAnswer | AlgebraAnswer;
+type CorrectAnswer = | SingleChoiceAnswer | MultipleChoiceAnswer | NumericAnswer | LineEquationAnswer | FreeTextAnswer | GeoGebraPointAnswer | GeoGebraLineAnswer | AlgebraAnswer | GeoGebraSlopeAnswer;
 
 type CorrectAnswersJson = Record<string, CorrectAnswer>;
 
@@ -222,6 +227,33 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                     }
                     break;
                 }
+                case "geoGebraSlope": {
+                    try {
+                        const data = userAnswer.value;
+                        const line1Points = [data.point1Line1, data.point2Line1];
+                        const line2Points = [data.point1Line2, data.point2Line2];
+                        const perpendicular = linesArePerpendicular(line1Points[0], line1Points[1], line2Points[0], line2Points[1]);
+                        if (!perpendicular) {
+                            break;
+                        }
+                        const sharedPoint = findSharedPoint(line1Points, line2Points);
+
+                        if (!sharedPoint) {break;}
+                        const point1 = getOuterPoint(line1Points, sharedPoint);
+                        const point2 = getOuterPoint(line2Points, sharedPoint);
+
+                        if (!point1 || !point2) {break;}
+
+                        const slope = calculateSlope(point1, point2);
+
+                        if (checkNumericConditions(slope, correctAnswer.value)) {
+                            isCorrect = true;
+                        }
+                    } catch (err) {
+                        console.log("geoGebraSlope evaluation error:", err);
+                    }
+                    break;
+                }
             }
         }
         score.push(isCorrect ? 1 : 0);
@@ -242,12 +274,12 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
 
 function matchPoint(userPoint: { x: number; y: number }, correctPoint: { x: NumericCondition[]; y: NumericCondition[] }) {
     return (
-        checkPointConditions(userPoint.x, correctPoint.x) &&
-        checkPointConditions(userPoint.y, correctPoint.y)
+        checkNumericConditions(userPoint.x, correctPoint.x) &&
+        checkNumericConditions(userPoint.y, correctPoint.y)
     );
 }
 
-function checkPointConditions(value: number, conditions: NumericCondition[]): boolean {
+function checkNumericConditions(value: number, conditions: NumericCondition[]): boolean {
     const EPS = 1e-12;
     let result = conditions[0]?.logic !== "or";
 
@@ -290,8 +322,8 @@ function checkGeoGebraPoints(correct: Record<string, any>, user: { name: string;
 }
 
 function matchLine(userLine: { m: number; c: number }, correctLine: { m: NumericCondition[]; c: NumericCondition[] }): boolean {
-    const mOk = checkLineEquationConditions(userLine.m, correctLine.m);
-    const cOk = checkLineEquationConditions(userLine.c, correctLine.c);
+    const mOk = checkNumericConditions(userLine.m, correctLine.m);
+    const cOk = checkNumericConditions(userLine.c, correctLine.c);
     return mOk && cOk;
 }
 
@@ -313,40 +345,9 @@ function checkAndSubstituteLineEquation(m: number, c: number, mConditions: Numer
             condition.value = String(evaluated);
         });
     }
-    const mOk = checkLineEquationConditions(m, mConditions);
-    const cOk = checkLineEquationConditions(c, cConditions);
+    const mOk = checkNumericConditions(m, mConditions);
+    const cOk = checkNumericConditions(c, cConditions);
     return mOk && cOk;
-}
-
-
-function checkLineEquationConditions(value: number, conditions: NumericCondition[]): boolean {
-    const EPS = 1e-12;
-    let result = conditions[0]?.logic !== "or";
-
-    for (const cond of conditions) {
-        const target = evaluateCondition(cond);
-        let check = false;
-        switch (cond.operator) {
-            case "=":
-                check = Math.abs(value - target) < EPS;
-                break;
-            case "<":
-                check = value < target - EPS;
-                break;
-            case ">":
-                check = value > target + EPS;
-                break;
-            case "<=":
-                check = value <= target + EPS;
-                break;
-            case ">=":
-                check = value >= target - EPS;
-                break;
-        }
-        if (cond.logic === "or") result = result || check;
-        else result = result && check;
-    }
-    return result;
 }
 
 function checkGeoGebraLines(correct: Record<string, any>, user: { m: number; c: number }[]): boolean {
@@ -461,4 +462,41 @@ function getMCIndeces(doc: any, targetIds: string[]): number[] {
     return targetIds
         .map(id => getSCIndex(doc, id, "multipleChoice"))
         .filter((v): v is number => v !== null);
+}
+
+function findSharedPoint(points1: any[], points2: any[]) {
+    for (const p1 of points1) {
+        for (const p2 of points2) {
+            if (p1.x === p2.x && p1.y === p2.y) {
+                return p1;
+            }
+        }
+    }
+    return null;
+}
+
+function getOuterPoint(points: any[], sharedPoint: any) {
+    return points.find(p => !(p.x === sharedPoint.x && p.y === sharedPoint.y));
+}
+
+function calculateSlope(p1: { x: number; y: number }, p2: { x: number; y: number }): number {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+
+        if (Math.abs(dx) < 1e-12) {
+            return Infinity;
+        }
+
+        return dy / dx;
+}
+
+function linesArePerpendicular(p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }, p4: { x: number; y: number }
+): boolean {
+    const vx1 = p2.x - p1.x;
+    const vy1 = p2.y - p1.y;
+    const vx2 = p4.x - p3.x;
+    const vy2 = p4.y - p3.y;
+    const dot = vx1 * vx2 + vy1 * vy2;
+
+    return Math.abs(dot) < 1e-12;
 }
