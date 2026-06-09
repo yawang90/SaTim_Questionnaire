@@ -47,9 +47,23 @@ export default function QuestionsTablePage() {
     const [previewOpen, setPreviewOpen] = useState(false);
 
     const transformedRows = rows.map((row) => {
-        const flatRow: Record<string, any> = { id: row.id, status: row.status, title: (row as any).title, createdBy: row.createdBy?.first_name + " " + row.createdBy?.last_name, updatedBy: row.updatedBy?.first_name + " " + row.updatedBy?.last_name};
-        row.metadata.forEach((meta) => {
-            flatRow[meta.key] = meta.value;
+        const flatRow: Record<string, any> = {
+            id: row.id,
+            status: row.status,
+            createdBy:
+                row.createdBy?.first_name + " " + row.createdBy?.last_name,
+            updatedBy:
+                row.updatedBy?.first_name + " " + row.updatedBy?.last_name,
+        };
+
+        row.metadata.forEach((meta: any) => {
+            if (meta.type === "checkbox") {
+                flatRow[meta.key] = Object.keys(meta.optionsValue || {})
+                    .filter((key) => meta.optionsValue[key])
+                    .join(", ");
+            } else {
+                flatRow[meta.key] = meta.value ?? "";
+            }
         });
         return flatRow;
     });

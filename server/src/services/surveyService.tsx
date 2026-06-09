@@ -783,7 +783,7 @@ const extractAnswerTypes = (contentJson: any): string[] => {
         return found;
     };
 
-    const ANSWER_TYPE_LABELS: Record<string, string> = {
+const ANSWER_TYPE_LABELS: Record<string, string> = {
     algebra: "Algebra",
     mcChoice: "Multiple Choice",
     mc: "Multiple Choice",
