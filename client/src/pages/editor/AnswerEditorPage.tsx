@@ -283,8 +283,14 @@ export default function AnswerEditorPage() {
                         value = {m: rawAnswer?.m?.map((e: any) => ({ ...e })) ?? [], c: rawAnswer?.c?.map((e: any) => ({ ...e })) ?? [],};
                         break;
                     }
+                    case "mc":
+                        { const oldAnswers = answers[b.key] ?? [];
+                        value = b.choices
+                            .filter(choice => oldAnswers.includes(choice.id))
+                            .map(choice => choice.id);
+                        break; }
                     default:
-                        value = answers[b.key];
+                        value = answers[b.key] ?? [];
                 }
                 payload[b.key] = {type: b.kind, value};
             });

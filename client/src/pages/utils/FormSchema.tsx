@@ -1,4 +1,4 @@
-import type { MetaField } from "../questions/MetaDataPage.tsx";
+import type { MetaField } from "../editor/MetaDataPage.tsx";
 
 export const initialFormSchema: MetaField[] = [
     {

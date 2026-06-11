@@ -1,5 +1,5 @@
 import {authFetch} from "./AuthFetchHelper.tsx";
-import type {MetaField} from "../pages/questions/MetaDataPage.tsx";
+import type {MetaField} from "../pages/editor/MetaDataPage.tsx";
 
 // @ts-expect-error
 const API_URL = import.meta.env.VITE_API_URL;
