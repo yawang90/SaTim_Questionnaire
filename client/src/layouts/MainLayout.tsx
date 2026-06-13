@@ -57,6 +57,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             Team
                         </Link>)}
 
+                        {teamId !== null && (
+                            <Link component={RouterLink} to="/teachers" color="inherit" underline="none" sx={{ mr: 2 }} variant="button">
+                                Lehrer
+                            </Link>)}
+
                         <Link component={RouterLink} to="/profile" color="inherit" underline="none" variant="button">
                             Profil
                         </Link>
