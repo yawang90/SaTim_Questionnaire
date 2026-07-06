@@ -16,7 +16,7 @@ import {
     Typography,
 } from "@mui/material";
 import {Add} from "@mui/icons-material";
-import {createTeacherInvite, getTeachers, type Teacher,} from "../services/TeacherService.tsx";
+import {getTeachers, type Teacher,} from "../services/TeacherService.tsx";
 
 const TeacherPage = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -25,8 +25,7 @@ const TeacherPage = () => {
     const [inviteUrl, setInviteUrl] = useState("");
     const generateInviteLink = async () => {
         try {
-            const token = await createTeacherInvite();
-            setInviteUrl(`${window.location.origin}/register/teacher/${token}`);
+            setInviteUrl(`${window.location.origin}/register/teacher`);
         } catch (err) {
             console.error(err);
         }
@@ -39,10 +38,7 @@ const TeacherPage = () => {
 
     const handleOpenAddTeacher = async () => {
         setOpenAddDialog(true);
-       // const { token } = await createTeacherInvite();
-        const token  = "asdasd";
-
-        setInviteUrl(`${window.location.origin}/register/teacher/${token}`);
+        setInviteUrl(`${window.location.origin}/register/teacher`);
     };
 
     useEffect(() => {
@@ -120,7 +116,7 @@ const TeacherPage = () => {
                 <DialogTitle>Lehrperson hinzufügen</DialogTitle>
                 <DialogContent>
                     <Typography sx={{ mb: 2 }}>
-                        Teilen Sie diesen Link mit der Lehrperson. Bitte verwenden Sie einen neuen Link pro Lehrperson.
+                        Teilen Sie diesen Link mit der Lehrperson.
                     </Typography>
                     <TextField fullWidth value={inviteUrl} slotProps={{input: {readOnly: true,},}}/>
                 </DialogContent>

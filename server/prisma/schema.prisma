@@ -230,3 +230,60 @@ model anonymousUser {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model teacher {
+  id Int @id @default(autoincrement())
+
+  first_name     String
+  last_name      String
+  email          String @unique
+  password       String
+  school_name    String
+  school_address String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classes schoolClass[]
+}
+
+model schoolClass {
+  id        Int             @id @default(autoincrement())
+  name      String
+  type      SchoolClassType
+  teacherId Int
+  teacher   teacher         @relation(fields: [teacherId], references: [id])
+
+  sus sus[]
+
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
+}
+
+model sus {
+  id         Int      @id @default(autoincrement())
+  first_name String
+  last_name  String
+  password   String
+  birthday   DateTime
+  email      String?
+  externalId String?  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classId     Int?
+  schoolClass schoolClass? @relation(fields: [classId], references: [id])
+
+  @@index([classId])
+}
+
+enum SchoolClassType {
+  KANTI_KURZ_1
+  KANTI_KURZ_2
+  KANTI_LANG_1
+  SEK_7
+  SEK_8
+  SEK_9
+}

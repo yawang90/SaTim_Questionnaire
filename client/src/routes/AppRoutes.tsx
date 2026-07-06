@@ -27,7 +27,7 @@ function AppRoutes() {
                 <Route path="/quiz/:id" element={<QuizPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/noTeam" element={<NoTeamPage />} />
-                <Route path="/register/teacher/:token" element={<TeacherRegistrationPage />} />
+                <Route path="/register/teacher" element={<TeacherRegistrationPage />} />
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />

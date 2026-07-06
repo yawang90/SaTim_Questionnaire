@@ -1,42 +1,30 @@
-import React, {useEffect, useState} from "react";
-import {Box, Button, Card, CardContent, CircularProgress, TextField, Typography,} from "@mui/material";
-import {useParams} from "react-router-dom";
-import {registerTeacher, verifyTeacherInvite} from "../../services/TeacherService.tsx";
+import React, {useState} from "react";
+import {Alert, Box, Button, Card, CardContent, CircularProgress, Snackbar, TextField, Typography,} from "@mui/material";
+import {registerTeacher} from "../../services/TeacherService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
 
 const TeacherRegistrationPage = () => {
-    const { token } = useParams();
-
-    const [loading, setLoading] = useState(true);
-    const [validToken, setValidToken] = useState(false);
-
+    const [loading, setLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success" as "success" | "error",
+    });
+    const handleCloseSnackbar = () => {
+        setSnackbar((prev) => ({
+            ...prev,
+            open: false,
+        }));
+    };
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
         email: "",
+        password: "",
+        confirmPassword: "",
         schoolName: "",
         schoolAddress: "",
     });
-
-    useEffect(() => {
-        const verify = async () => {
-            if (!token) {
-                setLoading(false);
-                return;
-            }
-            try {
-                await verifyTeacherInvite(token);
-                setValidToken(true);
-            } catch (err) {
-                console.error(err);
-                setValidToken(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        verify();
-    }, [token]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -47,12 +35,38 @@ const TeacherRegistrationPage = () => {
     };
 
     const handleSubmit = async () => {
+        if (form.password !== form.confirmPassword) {
+            setSnackbar({
+                open: true,
+                message: "Die Passwörter stimmen nicht überein.",
+                severity: "error",
+            });
+            return;
+        }
+
+        if (form.password.length < 8) {
+            setSnackbar({
+                open: true,
+                message: "Das Passwort muss mindestens 8 Zeichen lang sein.",
+                severity: "error",
+            });
+            return;
+        }
         try {
-            await registerTeacher({token, ...form,});
-            alert("Registrierung erfolgreich");
+            const { ...teacherData } = form;
+            await registerTeacher(teacherData);
+            setSnackbar({
+                open: true,
+                message: "Registrierung erfolgreich.",
+                severity: "success",
+            });
         } catch (err) {
             console.error(err);
-            alert("Registrierung fehlgeschlagen");
+            setSnackbar({
+                open: true,
+                message: "Registrierung fehlgeschlagen.",
+                severity: "error",
+            });
         }
     };
 
@@ -61,16 +75,6 @@ const TeacherRegistrationPage = () => {
             <Box display="flex" justifyContent="center" mt={10}>
                 <CircularProgress />
             </Box>
-        );
-    }
-
-    if (!validToken) {
-        return (
-                <Box sx={{width: 600, mx: 'auto', mt: 12, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: 3, borderRadius: 2,}}>
-                    <Typography variant="h5" gutterBottom>
-                        Der Einladungslink ist ungültig oder abgelaufen, bitte fordern Sie einen neuen Link.
-                    </Typography>
-                </Box>
         );
     }
 
@@ -96,6 +100,24 @@ const TeacherRegistrationPage = () => {
                             label="Nachname"
                             name="lastName"
                             value={form.lastName}
+                            onChange={handleChange}
+                            required
+                        />
+
+                        <TextField
+                            label="Passwort"
+                            name="password"
+                            type="password"
+                            value={form.password}
+                            onChange={handleChange}
+                            required
+                        />
+
+                        <TextField
+                            label="Passwort bestätigen"
+                            name="confirmPassword"
+                            type="password"
+                            value={form.confirmPassword}
                             onChange={handleChange}
                             required
                         />
@@ -136,7 +158,13 @@ const TeacherRegistrationPage = () => {
                     </Box>
                 </CardContent>
             </Card>
-        </Box></GeneralLayout>
+        </Box>
+            <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} variant="filled" sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+        </GeneralLayout>
     );
 };
 
