@@ -2,9 +2,11 @@ import React, {useState} from "react";
 import {Alert, Box, Button, Card, CardContent, CircularProgress, Snackbar, TextField, Typography,} from "@mui/material";
 import {registerTeacher} from "../../services/TeacherService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
+import { useNavigate } from "react-router-dom";
 
 const TeacherRegistrationPage = () => {
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
@@ -60,6 +62,7 @@ const TeacherRegistrationPage = () => {
                 message: "Registrierung erfolgreich.",
                 severity: "success",
             });
+            navigate("/teacher/classes");
         } catch (err) {
             console.error(err);
             setSnackbar({

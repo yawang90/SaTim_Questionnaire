@@ -16,6 +16,7 @@ import LoggedInRoute from './LoggedInRoute.tsx';
 import NoTeamPage from '../pages/NoTeamPage.tsx';
 import TeacherPage from "../pages/TeacherPage.tsx";
 import TeacherRegistrationPage from "../pages/teacher/TeacherRegistrationPage.tsx";
+import ClassOverviewPage from "../pages/teacher/ClassOverviewPage.tsx";
 
 function AppRoutes() {
     return (
@@ -27,7 +28,10 @@ function AppRoutes() {
                 <Route path="/quiz/:id" element={<QuizPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/noTeam" element={<NoTeamPage />} />
-                <Route path="/register/teacher" element={<TeacherRegistrationPage />} />
+                <Route path="/teacher/register" element={<TeacherRegistrationPage />} />
+
+                {/* TEACHER */}
+                <Route path="/teacher/classes" element={<ClassOverviewPage />} />
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />

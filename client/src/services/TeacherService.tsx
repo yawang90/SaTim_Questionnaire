@@ -1,4 +1,4 @@
-import {authFetch} from "./AuthFetchHelper.tsx";
+import {teacherAuthFetch} from "./TeacherAuthFetchHelper.tsx";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 export interface Teacher {
@@ -20,10 +20,19 @@ export interface RegisterTeacherRequest {
     schoolAddress: string;
 }
 
+export interface TeacherLoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface TeacherLoginResponse {
+    token: string;
+    teacherId: number;
+}
 export const getTeachers = async (): Promise<Teacher[]> => {
     const token = localStorage.getItem("token");
 
-    const response = await authFetch(`${API_URL}/api/teacher/list`, {
+    const response = await teacherAuthFetch(`${API_URL}/api/teacher/list`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -54,6 +63,34 @@ export const registerTeacher = async (data: RegisterTeacherRequest) => {
     if (!response.ok) {
         throw new Error("Registration failed");
     }
+    const result = await response.json();
+    console.log(result)
+    saveTeacherSession(result);
+    return result;
+};
 
-    return response.json();
+export const loginTeacher = async (
+    data: TeacherLoginRequest
+): Promise<TeacherLoginResponse> => {
+    const response = await fetch(`${API_URL}/api/teacher/login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+    }
+
+    const result = await response.json();
+    saveTeacherSession(result);
+    return result;
+};
+
+const saveTeacherSession = (result: TeacherLoginResponse) => {
+    localStorage.setItem("teacherToken", result.token);
+    localStorage.setItem("teacherId", result.teacherId.toString());
 };

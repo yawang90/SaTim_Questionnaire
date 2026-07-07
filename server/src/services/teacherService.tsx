@@ -30,14 +30,7 @@ export const getTeachersService = async () => {
     });
 };
 
-export const registerTeacherService = async ({
-                                                 firstName,
-                                                 lastName,
-                                                 email,
-                                                 password,
-                                                 schoolName,
-                                                 schoolAddress,
-                                             }: RegisterTeacherInput) => {
+export const registerTeacherService = async ({firstName, lastName, email, password, schoolName, schoolAddress,}: RegisterTeacherInput) => {
     const existingTeacher = await prisma.teacher.findUnique({where: {email,},});
 
     if (existingTeacher) {
@@ -63,6 +56,14 @@ export const registerTeacherService = async ({
             school_name: true,
             school_address: true,
             createdAt: true,
+        },
+    });
+};
+
+export const loginTeacherService = async (email: string) => {
+    return prisma.teacher.findUnique({
+        where: {
+            email,
         },
     });
 };

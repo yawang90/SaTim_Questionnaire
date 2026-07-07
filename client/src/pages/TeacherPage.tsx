@@ -25,7 +25,7 @@ const TeacherPage = () => {
     const [inviteUrl, setInviteUrl] = useState("");
     const generateInviteLink = async () => {
         try {
-            setInviteUrl(`${window.location.origin}/register/teacher`);
+            setInviteUrl(`${window.location.origin}/teacher/register`);
         } catch (err) {
             console.error(err);
         }
@@ -38,7 +38,7 @@ const TeacherPage = () => {
 
     const handleOpenAddTeacher = async () => {
         setOpenAddDialog(true);
-        setInviteUrl(`${window.location.origin}/register/teacher`);
+        setInviteUrl(`${window.location.origin}/teacher/register`);
     };
 
     useEffect(() => {
