@@ -17,6 +17,7 @@ import NoTeamPage from '../pages/NoTeamPage.tsx';
 import TeacherPage from "../pages/TeacherPage.tsx";
 import TeacherRegistrationPage from "../pages/teacher/TeacherRegistrationPage.tsx";
 import ClassOverviewPage from "../pages/teacher/ClassOverviewPage.tsx";
+import ClassPage from "../pages/teacher/ClassPage.tsx";
 
 function AppRoutes() {
     return (
@@ -32,6 +33,7 @@ function AppRoutes() {
 
                 {/* TEACHER */}
                 <Route path="/teacher/classes" element={<ClassOverviewPage />} />
+                <Route path="/teacher/class/:id" element={<ClassPage/>} />
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />

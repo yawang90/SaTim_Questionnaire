@@ -1,4 +1,4 @@
-import { authFetch } from "./AuthFetchHelper.tsx";
+import { teacherAuthFetch } from "./TeacherAuthFetchHelper.tsx";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,6 +18,15 @@ export interface SchoolClass {
     teacherId: number;
     createdAt: string;
     studentCount: number;
+    registrationToken: string;
+}
+
+export interface Student {
+    id: number;
+    first_name: string;
+    last_name: string;
+    birthday: string;
+    email?: string;
 }
 
 export interface CreateSchoolClassRequest {
@@ -30,14 +39,13 @@ export interface UpdateSchoolClassRequest {
     type: SchoolClassType;
 }
 
-export const getClasses = async (): Promise<SchoolClass[]> => {
-    const token = localStorage.getItem("token");
+const getToken = () => localStorage.getItem("teacherToken");
 
-    const response = await authFetch(`${API_URL}/api/class/list`, {
+export const getClasses = async (): Promise<SchoolClass[]> => {
+    const response = await teacherAuthFetch(`${API_URL}/api/schoolclass/list`, {
         method: "GET",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${getToken()}`,
         },
     });
 
@@ -48,16 +56,54 @@ export const getClasses = async (): Promise<SchoolClass[]> => {
     return response.json();
 };
 
+export const getClass = async (
+    classId: number
+): Promise<SchoolClass> => {
+    const response = await teacherAuthFetch(
+        `${API_URL}/api/schoolclass/${classId}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch class");
+    }
+
+    return response.json();
+};
+
+export const getStudents = async (
+    classId: number
+): Promise<Student[]> => {
+    const response = await teacherAuthFetch(
+        `${API_URL}/api/schoolclass/${classId}/students`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch students");
+    }
+
+    return response.json();
+};
+
 export const createClass = async (
     data: CreateSchoolClassRequest
 ) => {
-    const token = localStorage.getItem("token");
-
-    const response = await authFetch(`${API_URL}/api/class`, {
+    const response = await teacherAuthFetch(`${API_URL}/api/schoolclass`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify(data),
     });
@@ -74,16 +120,17 @@ export const updateClass = async (
     classId: number,
     data: UpdateSchoolClassRequest
 ) => {
-    const token = localStorage.getItem("token");
-
-    const response = await authFetch(`${API_URL}/api/class/${classId}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-    });
+    const response = await teacherAuthFetch(
+        `${API_URL}/api/schoolclass/${classId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: JSON.stringify(data),
+        }
+    );
 
     if (!response.ok) {
         const error = await response.json();
@@ -94,14 +141,15 @@ export const updateClass = async (
 };
 
 export const deleteClass = async (classId: number) => {
-    const token = localStorage.getItem("token");
-
-    const response = await authFetch(`${API_URL}/api/class/${classId}`, {
-        method: "DELETE",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await teacherAuthFetch(
+        `${API_URL}/api/schoolclass/${classId}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${getToken()}`,
+            },
+        }
+    );
 
     if (!response.ok) {
         const error = await response.json();

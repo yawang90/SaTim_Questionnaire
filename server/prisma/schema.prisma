@@ -248,11 +248,12 @@ model teacher {
 }
 
 model schoolClass {
-  id        Int             @id @default(autoincrement())
-  name      String
-  type      SchoolClassType
-  teacherId Int
-  teacher   teacher         @relation(fields: [teacherId], references: [id])
+  id                Int             @id @default(autoincrement())
+  name              String
+  type              SchoolClassType
+  teacherId         Int
+  teacher           teacher         @relation(fields: [teacherId], references: [id])
+  registrationToken String          @unique @default(uuid())
 
   sus sus[]
 

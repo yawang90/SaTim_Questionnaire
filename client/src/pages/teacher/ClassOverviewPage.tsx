@@ -23,23 +23,23 @@ import {
     SchoolClassType,
 } from "../../services/ClassService";
 import TeacherLayout from "../../layouts/TeacherLayout.tsx";
+import {useNavigate} from "react-router-dom";
 
 const ClassOverviewPage = () => {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [openDialog, setOpenDialog] = useState(false);
-
     const [newClass, setNewClass] = useState({
         name: "",
         type: SchoolClassType.SEK_7,
     });
-
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
         severity: "success" as "success" | "error",
     });
+    const navigate = useNavigate();
 
     const fetchClasses = async () => {
         setLoading(true);
@@ -133,20 +133,13 @@ const ClassOverviewPage = () => {
                                         </Typography>
 
                                         <Typography variant="body2" color="text.secondary">
-                                            {schoolClass.studentCount} Schüler
+                                            {schoolClass.studentCount} SuS
                                         </Typography>
 
                                         <Box mt={2} display="flex" gap={1}>
-                                            <Button variant="outlined" size="small">
+                                            <Button variant="contained" size="small"
+                                                onClick={() => navigate(`/teacher/class/${schoolClass.id}`)}>
                                                 Verwalten
-                                            </Button>
-
-                                            <Button variant="outlined" size="small">
-                                                Schüler
-                                            </Button>
-
-                                            <Button color="error" size="small">
-                                                Löschen
                                             </Button>
                                         </Box>
                                     </CardContent>
