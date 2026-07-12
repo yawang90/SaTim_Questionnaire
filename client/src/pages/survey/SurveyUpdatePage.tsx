@@ -92,7 +92,15 @@ const SurveyUpdatePage = () => {
     const exportRef = useRef<HTMLDivElement>(null);
     const [preparingExport, setPreparingExport] = useState(false);
     const [excelExport, setExcelExport] = useState(false);
-
+    const [exportProgress, setExportProgress] = useState<{
+        open: boolean;
+        current: number;
+        total: number;
+    }>({
+        open: false,
+        current: 0,
+        total: 0,
+    });
     useEffect(() => {
         const fetchSurvey = async () => {
             if (!id) return;
@@ -198,12 +206,16 @@ const SurveyUpdatePage = () => {
             const questions = await getQuestionsByIds(uniqueQuestionIds);
             await document.fonts.ready;
             const QUESTIONS_PER_PDF = 30;
+            const totalPdfs = Math.ceil(questions.length / QUESTIONS_PER_PDF);
+            setExportProgress({open: true, current: 0, total: totalPdfs,});
             for (
                 let start = 0;
                 start < questions.length;
                 start += QUESTIONS_PER_PDF
             ) {
                 const chunk = questions.slice(start, start + QUESTIONS_PER_PDF);
+                const currentPdf = Math.floor(start / QUESTIONS_PER_PDF) + 1;
+                setExportProgress({open: true, current: currentPdf, total: totalPdfs,});
                 setExportChunk(chunk);
                 await new Promise(resolve => requestAnimationFrame(resolve));
                 await new Promise(resolve => setTimeout(resolve, 150));
@@ -229,11 +241,16 @@ const SurveyUpdatePage = () => {
                     .from(el)
                     .save();
             }
-
             setExportChunk([]);
+            setExportProgress({open: false, current: 0, total: 0,});
+            setSnackbar({open: true, severity: "success", message: `${totalPdfs} PDF${totalPdfs > 1 ? "s" : ""} erfolgreich exportiert.`,});
         } catch (err) {
             console.error(err);
-
+            setExportProgress({
+                open: false,
+                current: 0,
+                total: 0,
+            });
             setSnackbar({
                 open: true,
                 message: "Fehler beim Exportieren.",
@@ -492,6 +509,11 @@ const SurveyUpdatePage = () => {
                 </Dialog>
                 <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                     <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+                </Snackbar>
+                <Snackbar open={exportProgress.open} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                    <Alert severity="info" variant="filled">
+                        Exportiere PDF {exportProgress.current} von {exportProgress.total}...
+                    </Alert>
                 </Snackbar>
             </Box>
             <Box
