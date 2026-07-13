@@ -231,6 +231,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                 case "geoGebraSlope": {
                     try {
                         const data = userAnswer.value;
+                        if (!!data) {break;}
                         const line1Points = [data.point1Line1, data.point2Line1];
                         const line2Points = [data.point1Line2, data.point2Line2];
                         const perpendicular = linesArePerpendicular(line1Points[0], line1Points[1], line2Points[0], line2Points[1]);
