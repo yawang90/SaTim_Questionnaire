@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import os from "os";
 import path from "path";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
+import fs from "fs";
 
 /**
  * Interface for creating a new survey
@@ -500,10 +501,7 @@ export const getSurveyExport = async (
         }
     });
 
-    const filePath = path.join(
-        os.tmpdir(),
-        `survey_export_${Date.now()}.xlsx`
-    );
+    const filePath = path.join(os.tmpdir(), `survey_export_${Date.now()}.xlsx`);
 
     const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
         filename: filePath,
@@ -511,8 +509,6 @@ export const getSurveyExport = async (
         useSharedStrings: false
     });
     const worksheet = workbook.addWorksheet("SurveyAnswers");
-
-
     const baseColumns = [
         "SchuelerID_System",
         "SchuelerID_Extern",
@@ -524,11 +520,8 @@ export const getSurveyExport = async (
         "Erhebung_StartedAt",
         "Erhebung_EndedAt"
     ];
-
-
     const questionColumns = allQuestionIds.flatMap(id => {
         const prefix = `Aufgabe_${id}_`;
-
         return [
             `${prefix}SystemID`,
             `${prefix}Position`,
@@ -540,17 +533,9 @@ export const getSurveyExport = async (
             `${prefix}Skipped`
         ];
     });
-
-
-    worksheet.columns = [
-        ...baseColumns,
-        ...questionColumns
-    ].map(key => ({
-        header:key,
-        key
-    }));
+    const columns = [...baseColumns, ...questionColumns];
+    worksheet.columns = columns.map((key) => ({header: key, key: key, width: 20}));
     const evaluationCache = new Map<number, any>();
-
     for (const answer of answers) {
         const instance = instances.find(i => i.id === answer.instanceId);
         if (!instance)
@@ -667,38 +652,29 @@ export const getSurveyExport = async (
                 [`${prefix}Position`]: bookletPositionMap.get(questionId) ?? "",
                 [`${prefix}RawResponse`]: orderedCorrect.map(x => x.user ? formatUserAnswer([x.user]) : "[]").join(", "),
                 [`${prefix}CorrectResponse`]: orderedCorrect.map(x => formatCorrectAnswer({[x.key]: x.correct})).join(", "),
-
                 [`${prefix}Score`]: (result?.score ?? []).join(", "),
-
                 [`${prefix}Feedback`]: formatFeedback(qa.feedbackAnswer ?? []),
                 [`${prefix}Zeit_Sekunden`]: qa.solvedTime ?? "",
-
                 [`${prefix}Skipped`]: qa.skipped ?? ""
             });
-
         }
-        for (const key of Object.keys(row)) {
-            if (
-                typeof row[key] === "object" &&
-                row[key] !== null
-            ) {
-                console.log(
-                    "BAD CELL",
-                    key,
-                    row[key]
-                );
+        const allowedKeys = new Set(
+            worksheet.columns.map(c => c.key)
+        );
 
-                row[key] = JSON.stringify(row[key]);
-            }
+        const invalidKeys = Object.keys(row)
+            .filter(k => !allowedKeys.has(k));
 
-            if (row[key] === undefined) {
-                row[key] = "";
-            }
+        if (invalidKeys.length > 0) {
+            console.log("INVALID ROW KEYS:", invalidKeys);
         }
         worksheet.addRow(row).commit();
-
     }
     await workbook.commit();
+    console.log("Export finished:", filePath);
+
+    const stats = fs.statSync(filePath);
+    console.log("File size:", stats.size);
     return filePath;
 };
 
