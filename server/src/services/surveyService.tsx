@@ -553,8 +553,12 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
         rows.push(row);
     }
     const workbook = XLSX.utils.book_new();
+    console.log("Rows:", rows.length);
+    console.log("Heap before worksheet:", process.memoryUsage().heapUsed / 1024 / 1024);
     const worksheet = XLSX.utils.json_to_sheet(rows);
+    console.log("Heap after worksheet:", process.memoryUsage().heapUsed / 1024 / 1024);
     XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
+    console.log("Heap before write:", process.memoryUsage().heapUsed / 1024 / 1024);
     return XLSX.write(workbook, {
         type: "buffer",
         bookType: "xlsx"
