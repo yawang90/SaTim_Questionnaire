@@ -283,15 +283,8 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
             instanceIds
         );
 
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename=Erhebung_${surveyId}.xlsx`
-        );
-
-        res.setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
+        res.setHeader("Content-Disposition", `attachment; filename=Erhebung_${surveyId}.xlsx`);
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);

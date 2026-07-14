@@ -511,7 +511,44 @@ export const getSurveyExport = async (
         useSharedStrings: false
     });
     const worksheet = workbook.addWorksheet("SurveyAnswers");
-    let columnsInitialized = false;
+
+
+    const baseColumns = [
+        "SchuelerID_System",
+        "SchuelerID_Extern",
+        "GruppenID_ausLink",
+        "GruppenBezeichnung",
+        "Booklet_ID",
+        "Booklet_Version",
+        "Freier_Parameter",
+        "Erhebung_StartedAt",
+        "Erhebung_EndedAt"
+    ];
+
+
+    const questionColumns = allQuestionIds.flatMap(id => {
+        const prefix = `Aufgabe_${id}_`;
+
+        return [
+            `${prefix}SystemID`,
+            `${prefix}Position`,
+            `${prefix}RawResponse`,
+            `${prefix}CorrectResponse`,
+            `${prefix}Score`,
+            `${prefix}Feedback`,
+            `${prefix}Zeit_Sekunden`,
+            `${prefix}Skipped`
+        ];
+    });
+
+
+    worksheet.columns = [
+        ...baseColumns,
+        ...questionColumns
+    ].map(key => ({
+        header:key,
+        key
+    }));
     const evaluationCache = new Map<number, any>();
 
     for (const answer of answers) {
@@ -649,10 +686,6 @@ export const getSurveyExport = async (
 
         }
 
-        if (!columnsInitialized) {
-            worksheet.columns = Object.keys(row).map(key => ({header: key, key}));
-            columnsInitialized = true;
-        }
         worksheet.addRow(row).commit();
 
     }
