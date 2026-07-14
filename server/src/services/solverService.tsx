@@ -87,6 +87,11 @@ export interface EvaluateResult {
 }
 
 export const evaluateAnswersService = async (questionId: number, userAnswers: UserAnswerInput[]): Promise<EvaluateResult | null> => {
+    console.log(
+        questionId,
+        (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1),
+        "MB"
+    );
     const questionEntry: Pick<question, "id" | "correctAnswers" | "contentJson"> | null =
         await prisma.question.findUnique({
             where: {id: questionId},
