@@ -668,6 +668,9 @@ export const getSurveyExport = async (
         if (invalidKeys.length > 0) {
             console.log("INVALID ROW KEYS:", invalidKeys);
         }
+        for (const key of Object.keys(row)) {
+            row[key] = sanitizeExcelValue(row[key]);
+        }
         worksheet.addRow(row).commit();
     }
     await workbook.commit();
@@ -938,4 +941,13 @@ function extractMetadataMap(metadata: Prisma.JsonValue): Record<string, string> 
     }
 
     return map;
+}
+
+function sanitizeExcelValue(value:any) {
+    if (typeof value !== "string") return value;
+
+    return value.replace(
+        /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,
+        ""
+    );
 }

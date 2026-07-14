@@ -288,9 +288,7 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
 
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);
-        fileStream.on("close", () => {fs.unlink(filePath, () => {});
-        });
-
+        fileStream.on("end", () => {fs.unlink(filePath, () => {});});
     } catch (err) {
         console.error("Survey export failed:", err);
 
