@@ -685,7 +685,24 @@ export const getSurveyExport = async (
             });
 
         }
+        for (const key of Object.keys(row)) {
+            if (
+                typeof row[key] === "object" &&
+                row[key] !== null
+            ) {
+                console.log(
+                    "BAD CELL",
+                    key,
+                    row[key]
+                );
 
+                row[key] = JSON.stringify(row[key]);
+            }
+
+            if (row[key] === undefined) {
+                row[key] = "";
+            }
+        }
         worksheet.addRow(row).commit();
 
     }
