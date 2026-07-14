@@ -598,16 +598,8 @@ export const getSurveyExport = async (
             Booklet_ID: answer.booklet.bookletId,
             Booklet_Version: answer.booklet.version,
             Freier_Parameter: answer.freeParam,
-            Erhebung_StartedAt:
-                earliestStart !== Infinity
-                    ? formatSwissDate(
-                        new Date(
-                            earliestStart
-                        ).toISOString()
-                    )
-                    : "",
-            Erhebung_EndedAt:
-            answer.endedAt
+            Erhebung_StartedAt: earliestStart !== Infinity ? formatSwissDate(new Date(earliestStart).toISOString()) : "",
+            Erhebung_EndedAt: answer.endedAt ? formatSwissDate(answer.endedAt) : ""
         };
 
         for (const questionId of allQuestionIds) {
