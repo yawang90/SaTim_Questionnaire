@@ -658,26 +658,12 @@ export const getSurveyExport = async (
                 [`${prefix}Skipped`]: qa.skipped ?? ""
             });
         }
-        const allowedKeys = new Set(
-            worksheet.columns.map(c => c.key)
-        );
-
-        const invalidKeys = Object.keys(row)
-            .filter(k => !allowedKeys.has(k));
-
-        if (invalidKeys.length > 0) {
-            console.log("INVALID ROW KEYS:", invalidKeys);
-        }
         for (const key of Object.keys(row)) {
             row[key] = sanitizeExcelValue(row[key]);
         }
         worksheet.addRow(row).commit();
     }
     await workbook.commit();
-    console.log("Export finished:", filePath);
-
-    const stats = fs.statSync(filePath);
-    console.log("File size:", stats.size);
     return filePath;
 };
 
