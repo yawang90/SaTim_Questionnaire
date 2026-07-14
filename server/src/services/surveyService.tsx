@@ -1,7 +1,11 @@
 import prisma from "../config/prismaClient.js";
 import {Prisma, question_status, type survey, survey_mode, survey_status, type surveyInstance} from "@prisma/client";
 import XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import os from "os";
+import path from "path";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
+
 /**
  * Interface for creating a new survey
  */
@@ -82,7 +86,7 @@ export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => 
 
     return prisma.survey.create({
         data: createData,
-        include: { instances: true },
+        include: {instances: true},
     });
 };
 
@@ -92,11 +96,11 @@ export const createSurvey = async (data: CreateSurveyInput): Promise<survey> => 
 export const getAllSurveys = async (): Promise<survey[]> => {
     return prisma.survey.findMany({
         include: {
-            createdBy: { select: { id: true, first_name: true, last_name: true } },
-            updatedBy: { select: { id: true, first_name: true, last_name: true } },
+            createdBy: {select: {id: true, first_name: true, last_name: true}},
+            updatedBy: {select: {id: true, first_name: true, last_name: true}},
             instances: true,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: {createdAt: "desc"},
     });
 };
 
@@ -105,13 +109,13 @@ export const getAllSurveys = async (): Promise<survey[]> => {
  */
 export const getSurveyById = async (id: number) => {
     const survey = await prisma.survey.findUnique({
-        where: { id },
+        where: {id},
         include: {
-            createdBy: { select: { id: true, first_name: true, last_name: true } },
-            updatedBy: { select: { id: true, first_name: true, last_name: true } },
+            createdBy: {select: {id: true, first_name: true, last_name: true}},
+            updatedBy: {select: {id: true, first_name: true, last_name: true}},
             instances: true,
             booklet: {
-                orderBy: { bookletId: "asc" },
+                orderBy: {bookletId: "asc"},
             },
         },
     });
@@ -137,7 +141,7 @@ export const getSurveyById = async (id: number) => {
  * Update an existing survey by ID
  */
 export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Promise<survey> => {
-    const updateData: any = { updatedById: data.updatedById };
+    const updateData: any = {updatedById: data.updatedById};
 
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
@@ -145,9 +149,9 @@ export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Pro
     if (data.status !== undefined) updateData.status = data.status;
 
     return prisma.survey.update({
-        where: { id },
+        where: {id},
         data: updateData,
-        include: { instances: true },
+        include: {instances: true},
     });
 };
 
@@ -156,14 +160,14 @@ export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Pro
  */
 export const deleteSurveyById = async (id: number): Promise<survey> => {
     return prisma.survey.delete({
-        where: { id },
+        where: {id},
     });
 };
 
 export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Promise<surveyInstance> => {
     const survey = await prisma.survey.findUnique({
-        where: { id: data.surveyId },
-        select: { bookletVersion: true }
+        where: {id: data.surveyId},
+        select: {bookletVersion: true}
     });
 
     if (!survey) {
@@ -188,11 +192,11 @@ export const createSurveyInstance = async (data: CreateSurveyInstanceInput): Pro
  */
 export const getSurveyInstances = async (surveyId: number): Promise<surveyInstance[]> => {
     return prisma.surveyInstance.findMany({
-        where: { surveyId },
-        orderBy: { createdAt: "desc" },
+        where: {surveyId},
+        orderBy: {createdAt: "desc"},
         include: {
-            createdBy: { select: { id: true, first_name: true, last_name: true } },
-            updatedBy: { select: { id: true, first_name: true, last_name: true } },
+            createdBy: {select: {id: true, first_name: true, last_name: true}},
+            updatedBy: {select: {id: true, first_name: true, last_name: true}},
         },
     });
 };
@@ -205,7 +209,7 @@ export const updateSurveyInstanceById = async (
     data: UpdateSurveyInstanceInput
 ): Promise<surveyInstance> => {
     return prisma.surveyInstance.update({
-        where: { id },
+        where: {id},
         data,
     });
 };
@@ -215,7 +219,7 @@ export const updateSurveyInstanceById = async (
  */
 export const deleteSurveyInstanceById = async (id: number): Promise<surveyInstance> => {
     return prisma.surveyInstance.delete({
-        where: { id },
+        where: {id},
     });
 };
 
@@ -224,22 +228,22 @@ export const deleteSurveyInstanceById = async (id: number): Promise<surveyInstan
  */
 export const getBookletsBySurveyId = async (surveyId: number) => {
     const result = await prisma.booklet.aggregate({
-        where: { surveyId },
-        _max: { version: true },
+        where: {surveyId},
+        _max: {version: true},
     });
 
     const maxVersion = result._max.version ?? 0;
     if (maxVersion === 0) return [];
 
     return prisma.booklet.findMany({
-        where: { surveyId, version: maxVersion },
+        where: {surveyId, version: maxVersion},
         include: {
             bookletQuestion: {
-                include: { question: true },
-                orderBy: { position: "asc" },
+                include: {question: true},
+                orderBy: {position: "asc"},
             },
         },
-        orderBy: { bookletId: "asc" },
+        orderBy: {bookletId: "asc"},
     });
 };
 
@@ -256,8 +260,8 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
         const questionIds = [...new Set(questionIdsRaw)];
 
         const validQuestions = await prisma.question.findMany({
-            where: { id: { in: questionIds } },
-            select: { id: true, status: true },
+            where: {id: {in: questionIds}},
+            select: {id: true, status: true},
         });
         const validIds = validQuestions.map(q => q.id);
         const unfinishedIds = validQuestions.filter(q => q.status !== question_status.FINISHED).map(q => q.id);
@@ -281,9 +285,9 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
 
     return prisma.$transaction(async (tx) => {
         const updatedSurvey = await tx.survey.update({
-            where: { id: surveyId },
-            data: { bookletVersion: { increment: 1 } },
-            select: { bookletVersion: true },
+            where: {id: surveyId},
+            data: {bookletVersion: {increment: 1}},
+            select: {bookletVersion: true},
         });
 
         for (const [bookletName, questionIdsRaw] of Object.entries(bookletMap)) {
@@ -311,7 +315,7 @@ export const processSurveyExcels = async (surveyId: number, slotQuestionFile: Ex
             });
         }
         return tx.survey.update({
-            where: { id: surveyId },
+            where: {id: surveyId},
             data: {
                 bookletMappingExcelUrl: "",
                 status: survey_status.PREPARED,
@@ -380,38 +384,45 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
     const allHeaders = Array.from(new Set(metadataMaps.flatMap(m => Object.keys(m))));
     const rows = await Promise.all(
         questions.map(async (question, index) => {
-        const meta = extractMetadataMap(question.metadata as any);
-        let total = 0;
-        let fullScoreCount = 0;
-        const maxPoints = extractAnswerTypes(question.contentJson).length;
-        for (const answer of answers) {
-            for (const qa of answer.questionsAnswers) {
-                const qid = qa.questionId;
-                if (question.id !== qid) continue;
-                total = total + 1;
-                if (qa.solved) {
-                    const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
-                    const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
-                    const result = await evaluateAnswersService(qid, userAnswerInput);
-                    const achievedScore = Array.isArray(result?.score) ? result.score.reduce((sum, num) => sum + num, 0) : 0;
-                    const correct = achievedScore === maxPoints;
-                    if (correct) fullScoreCount = fullScoreCount + 1;
+            const meta = extractMetadataMap(question.metadata as any);
+            let total = 0;
+            let fullScoreCount = 0;
+            const maxPoints = extractAnswerTypes(question.contentJson).length;
+            for (const answer of answers) {
+                for (const qa of answer.questionsAnswers) {
+                    const qid = qa.questionId;
+                    if (question.id !== qid) continue;
+                    total = total + 1;
+                    if (qa.solved) {
+                        const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
+                        const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({
+                            key: a.key,
+                            value: a.value,
+                            m: a.m,
+                            c: a.c
+                        }));
+                        const result = await evaluateAnswersService(qid, userAnswerInput);
+                        const achievedScore = Array.isArray(result?.score) ? result.score.reduce((sum, num) => sum + num, 0) : 0;
+                        const correct = achievedScore === maxPoints;
+                        if (correct) fullScoreCount = fullScoreCount + 1;
+                    }
                 }
             }
-        }
-        const row: any = {
-            Downloaded: surveyTitle,
-            ID: question.id,
-            Booklet: [...new Set(question.bookletQuestion.map(bq => bq.booklet.bookletId))].join(", "),
-            "Antwort Formate": [...new Set(extractAnswerTypes(question.contentJson).map(type => ANSWER_TYPE_LABELS[type] ?? type))].join(", "),
-            "Max Points": maxPoints,
-            "Richtige Antworten": fullScoreCount,
-            "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) + "% (von total " + total +")": "0" + "% (von total " + total +")",
-            ...meta,
-        };
-        for (const key of allHeaders) {row[key] = meta?.[key] ?? "";}
-        return row;
-    }));
+            const row: any = {
+                Downloaded: surveyTitle,
+                ID: question.id,
+                Booklet: [...new Set(question.bookletQuestion.map(bq => bq.booklet.bookletId))].join(", "),
+                "Antwort Formate": [...new Set(extractAnswerTypes(question.contentJson).map(type => ANSWER_TYPE_LABELS[type] ?? type))].join(", "),
+                "Max Points": maxPoints,
+                "Richtige Antworten": fullScoreCount,
+                "% Correct": total ? ((fullScoreCount / total) * 100).toFixed(2) + "% (von total " + total + ")" : "0" + "% (von total " + total + ")",
+                ...meta,
+            };
+            for (const key of allHeaders) {
+                row[key] = meta?.[key] ?? "";
+            }
+            return row;
+        }));
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(
@@ -428,9 +439,13 @@ export const getQuestionDetailsExport = async (ids: number[], surveyId: number, 
 /**
  * Export survey answers for selected instances, including question scores
  */
-export const getSurveyExport = async (surveyId: number, instanceIds: number[]): Promise<Buffer> => {
+export const getSurveyExport = async (
+    surveyId: number,
+    instanceIds: number[]
+): Promise<string> => {
+
     const survey = await prisma.survey.findUnique({
-        where: { id: surveyId },
+        where: {id: surveyId},
         include: {
             booklet: {
                 include: {
@@ -439,17 +454,38 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             }
         }
     });
-    if (!survey) throw new Error("Survey not found");
-    const allBookletQuestions = survey.booklet.flatMap(b => b.bookletQuestion ?? []);
-    const allQuestionIds = Array.from(new Set(allBookletQuestions.map(q => q.questionId)));
-    const instances = await prisma.surveyInstance.findMany({
-        where: { id: { in: instanceIds }, surveyId }
-    });
-    if (!instances.length) {
-        throw new Error("No valid instances found");
+
+    if (!survey) {
+        throw new Error("Survey not found");
     }
+
+
+    const allQuestionIds = Array.from(
+        new Set(
+            survey.booklet
+                .flatMap(b => b.bookletQuestion)
+                .map(q => q.questionId)
+        )
+    );
+
+
+    const instances = await prisma.surveyInstance.findMany({
+        where: {
+            id: {
+                in: instanceIds
+            },
+            surveyId
+        }
+    });
+
+
     const answers = await prisma.answer.findMany({
-        where: { surveyId, instanceId: { in: instanceIds } },
+        where: {
+            surveyId,
+            instanceId: {
+                in: instanceIds
+            }
+        },
         include: {
             questionsAnswers: {
                 include: {
@@ -463,106 +499,165 @@ export const getSurveyExport = async (surveyId: number, instanceIds: number[]): 
             }
         }
     });
-    const rows: any[] = [];
+
+    const filePath = path.join(
+        os.tmpdir(),
+        `survey_export_${Date.now()}.xlsx`
+    );
+
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+        filename: filePath,
+        useStyles: false,
+        useSharedStrings: false
+    });
+    const worksheet = workbook.addWorksheet("SurveyAnswers");
+    let columnsInitialized = false;
+    const evaluationCache = new Map<number, any>();
+
     for (const answer of answers) {
         const instance = instances.find(i => i.id === answer.instanceId);
-        if (!instance) continue;
+        if (!instance)
+            continue;
         const qaMap = new Map<number, typeof answer.questionsAnswers[0]>();
         for (const qa of answer.questionsAnswers) {
             qaMap.set(qa.questionId, qa);
         }
-        const bookletQuestionSet = new Set(
-            answer.booklet.bookletQuestion.map(bq => bq.questionId)
-        );
+
+        const bookletQuestionSet = new Set(answer.booklet.bookletQuestion.map(q => q.questionId));
         const bookletPositionMap = new Map<number, number>();
         for (const bq of answer.booklet.bookletQuestion) {
-            bookletPositionMap.set(bq.questionId, bq.position);
+            bookletPositionMap.set(
+                bq.questionId,
+                bq.position
+            );
         }
-        const earliestStart = answer.questionsAnswers
-            .map(qA => qA.solvingTimeStart)
-            .filter(Boolean)
-            .map(date => new Date(date).getTime())
-            .reduce((min, ts) => Math.min(min, ts), Infinity);
-        const earliestStartDate = earliestStart !== Infinity ? formatSwissDate(new Date(earliestStart).toISOString()) : null;
-        const user = await prisma.anonymousUser.findUnique({
-            where: { externalId: answer.userId },
-            select: { id: true },
-        });
+
+        const earliestStart =
+            answer.questionsAnswers
+                .map(q => q.solvingTimeStart)
+                .filter(Boolean)
+                .map(d => new Date(d).getTime())
+                .reduce(
+                    (min, v) => Math.min(min, v),
+                    Infinity
+                );
+
+
+        const user =
+            await prisma.anonymousUser.findUnique({
+                where: {
+                    externalId: answer.userId
+                },
+                select: {
+                    id: true
+                }
+            });
 
         const row: any = {
             SchuelerID_System: answer.userId,
-            SchuelerID_Extern: user ? user.id : "",
+            SchuelerID_Extern: user?.id ?? "",
             GruppenID_ausLink: instance.id,
             GruppenBezeichnung: instance.name,
             Booklet_ID: answer.booklet.bookletId,
             Booklet_Version: answer.booklet.version,
             Freier_Parameter: answer.freeParam,
-            Erhebung_StartedAt: earliestStartDate,
-            Erhebung_EndedAt: answer.endedAt
+            Erhebung_StartedAt:
+                earliestStart !== Infinity
+                    ? formatSwissDate(
+                        new Date(
+                            earliestStart
+                        ).toISOString()
+                    )
+                    : "",
+            Erhebung_EndedAt:
+            answer.endedAt
         };
+
         for (const questionId of allQuestionIds) {
+            const prefix = `Aufgabe_${questionId}_`;
             if (!bookletQuestionSet.has(questionId)) {
-                row[`Aufgabe_${questionId}_SystemID`] = "";
-                row[`Aufgabe_${questionId}_Position`] = "";
-                row[`Aufgabe_${questionId}_RawResponse`] = "";
-                row[`Aufgabe_${questionId}_CorrectResponse`] = "";
-                row[`Aufgabe_${questionId}_Score`] = "";
-                row[`Aufgabe_${questionId}_Feedback`] = "";
-                row[`Aufgabe_${questionId}_StartedAt`] = "";
-                row[`Aufgabe_${questionId}_FinishedAt`] = "";
-                row[`Aufgabe_${questionId}_Zeit_Sekunden`] = "";
-                row[`Aufgabe_${questionId}_Skipped`] = "";
+                Object.assign(row, {
+                    [`${prefix}SystemID`]: "",
+                    [`${prefix}Position`]: "",
+                    [`${prefix}RawResponse`]: "",
+                    [`${prefix}CorrectResponse`]: "",
+                    [`${prefix}Score`]: "",
+                    [`${prefix}Feedback`]: "",
+                    [`${prefix}Zeit_Sekunden`]: "",
+                    [`${prefix}Skipped`]: "",
+                });
                 continue;
             }
-            const qa = qaMap.get(questionId);
+            const qa =
+                qaMap.get(questionId);
+
             if (!qa) {
-                row[`Aufgabe_${questionId}_SystemID`] = questionId;
-                row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
-                row[`Aufgabe_${questionId}_RawResponse`] = "";
-                row[`Aufgabe_${questionId}_CorrectResponse`] = "";
-                row[`Aufgabe_${questionId}_Score`] = "";
-                row[`Aufgabe_${questionId}_Feedback`] = "";
-                row[`Aufgabe_${questionId}_StartedAt`] = "";
-                row[`Aufgabe_${questionId}_FinishedAt`] = "";
-                row[`Aufgabe_${questionId}_Zeit_Sekunden`] = "";
-                row[`Aufgabe_${questionId}_Skipped`] = "";
+                Object.assign(row, {
+                    [`${prefix}SystemID`]: questionId,
+                    [`${prefix}Position`]:
+                        bookletPositionMap.get(questionId) ?? "",
+                    [`${prefix}RawResponse`]: "",
+                    [`${prefix}CorrectResponse`]: "",
+                    [`${prefix}Score`]: "",
+                    [`${prefix}Feedback`]: "",
+                    [`${prefix}Zeit_Sekunden`]: "",
+                    [`${prefix}Skipped`]: "",
+                });
+
                 continue;
+            }
+            let result = evaluationCache.get(questionId);
+            if (!result) {
+                const answerArray =
+                    Array.isArray(qa.answerJson)
+                        ? qa.answerJson as any[]
+                        : [];
+                const input =
+                    answerArray.map(a => ({
+                        key: a.key,
+                        value: a.value,
+                        m: a.m,
+                        c: a.c
+                    }));
+
+                result = await evaluateAnswersService(questionId, input);
+                evaluationCache.set(questionId, result);
             }
             const answerArray = Array.isArray(qa.answerJson) ? qa.answerJson as any[] : [];
-            const userAnswerInput: UserAnswerInput[] = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
-            const result = await evaluateAnswersService(questionId, userAnswerInput);
-            const correctOrder = Object.keys(result?.correctAnswers ?? {});
-            const userMap = new Map(answerArray?.map(a => [a.key, a]));
-            const orderedCorrect = correctOrder.map(key => {
-                return {
-                    key,
-                    user: userMap.get(key) ?? null,
-                    correct: result?.correctAnswers[key]
-                };
+            const userMap = new Map(answerArray.map(a => [a.key, a]));
+
+            const orderedCorrect = Object.keys(result?.correctAnswers ?? {}).map(key => ({
+                key,
+                user: userMap.get(key),
+                correct:
+                    result.correctAnswers[key]
+            }));
+
+            Object.assign(row, {
+                [`${prefix}SystemID`]: qa.questionId,
+                [`${prefix}Position`]: bookletPositionMap.get(questionId) ?? "",
+                [`${prefix}RawResponse`]: orderedCorrect.map(x => x.user ? formatUserAnswer([x.user]) : "[]").join(", "),
+                [`${prefix}CorrectResponse`]: orderedCorrect.map(x => formatCorrectAnswer({[x.key]: x.correct})).join(", "),
+
+                [`${prefix}Score`]: (result?.score ?? []).join(", "),
+
+                [`${prefix}Feedback`]: formatFeedback(qa.feedbackAnswer ?? []),
+                [`${prefix}Zeit_Sekunden`]: qa.solvedTime ?? "",
+
+                [`${prefix}Skipped`]: qa.skipped ?? ""
             });
-            const scoreVector = result?.score ?? [];
-            row[`Aufgabe_${questionId}_SystemID`] = qa.questionId;
-            row[`Aufgabe_${questionId}_Position`] = bookletPositionMap.get(questionId) ?? "";
-            row[`Aufgabe_${questionId}_RawResponse`] = orderedCorrect.map(x => x.user ? formatUserAnswer([x.user]) : "[]").join(", ");
-            row[`Aufgabe_${questionId}_CorrectResponse`] = orderedCorrect.map(x => formatCorrectAnswer({ [x.key]: x.correct })).join(", ");
-            row[`Aufgabe_${questionId}_Score`] = scoreVector.join(", ");
-            row[`Aufgabe_${questionId}_Feedback`] = formatFeedback(qa.feedbackAnswer ?? []);
-            row[`Aufgabe_${questionId}_Zeit_Sekunden`] = qa.solvedTime ?? "";
-            row[`Aufgabe_${questionId}_Skipped`] = qa.skipped ?? "";
+
         }
-        rows.push(row);
+
+        if (!columnsInitialized) {
+            worksheet.columns = Object.keys(row).map(key => ({header: key, key}));
+            columnsInitialized = true;
+        }
+        worksheet.addRow(row).commit();
+
     }
-    const workbook = XLSX.utils.book_new();
-    console.log("Rows:", rows.length);
-    console.log("Heap before worksheet:", process.memoryUsage().heapUsed / 1024 / 1024);
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    console.log("Heap after worksheet:", process.memoryUsage().heapUsed / 1024 / 1024);
-    XLSX.utils.book_append_sheet(workbook, worksheet, "SurveyAnswers");
-    console.log("Heap before write:", process.memoryUsage().heapUsed / 1024 / 1024);
-    return XLSX.write(workbook, {
-        type: "buffer",
-        bookType: "xlsx"
-    });
+    await workbook.commit();
+    return filePath;
 };
 
 function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
@@ -602,7 +697,7 @@ function readSlotToQuestionExcel(slotQuestionFile: Express.Multer.File) {
 }
 
 function readBookletToSlotExcel(bookletSlotFile: Express.Multer.File, slotToQuestionMap: Record<string, number>) {
-    const workbook = XLSX.read(bookletSlotFile.buffer, { type: "buffer" });
+    const workbook = XLSX.read(bookletSlotFile.buffer, {type: "buffer"});
 
     if (workbook.SheetNames.length === 0) {
         throw new Error("Booklet-Slot Excel file has no sheets");
@@ -729,9 +824,10 @@ function formatCorrectAnswer(input: any): string {
                 case "geoGebraPoints":
                     let index2 = 1;
                     return Object.entries(ans.value || {}).map(([pointName, coords]: any) => {
-                            const x = coords.x?.map((v: any) => v.value).join("|") ?? "";
-                            const y = coords.y?.map((v: any) => v.value).join("|") ?? "";
-                            return `[${index2++}: x=${x}, y=${y}]`;})
+                        const x = coords.x?.map((v: any) => v.value).join("|") ?? "";
+                        const y = coords.y?.map((v: any) => v.value).join("|") ?? "";
+                        return `[${index2++}: x=${x}, y=${y}]`;
+                    })
                         .join(", ");
                 case "geoGebraLines":
                     let index3 = 1;
@@ -761,31 +857,34 @@ function normalizeCorrectAnswer(input: any): any[] {
 const extractAnswerTypes = (contentJson: any): string[] => {
     if (!contentJson) return [];
     const allowedTypes = new Set(["algebra", "mcChoice", "numericInput", "freeText", "singleChoice", "freeTextInline", "lineEquation", "geoGebra", "geoGebraSlope"]);
-        const found: string[] = [];
-        const countedGroups = new Set<string>();
-        const traverse = (node: any) => {
-            if (!node) return;
-            if (Array.isArray(node)) {node.forEach(traverse);return;}
+    const found: string[] = [];
+    const countedGroups = new Set<string>();
+    const traverse = (node: any) => {
+        if (!node) return;
+        if (Array.isArray(node)) {
+            node.forEach(traverse);
+            return;
+        }
 
-            if (typeof node === "object") {
-                if (typeof node.type === "string" && allowedTypes.has(node.type)) {
-                    if (node.type === "mcChoice" || node.type === "singleChoice") {
-                        const groupId = node.attrs?.groupId;
-                        const uniqueKey = `${node.type}:${groupId ?? node.attrs?.id}`;
-                        if (!countedGroups.has(uniqueKey)) {
-                            countedGroups.add(uniqueKey);
-                            found.push(node.type === "mcChoice" ? "mc" : "sc");
-                        }
-                    } else {
-                        found.push(node.type);
+        if (typeof node === "object") {
+            if (typeof node.type === "string" && allowedTypes.has(node.type)) {
+                if (node.type === "mcChoice" || node.type === "singleChoice") {
+                    const groupId = node.attrs?.groupId;
+                    const uniqueKey = `${node.type}:${groupId ?? node.attrs?.id}`;
+                    if (!countedGroups.has(uniqueKey)) {
+                        countedGroups.add(uniqueKey);
+                        found.push(node.type === "mcChoice" ? "mc" : "sc");
                     }
+                } else {
+                    found.push(node.type);
                 }
-                Object.values(node).forEach(traverse);
             }
-        };
-        traverse(contentJson);
-        return found;
+            Object.values(node).forEach(traverse);
+        }
     };
+    traverse(contentJson);
+    return found;
+};
 
 const ANSWER_TYPE_LABELS: Record<string, string> = {
     algebra: "Algebra",
@@ -794,8 +893,8 @@ const ANSWER_TYPE_LABELS: Record<string, string> = {
     sc: "Single Choice",
     numericInput: "Numerische Eingabe",
     freeText: "Freitext",
-    singleChoice : "Single Choice",
-    freeTextInline : "Freitext",
+    singleChoice: "Single Choice",
+    freeTextInline: "Freitext",
     lineEquation: "Lineare Gleichung",
     geoGebra: "Geogebra",
     geoGebraSlope: "Geogebra Steigungsdreick"
