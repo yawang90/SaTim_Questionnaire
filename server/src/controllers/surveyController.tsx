@@ -15,7 +15,7 @@ import {
     updateSurveyById,
     updateSurveyInstanceById,
 } from "../services/surveyService.js";
-
+import fs from "fs";
 /**
  * Interface for creating a new survey
  */
@@ -273,17 +273,28 @@ export const getSurveyExportHandler = async (req: Request, res: Response) => {
         const { instanceIds } = req.body as { instanceIds: number[] };
 
         if (!Array.isArray(instanceIds) || instanceIds.length === 0) {
-            return res.status(400).json({ message: "Keine Durchführungen ausgewählt." });
+            return res.status(400).json({
+                message: "Keine Durchführungen ausgewählt."
+            });
         }
 
-        const excelBuffer = await getSurveyExport(surveyId, instanceIds);
+        const filePath = await getSurveyExport(
+            surveyId,
+            instanceIds
+        );
 
         res.setHeader("Content-Disposition", `attachment; filename=Erhebung_${surveyId}.xlsx`);
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.send(excelBuffer);
+
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+        fileStream.on("end", () => {fs.unlink(filePath, () => {});});
     } catch (err) {
         console.error("Survey export failed:", err);
-        res.status(500).json({ message: "Export fehlgeschlagen" });
+
+        res.status(500).json({
+            message: "Export fehlgeschlagen"
+        });
     }
 };
 

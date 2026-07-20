@@ -88,13 +88,19 @@ const SurveyUpdatePage = () => {
     const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-    const [exportQuestions, setExportQuestions] = useState<Question[]>([]);
-    const [exportOpen, setExportOpen] = useState(false);
-    const [exporting, setExporting] = useState(false);
+    const [exportChunk, setExportChunk] = useState<Question[]>([]);
     const exportRef = useRef<HTMLDivElement>(null);
     const [preparingExport, setPreparingExport] = useState(false);
     const [excelExport, setExcelExport] = useState(false);
-
+    const [exportProgress, setExportProgress] = useState<{
+        open: boolean;
+        current: number;
+        total: number;
+    }>({
+        open: false,
+        current: 0,
+        total: 0,
+    });
     useEffect(() => {
         const fetchSurvey = async () => {
             if (!id) return;
@@ -198,14 +204,56 @@ const SurveyUpdatePage = () => {
                 new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.questionId)))
             );
             const questions = await getQuestionsByIds(uniqueQuestionIds);
-            setExportQuestions(questions);
-            await new Promise(requestAnimationFrame);
-            setExportOpen(true);
+            await document.fonts.ready;
+            const QUESTIONS_PER_PDF = 30;
+            const totalPdfs = Math.ceil(questions.length / QUESTIONS_PER_PDF);
+            setExportProgress({open: true, current: 0, total: totalPdfs,});
+            for (
+                let start = 0;
+                start < questions.length;
+                start += QUESTIONS_PER_PDF
+            ) {
+                const chunk = questions.slice(start, start + QUESTIONS_PER_PDF);
+                const currentPdf = Math.floor(start / QUESTIONS_PER_PDF) + 1;
+                setExportProgress({open: true, current: currentPdf, total: totalPdfs,});
+                setExportChunk(chunk);
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                await new Promise(resolve => setTimeout(resolve, 150));
+
+                const el = exportRef.current;
+                if (!el) continue;
+
+                await html2pdf()
+                    .set({
+                        margin: 10,
+                        filename:
+                            `${survey?.title}_items_part_${Math.floor(start / QUESTIONS_PER_PDF) + 1}.pdf`,
+                        html2canvas: {
+                            scale: 1,
+                            useCORS: true,
+                            backgroundColor: "#fff",
+                        },
+                        jsPDF: {
+                            unit: "mm",
+                            format: "a4",
+                        },
+                    })
+                    .from(el)
+                    .save();
+            }
+            setExportChunk([]);
+            setExportProgress({open: false, current: 0, total: 0,});
+            setSnackbar({open: true, severity: "success", message: `${totalPdfs} PDF${totalPdfs > 1 ? "s" : ""} erfolgreich exportiert.`,});
         } catch (err) {
-            console.log(err);
+            console.error(err);
+            setExportProgress({
+                open: false,
+                current: 0,
+                total: 0,
+            });
             setSnackbar({
                 open: true,
-                message: "Fehler beim Laden der Exportdaten.",
+                message: "Fehler beim Exportieren.",
                 severity: "error",
             });
         } finally {
@@ -351,14 +399,20 @@ const SurveyUpdatePage = () => {
                         <Button variant="outlined" sx={{mr: 2}} onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
-                        <Button variant="outlined" sx={{mr: 2}} startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
+                        <Button
+                            variant="outlined"
+                            sx={{ mr: 2 }}
+                            startIcon={<FileDownload />}
+                            onClick={handleExportClick}
+                            disabled={saving || preparingExport}
+                        >
                             {preparingExport ? (
                                 <Box display="flex" alignItems="center" gap={1}>
                                     <CircularProgress size={20} />
-                                    Laden...
-                                </Box>) : (
-                                <>Booklet Items (PDF)
-                                </>
+                                    Exportiere...
+                                </Box>
+                            ) : (
+                                <>Booklet Items (PDF)</>
                             )}
                         </Button>
                         <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExcelExportClick} disabled={saving || excelExport}>
@@ -456,70 +510,40 @@ const SurveyUpdatePage = () => {
                 <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                     <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
                 </Snackbar>
+                <Snackbar open={exportProgress.open} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+                    <Alert severity="info" variant="filled">
+                        Exportiere PDF {exportProgress.current} von {exportProgress.total}...
+                    </Alert>
+                </Snackbar>
             </Box>
-            <Dialog open={exportOpen} fullWidth maxWidth="md">
-                <DialogTitle>PDF Export Vorschau</DialogTitle>
-                <DialogContent>
-                    {exporting && (
-                        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                            <LinearProgress sx={{ width: "100%" }} />
+            <Box
+                sx={{
+                    position: "fixed",
+                    left: "-10000px",
+                    top: 0,
+                    width: "210mm",
+                    backgroundColor: "white",
+                    p: 2,
+                }}>
+                <Box ref={exportRef}>
+                    {exportChunk.map((q, i) => (
+                        <Box
+                            key={q.id}
+                            sx={{
+                                mb: 4,
+                                breakBefore: i === 0 ? "auto" : "page",
+                                pageBreakBefore: i === 0 ? "auto" : "always",
+                                breakInside: "avoid",
+                            }}>
+                            <Typography variant="h5">
+                                Aufgabe {i + 1} - ID {q.id}
+                            </Typography>
+
+                            <QuestionPdfPreview content={q.contentJson} />
                         </Box>
-                    )}
-                    <Box ref={exportRef} sx={{ backgroundColor: "white", p: 2 }}>
-                        {exportQuestions.map((q, i) => (
-                            <Box key={q.id}    sx={{mb: 4, breakBefore: i === 0 ? "auto" : "page", pageBreakBefore: i === 0 ? "auto" : "always", breakInside: "avoid",}}>
-                                <Typography variant="h5">
-                                    Aufgabe {i + 1} - ID {q.id}
-                                </Typography>
-                                <QuestionPdfPreview content={q.contentJson} />
-                            </Box>
-                        ))}
-                    </Box>
-                </DialogContent>
-
-                <DialogActions>
-                    <Button onClick={() => setExportOpen(false)} disabled={exporting}>
-                        Schließen
-                    </Button>
-
-                    <Button
-                        startIcon={<FileDownload />}
-                        variant="contained"
-                        disabled={exporting}
-                        onClick={async () => {
-                            try {
-                                setExporting(true);
-
-                                await document.fonts.ready;
-
-                                const el = exportRef.current;
-                                if (!el) return;
-
-                                await html2pdf()
-                                    .set({
-                                        margin: 10,
-                                        filename: `${survey?.title}_items.pdf`,
-                                        html2canvas: {
-                                            scale: 1,
-                                            useCORS: true,
-                                            backgroundColor: "#fff",
-                                        },
-                                        jsPDF: {
-                                            unit: "mm",
-                                            format: "a4",
-                                        }
-                                    })
-                                    .from(el)
-                                    .save();
-
-                            } finally {
-                                setExporting(false);
-                            }
-                        }}>
-                        Exportieren
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                    ))}
+                </Box>
+            </Box>
         </MainLayout>
     );
 };
