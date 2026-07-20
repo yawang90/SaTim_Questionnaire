@@ -5,8 +5,10 @@ import {
     updateClass,
     deleteClass, getClass,
 } from "../controllers/schoolClassController.js";
+import {teacherAuth} from "../auth/teacherAuthenticate.js";
 
 const router = express.Router();
+router.use(teacherAuth);
 
 router.get("/list", getClasses);
 router.get("/:id", getClass);

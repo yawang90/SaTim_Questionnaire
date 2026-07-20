@@ -25,8 +25,7 @@ interface UpdateClassBody {
 
 export const getClasses = async (_req: Request, res: Response) => {
     try {
-        const classes = await getClassesService();
-
+        const classes = await getClassesService(_req.teacherId!);
         res.json(classes);
     } catch (err) {
         console.error(err);
@@ -42,8 +41,7 @@ export const createClass = async (
     res: Response
 ) => {
     try {
-        const schoolClass = await createClassService(req.body);
-
+        const schoolClass = await createClassService(req.teacherId!, req.body);
         res.status(201).json(schoolClass);
     } catch (err) {
         console.error(err);
@@ -60,6 +58,7 @@ export const updateClass = async (
 ) => {
     try {
         const schoolClass = await updateClassService(
+            req.teacherId!,
             Number(req.params.id),
             req.body
         );
@@ -79,14 +78,12 @@ export const deleteClass = async (
     res: Response
 ) => {
     try {
-        await deleteClassService(Number(req.params.id));
-
+        await deleteClassService(req.teacherId!, Number(req.params.id));
         res.json({
             message: "Class deleted",
         });
     } catch (err) {
         console.error(err);
-
         res.status(500).json({
             message: "Failed to delete class",
         });
@@ -98,8 +95,7 @@ export const getClass = async (
     res: Response
 ) => {
     try {
-        const schoolClass = await getClassService(Number(req.params.id));
-
+        const schoolClass = await getClassService(req.teacherId!, Number(req.params.id));
         if (!schoolClass) {
             return res.status(404).json({
                 message: "Class not found",
