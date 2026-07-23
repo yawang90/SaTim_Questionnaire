@@ -1,10 +1,12 @@
-import type { Request, Response } from "express";
+import type {Request, Response} from "express";
 
 import {
-    getClassesService,
     createClassService,
+    deleteClassService,
+    ensureTeacherBelongsToUserTeam,
+    getClassesService,
+    getClassService,
     updateClassService,
-    deleteClassService, getClassService,
 } from "../services/schoolClassService.js";
 
 export interface ClassTypes {
@@ -23,9 +25,21 @@ interface UpdateClassBody {
     type: ClassTypes["type"];
 }
 
-export const getClasses = async (_req: Request, res: Response) => {
+
+export const getClasses = async (req: Request, res: Response) => {
     try {
-        const classes = await getClassesService(_req.teacherId!);
+        let teacherId: number;
+
+        if (req.params.teacherId) {
+            const userId = Number((req as any).user?.id);
+            if (!userId) return res.status(401).json({ error: "Not authenticated" });
+            teacherId = Number(req.params.teacherId);
+            await ensureTeacherBelongsToUserTeam(userId, teacherId);
+        } else {
+            teacherId = req.teacherId!;
+        }
+
+        const classes = await getClassesService(teacherId);
         res.json(classes);
     } catch (err) {
         console.error(err);
@@ -52,10 +66,7 @@ export const createClass = async (
     }
 };
 
-export const updateClass = async (
-    req: Request<{ id: string }, {}, UpdateClassBody>,
-    res: Response
-) => {
+export const updateClass = async (req: Request<{ id: string }, {}, UpdateClassBody>, res: Response) => {
     try {
         const schoolClass = await updateClassService(
             req.teacherId!,
@@ -73,10 +84,7 @@ export const updateClass = async (
     }
 };
 
-export const deleteClass = async (
-    req: Request<{ id: string }>,
-    res: Response
-) => {
+export const deleteClass = async (req: Request<{ id: string }>, res: Response) => {
     try {
         await deleteClassService(req.teacherId!, Number(req.params.id));
         res.json({
@@ -90,10 +98,7 @@ export const deleteClass = async (
     }
 };
 
-export const getClass = async (
-    req: Request<{ id: string }>,
-    res: Response
-) => {
+export const getClass = async (req: Request<{ id: string }>, res: Response) => {
     try {
         const schoolClass = await getClassService(req.teacherId!, Number(req.params.id));
         if (!schoolClass) {
@@ -111,3 +116,4 @@ export const getClass = async (
         });
     }
 };
+

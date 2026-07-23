@@ -29,11 +29,12 @@ function AppRoutes() {
                 <Route path="/quiz/:id" element={<QuizPage />} />
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/noTeam" element={<NoTeamPage />} />
-                <Route path="/teacher/register" element={<TeacherRegistrationPage />} />
+                <Route path="/teacher/register/:userId" element={<TeacherRegistrationPage />} />
 
                 {/* TEACHER */}
                 <Route path="/teacher/classes" element={<ClassOverviewPage />} />
                 <Route path="/teacher/class/:id" element={<ClassPage/>} />
+                <Route path="/teacher/classes/:teacherId" element={<LoggedInRoute><ClassOverviewPage /></LoggedInRoute>}/>
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />

@@ -23,29 +23,21 @@ import {
     SchoolClassType,
 } from "../../services/ClassService";
 import TeacherLayout from "../../layouts/TeacherLayout.tsx";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 
 const ClassOverviewPage = () => {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(false);
-
     const [openDialog, setOpenDialog] = useState(false);
-    const [newClass, setNewClass] = useState({
-        name: "",
-        type: SchoolClassType.SEK_7,
-    });
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: "",
-        severity: "success" as "success" | "error",
-    });
+    const [newClass, setNewClass] = useState({name: "", type: SchoolClassType.SEK_7,});
+    const [snackbar, setSnackbar] = useState({open: false, message: "", severity: "success" as "success" | "error",});
     const navigate = useNavigate();
+    const { teacherId } = useParams();
 
     const fetchClasses = async () => {
         setLoading(true);
-
         try {
-            const data = await getClasses();
+            const data = await getClasses(teacherId);
             setClasses(data);
         } catch (err) {
             console.error(err);

@@ -1,5 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import bcrypt from "bcrypt";
+import {getUserTeam} from "./teamServices.js";
 
 const saltRounds = 10;
 
@@ -11,6 +12,7 @@ interface RegisterTeacherInput {
     password: string;
     schoolName: string;
     schoolAddress: string;
+    userId: string
 }
 
 export const getTeachersService = async () => {
@@ -30,7 +32,7 @@ export const getTeachersService = async () => {
     });
 };
 
-export const registerTeacherService = async ({firstName, lastName, email, password, schoolName, schoolAddress,}: RegisterTeacherInput) => {
+export const registerTeacherService = async ({firstName, lastName, email, password, schoolName, schoolAddress, userId}: RegisterTeacherInput) => {
     const existingTeacher = await prisma.teacher.findUnique({where: {email,},});
 
     if (existingTeacher) {
@@ -38,6 +40,7 @@ export const registerTeacherService = async ({firstName, lastName, email, passwo
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const teamId = await getUserTeam(userId);
 
     return prisma.teacher.create({
         data: {
@@ -47,6 +50,7 @@ export const registerTeacherService = async ({firstName, lastName, email, passwo
             password: hashedPassword,
             school_name: schoolName,
             school_address: schoolAddress,
+            teamId: teamId
         },
         select: {
             id: true,

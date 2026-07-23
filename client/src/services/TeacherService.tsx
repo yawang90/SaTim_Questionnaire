@@ -18,6 +18,7 @@ export interface RegisterTeacherRequest {
     password: string;
     schoolName: string;
     schoolAddress: string;
+    userId: string;
 }
 
 export interface TeacherLoginRequest {
@@ -32,7 +33,7 @@ export interface TeacherLoginResponse {
 export const getTeachers = async (): Promise<Teacher[]> => {
     const token = localStorage.getItem("token");
 
-    const response = await teacherAuthFetch(`${API_URL}/api/teacher/list`, {
+    const response = await teacherAuthFetch(`${API_URL}/api/teacher/get`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

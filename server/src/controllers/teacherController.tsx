@@ -12,6 +12,7 @@ interface RegisterTeacherBody {
     password: string;
     schoolName: string;
     schoolAddress: string;
+    userId: string;
 }
 
 interface TeacherLoginRequestBody {

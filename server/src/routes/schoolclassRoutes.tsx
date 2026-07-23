@@ -6,14 +6,16 @@ import {
     deleteClass, getClass,
 } from "../controllers/schoolClassController.js";
 import {teacherAuth} from "../auth/teacherAuthenticate.js";
+import {authenticateToken} from "../auth/authenticate.js";
 
 const router = express.Router();
-router.use(teacherAuth);
+router.get("/list", teacherAuth, getClasses);
 
-router.get("/list", getClasses);
-router.get("/:id", getClass);
-router.post("/", createClass);
-router.put("/:id", updateClass);
-router.delete("/:id", deleteClass);
+router.get("/list/:teacherId", authenticateToken, getClasses);
+
+router.get("/:id", teacherAuth, getClass);
+router.post("/", teacherAuth, createClass);
+router.put("/:id", teacherAuth, updateClass);
+router.delete("/:id", teacherAuth, deleteClass);
 
 export default router;

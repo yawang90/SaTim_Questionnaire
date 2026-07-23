@@ -1,5 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import type { ClassTypes } from "../controllers/schoolClassController.js";
+import {getUserTeam} from "./teamServices.js";
 
 export const getClassesService = async (teacherId: number) => {
     return prisma.schoolClass.findMany({
@@ -127,4 +128,28 @@ export const getClassService = async (
             },
         },
     });
+};
+
+
+export const ensureTeacherBelongsToUserTeam = async (
+    userId: number,
+    teacherId: number
+): Promise<void> => {
+    const userTeamId = await getUserTeam(userId);
+    const teacher = await prisma.teacher.findUnique({
+        where: {
+            id: teacherId,
+        },
+        select: {
+            teamId: true,
+        },
+    });
+
+    if (!teacher) {
+        throw new Error("Teacher not found");
+    }
+
+    if (teacher.teamId !== userTeamId) {
+        throw new Error("Access denied");
+    }
 };

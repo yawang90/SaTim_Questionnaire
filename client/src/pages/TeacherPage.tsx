@@ -17,28 +17,24 @@ import {
 } from "@mui/material";
 import {Add} from "@mui/icons-material";
 import {getTeachers, type Teacher,} from "../services/TeacherService.tsx";
+import { useNavigate } from "react-router-dom";
+import {useAuth} from "../contexts/AuthContext.tsx";
 
 const TeacherPage = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [inviteUrl, setInviteUrl] = useState("");
-    const generateInviteLink = async () => {
-        try {
-            setInviteUrl(`${window.location.origin}/teacher/register`);
-        } catch (err) {
-            console.error(err);
-        }
-    };
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
         severity: "success" as "success" | "error",
     });
-
+    const navigate = useNavigate();
+    const {userId} = useAuth();
     const handleOpenAddTeacher = async () => {
         setOpenAddDialog(true);
-        setInviteUrl(`${window.location.origin}/teacher/register`);
+        setInviteUrl(`${window.location.origin}/teacher/register/${userId}`);
     };
 
     useEffect(() => {
@@ -86,20 +82,28 @@ const TeacherPage = () => {
 
                 <Card>
                     <CardHeader title="Lehrpersonen Liste" />
-
                     <CardContent sx={{display: "flex", flexDirection: "column", gap: 2,}}>
                         {teachers.length > 0 ? (
                             teachers.map((teacher) => (
                                 <Card key={teacher.id} variant="outlined">
-                                    <CardContent>
-                                        <Typography variant="subtitle1">
-                                            {teacher.first_name}{" "}
-                                            {teacher.last_name}
-                                        </Typography>
+                                    <CardContent sx={{display: "flex", justifyContent: "space-between", alignItems: "center",}}>
+                                        <Box>
+                                            <Typography variant="subtitle1">
+                                                {teacher.first_name} {teacher.last_name}
+                                            </Typography>
 
-                                        <Typography variant="body2" color="text.secondary">
-                                            {teacher.email}
-                                        </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {teacher.email}
+                                            </Typography>
+
+                                            <Typography variant="body2" color="text.secondary">
+                                                {teacher.school_name}
+                                            </Typography>
+                                        </Box>
+
+                                        <Button variant="outlined" onClick={() => navigate(`/teacher/classes/${teacher.id}`)}>
+                                            Klassenübersicht
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             ))
@@ -122,9 +126,6 @@ const TeacherPage = () => {
                 </DialogContent>
 
                 <DialogActions>
-                    <Button onClick={generateInviteLink}>
-                        Neuen Link generieren
-                    </Button>
                     <Button onClick={() => navigator.clipboard.writeText(inviteUrl)} disabled={!inviteUrl}>
                         Kopieren
                     </Button>

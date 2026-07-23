@@ -41,18 +41,23 @@ export interface UpdateSchoolClassRequest {
 
 const getToken = () => localStorage.getItem("teacherToken");
 
-export const getClasses = async (): Promise<SchoolClass[]> => {
-    const response = await teacherAuthFetch(`${API_URL}/api/schoolclass/list`, {
-        method: "GET",
+export const getClasses = async (teacherId?: string): Promise<SchoolClass[]> => {
+    const url =
+        teacherId !== undefined
+            ? `${API_URL}/api/schoolclass/list/${teacherId}`
+            : `${API_URL}/api/schoolclass/list`;
+
+    const token = teacherId ? localStorage.getItem("token") : localStorage.getItem("teacherToken");
+
+    const response = await fetch(url, {
         headers: {
-            Authorization: `Bearer ${getToken()}`,
+            Authorization: `Bearer ${token}`,
         },
     });
 
     if (!response.ok) {
         throw new Error("Failed to fetch classes");
     }
-
     return response.json();
 };
 

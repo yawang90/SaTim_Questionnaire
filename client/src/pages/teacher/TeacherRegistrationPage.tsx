@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import {Alert, Box, Button, Card, CardContent, CircularProgress, Snackbar, TextField, Typography,} from "@mui/material";
 import {registerTeacher} from "../../services/TeacherService.tsx";
 import GeneralLayout from "../../layouts/GeneralLayout.tsx";
-import { useNavigate } from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 
 const TeacherRegistrationPage = () => {
     const [loading, setLoading] = useState(false);
@@ -18,6 +18,8 @@ const TeacherRegistrationPage = () => {
             open: false,
         }));
     };
+    const {userId} = useParams();
+
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -55,7 +57,11 @@ const TeacherRegistrationPage = () => {
             return;
         }
         try {
-            const { ...teacherData } = form;
+            const teacherData = {
+                ...form,
+                userId: userId ? userId : "",
+            };
+
             await registerTeacher(teacherData);
             setSnackbar({
                 open: true,
