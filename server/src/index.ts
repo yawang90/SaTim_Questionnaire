@@ -11,6 +11,7 @@ import { ComputeEngine } from "@cortex-js/compute-engine";
 import teamRoutes from "./routes/teamRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
 import schoolclassRoutes from "./routes/schoolclassRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/solver', solverRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/student', studentRoutes);
 app.use('/api/schoolclass', schoolclassRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 

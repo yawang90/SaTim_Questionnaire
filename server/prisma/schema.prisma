@@ -258,20 +258,18 @@ model schoolClass {
   teacher           teacher         @relation(fields: [teacherId], references: [id])
   registrationToken String          @unique @default(uuid())
 
-  sus sus[]
+  student student[]
 
   createdAt DateTime @default(now())
 
   @@index([teacherId])
 }
 
-model sus {
+model student {
   id         Int      @id @default(autoincrement())
-  first_name String
-  last_name  String
   password   String
   birthday   DateTime
-  email      String?
+  email      String?  @unique
   externalId String?  @unique
 
   createdAt DateTime @default(now())

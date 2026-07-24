@@ -10,7 +10,7 @@ export const getClassesService = async (teacherId: number) => {
         include: {
             _count: {
                 select: {
-                    sus: true,
+                    student: true,
                 },
             },
         },
@@ -36,7 +36,7 @@ export const createClassService = async (
         include: {
             _count: {
                 select: {
-                    sus: true,
+                    student: true,
                 },
             },
         },
@@ -73,7 +73,7 @@ export const updateClassService = async (
         include: {
             _count: {
                 select: {
-                    sus: true,
+                    student: true,
                 },
             },
         },
@@ -112,19 +112,14 @@ export const getClassService = async (
             teacherId,
         },
         include: {
-            sus: {
+            student: {
                 select: {
                     id: true,
-                    first_name: true,
-                    last_name: true,
                     email: true,
                     birthday: true,
                     externalId: true,
                     createdAt: true,
-                },
-                orderBy: {
-                    last_name: "asc",
-                },
+                }
             },
         },
     });

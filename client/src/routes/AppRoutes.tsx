@@ -18,6 +18,8 @@ import TeacherPage from "../pages/TeacherPage.tsx";
 import TeacherRegistrationPage from "../pages/teacher/TeacherRegistrationPage.tsx";
 import ClassOverviewPage from "../pages/teacher/ClassOverviewPage.tsx";
 import ClassPage from "../pages/teacher/ClassPage.tsx";
+import StudentRegistrationPage from "../pages/sus/StudentRegistrationPage.tsx";
+import StudentDashboardPage from "../pages/sus/StudentDashboardPage.tsx";
 
 function AppRoutes() {
     return (
@@ -30,11 +32,15 @@ function AppRoutes() {
                 <Route path="/table" element={<QuestionsTablePage />} />
                 <Route path="/noTeam" element={<NoTeamPage />} />
                 <Route path="/teacher/register/:userId" element={<TeacherRegistrationPage />} />
+                <Route path="/student/register/:registrationToken" element={<StudentRegistrationPage />} />
 
-                {/* TEACHER */}
+                {/* TEACHER TODO ADD AUTH*/}
                 <Route path="/teacher/classes" element={<ClassOverviewPage />} />
                 <Route path="/teacher/class/:id" element={<ClassPage/>} />
                 <Route path="/teacher/classes/:teacherId" element={<LoggedInRoute><ClassOverviewPage /></LoggedInRoute>}/>
+
+                {/* STUDENT TODO ADD AUTH */}
+                <Route path="/student/tests" element={<StudentDashboardPage />} />
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />
