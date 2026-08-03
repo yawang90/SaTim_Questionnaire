@@ -35,14 +35,18 @@ export const MCChoiceAnswerComponent: React.FC<NodeViewProps> = ({ node }) => {
         return nodes;
     };
 
+    const toggle = () => {
+        setIsChecked(prev => !prev);
+    };
+
     return (
         <NodeViewWrapper
             className="mc-choice-wrapper"
-            style={{display: "inline-flex", flexDirection: "row", alignItems: "center", padding: "0.5rem 1rem", marginRight: "0.5rem", verticalAlign: "top", gap: "0.5rem",}}>
+            onClick={toggle}
+            style={{display: "inline-flex", flexDirection: "row", alignItems: "center", padding: "0.5rem 1rem", marginRight: "0.5rem", verticalAlign: "top", gap: "0.5rem", cursor: "pointer", userSelect: "none",}}>
+            <input type="checkbox" name={`group-${groupId || "default"}`} checked={isChecked} onClick={(e) => e.stopPropagation()} onChange={toggle} style={{marginBottom: "0.25rem", flexShrink: 0,}}/>
 
-            <input type="checkbox" name={`group-${groupId || "default"}`} checked={isChecked} onChange={() => setIsChecked(!isChecked)} style={{ marginBottom: "0.25rem", flexShrink: 0 }}/>
-
-            <div className="mc-choice-content" style={{ display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap" }}>
+            <div className="mc-choice-content" style={{display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap",}}>
                 {renderChildren(node.content)}
             </div>
         </NodeViewWrapper>

@@ -192,10 +192,8 @@ const SurveyUpdatePage = () => {
 
     const handleExportClick = async () => {
         if (!survey) return;
-
         try {
             setPreparingExport(true);
-
             const uniqueQuestionIds = Array.from(
                 new Set(
                     booklets.flatMap(b =>
@@ -203,40 +201,28 @@ const SurveyUpdatePage = () => {
                     )
                 )
             );
-
             const questions = await getQuestionsByIds(uniqueQuestionIds);
-
             await document.fonts.ready;
-
             const zip = new JSZip();
-
             setExportProgress({
                 open: true,
                 current: 0,
                 total: questions.length,
             });
-
             for (let i = 0; i < questions.length; i++) {
-
                 const question = questions[i];
-
                 setExportProgress({
                     open: true,
                     current: i + 1,
                     total: questions.length,
                 });
-
                 setExportQuestion(question);
-
                 await new Promise(resolve => requestAnimationFrame(resolve));
                 await new Promise(resolve => setTimeout(resolve, 150));
-
                 const el = exportRef.current;
-
                 if (!el) {
                     continue;
                 }
-
                 const pdfBlob = await html2pdf()
                     .set({
                         margin: 10,
@@ -317,6 +303,7 @@ const SurveyUpdatePage = () => {
 
         }
     };
+
     const handleExcelExportClick = async () => {
         try {
             if (!survey) return;
@@ -576,7 +563,7 @@ const SurveyUpdatePage = () => {
                         {exportQuestion && (
                             <>
                                 <Typography variant="h5">Aufgabe ID {exportQuestion.id}</Typography>
-                                <QuestionPdfPreview content={exportQuestion.contentJson}/>
+                                <QuestionPdfPreview key={exportQuestion.id} content={exportQuestion.contentJson}/>
                             </>
                         )}
                     </Box>

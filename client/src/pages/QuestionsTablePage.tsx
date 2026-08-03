@@ -273,7 +273,7 @@ export default function QuestionsTablePage() {
                     <DialogContent dividers>
                         { selectedQuestion ? (
                             <Box display="flex" flexDirection="column" gap={1.5}>
-                                <Typography variant="h6">{selectedQuestion.title}</Typography>
+                                <Typography variant="h6">{selectedQuestion?.metadata[0]?.value ||  ""}</Typography>
                                 <Typography variant="body2" color="textSecondary">
                                     <strong>Erstellt von:</strong>{" "}
                                     {createdByUser
