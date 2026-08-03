@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="mydb@localhost" uuid="b925fce9-c374-4cfa-b18d-29543cef2bd9">
+    <data-source source="LOCAL" name="LOCAL_aufgaben-db" uuid="b925fce9-c374-4cfa-b18d-29543cef2bd9">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
@@ -13,7 +13,7 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="aufgaben_db@dpg-d2tavr7fte5s73a2becg-a.frankfurt-postgres.render.com" uuid="109480fd-cb14-4063-8415-2406037a6ac9">
+    <data-source source="LOCAL" name="PROD_aufgaben-db" uuid="109480fd-cb14-4063-8415-2406037a6ac9">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

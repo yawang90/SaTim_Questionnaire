@@ -5,7 +5,6 @@ import ExcelJS from "exceljs";
 import os from "os";
 import path from "path";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
-import fs from "fs";
 
 /**
  * Interface for creating a new survey
@@ -334,7 +333,8 @@ export const getQuestionsByIds = async (ids: number[]) => {
         },
         select: {
             id: true,
-            contentJson: true
+            contentJson: true,
+            contentHtml: true
         }
     });
 };

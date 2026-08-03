@@ -123,7 +123,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     };
 
     const insertHtml = (html: string) => {
-        editor.chain().focus().insertContent(html).run();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        editor.chain().focus().insertContent(doc.body).run();
         setHtmlCode("");
         setHtmlDialogOpen(false);
     };
