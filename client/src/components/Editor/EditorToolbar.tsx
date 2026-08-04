@@ -36,6 +36,7 @@ import Alert from '@mui/material/Alert';
 import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
 import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import CodeIcon from "@mui/icons-material/Code";
 
 const fontFamilies = ['Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Verdana'];
 const fontSizes = ['12px', '14px', '16px', '18px', '24px', '32px'];
@@ -60,6 +61,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
     const [showError, setShowError] = useState(false);
     const [imageWidth, setImageWidth] = useState<number>(300);
     const [imageHeight, setImageHeight] = useState<number>(200);
+    const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
+    const [htmlCode, setHtmlCode] = useState("");
 
     useEffect(() => {
         if (!editor) return;
@@ -117,6 +120,15 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
         editor.chain().focus().insertContent({ type: 'latex', attrs: { latex: code } }).run();
         setLatexCode('');
         setLatexDialogOpen(false);
+    };
+
+    const insertHtml = (html: string) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        editor.chain().focus().insertContent(doc.body).run();
+        setHtmlCode("");
+        setHtmlDialogOpen(false);
     };
 
     return (
@@ -266,6 +278,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                         <FunctionsIcon />
                     </IconButton>
                 </Tooltip>
+
+                <Tooltip title="HTML einfügen">
+                    <IconButton sx={{ color: "text.secondary" }} onClick={() => setHtmlDialogOpen(true)}><CodeIcon />
+                    </IconButton>
+                </Tooltip>
             </Paper>
 
             {/* Image Dialog */}
@@ -334,6 +351,26 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* HTML Dialog */}
+            <Dialog open={htmlDialogOpen} onClose={() => setHtmlDialogOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle>HTML einfügen</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" mb={1}>
+                        HTML-Code einfügen
+                    </Typography>
+                    <TextField fullWidth multiline minRows={12} label="HTML" value={htmlCode} onChange={(e) => setHtmlCode(e.target.value)} sx={{"& textarea": {fontFamily: "monospace",},}}/>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setHtmlDialogOpen(false)}>
+                        Abbrechen
+                    </Button>
+                    <Button variant="contained" disabled={!htmlCode.trim()} onClick={() => insertHtml(htmlCode)}>
+                        Einfügen
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Snackbar open={showError} autoHideDuration={5000} onClose={() => setShowError(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
                 <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: '100%' }}>
                     {errorMessage}

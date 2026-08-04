@@ -32,6 +32,7 @@ export interface SurveyResponse {
 export interface QuestionExport {
     id: number;
     contentJson: any;
+    contentHtml: any;
 }
 
 // @ts-expect-error

@@ -31,6 +31,8 @@ import {
 import {FileDownload} from "@mui/icons-material";
 import {useEffect, useRef, useState} from "react";
 import html2pdf from "html2pdf.js";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import QuestionPdfPreview from "./QuestionPdfPreview.tsx";
 
 export type surveyStatus = "ACTIVE" | "PREPARED" | "IN_PROGRESS" | "FINISHED";
@@ -88,19 +90,12 @@ const SurveyUpdatePage = () => {
     const [bookletDialogOpen, setBookletDialogOpen] = useState(false);
     const [validationErrors, setValidationErrors] = useState<any[]>([]);
     const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-    const [exportChunk, setExportChunk] = useState<Question[]>([]);
     const exportRef = useRef<HTMLDivElement>(null);
     const [preparingExport, setPreparingExport] = useState(false);
     const [excelExport, setExcelExport] = useState(false);
-    const [exportProgress, setExportProgress] = useState<{
-        open: boolean;
-        current: number;
-        total: number;
-    }>({
-        open: false,
-        current: 0,
-        total: 0,
-    });
+    const [exportProgress, setExportProgress] = useState<{ open: boolean; current: number; total: number; }>({open: false, current: 0, total: 0,});
+    const [exportQuestion, setExportQuestion] = useState<Question | null>(null);
+
     useEffect(() => {
         const fetchSurvey = async () => {
             if (!id) return;
@@ -193,45 +188,49 @@ const SurveyUpdatePage = () => {
         }
     };
 
-    const uniqueQuestionCount = Array.from(
-        new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.id)))
-    ).length;
+    const uniqueQuestionCount = Array.from(new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.id)))).length;
 
     const handleExportClick = async () => {
+        if (!survey) return;
         try {
             setPreparingExport(true);
             const uniqueQuestionIds = Array.from(
-                new Set(booklets.flatMap(b => b.bookletQuestion.map(q => q.questionId)))
+                new Set(
+                    booklets.flatMap(b =>
+                        b.bookletQuestion.map(q => q.questionId)
+                    )
+                )
             );
             const questions = await getQuestionsByIds(uniqueQuestionIds);
             await document.fonts.ready;
-            const QUESTIONS_PER_PDF = 30;
-            const totalPdfs = Math.ceil(questions.length / QUESTIONS_PER_PDF);
-            setExportProgress({open: true, current: 0, total: totalPdfs,});
-            for (
-                let start = 0;
-                start < questions.length;
-                start += QUESTIONS_PER_PDF
-            ) {
-                const chunk = questions.slice(start, start + QUESTIONS_PER_PDF);
-                const currentPdf = Math.floor(start / QUESTIONS_PER_PDF) + 1;
-                setExportProgress({open: true, current: currentPdf, total: totalPdfs,});
-                setExportChunk(chunk);
+            const zip = new JSZip();
+            setExportProgress({
+                open: true,
+                current: 0,
+                total: questions.length,
+            });
+            for (let i = 0; i < questions.length; i++) {
+                const question = questions[i];
+                setExportProgress({
+                    open: true,
+                    current: i + 1,
+                    total: questions.length,
+                });
+                setExportQuestion(question);
                 await new Promise(resolve => requestAnimationFrame(resolve));
                 await new Promise(resolve => setTimeout(resolve, 150));
-
                 const el = exportRef.current;
-                if (!el) continue;
-
-                await html2pdf()
+                if (!el) {
+                    continue;
+                }
+                const pdfBlob = await html2pdf()
                     .set({
                         margin: 10,
-                        filename:
-                            `${survey?.title}_items_part_${Math.floor(start / QUESTIONS_PER_PDF) + 1}.pdf`,
+                        filename: `Question_${question.id}.pdf`,
                         html2canvas: {
-                            scale: 1,
+                            scale: 2,
                             useCORS: true,
-                            backgroundColor: "#fff",
+                            backgroundColor: "#ffffff",
                         },
                         jsPDF: {
                             unit: "mm",
@@ -239,11 +238,52 @@ const SurveyUpdatePage = () => {
                         },
                     })
                     .from(el)
-                    .save();
+                    .outputPdf("blob");
+
+                const folder = zip.folder(`Question_${question.id}`);
+
+                folder?.file(
+                    `Question_${question.id}.pdf`,
+                    pdfBlob
+                );
+
+                folder?.file(
+                    `Question_${question.id}.json`,
+                    JSON.stringify(question.contentJson, null, 2)
+                );
+
+                folder?.file(
+                    `Question_${question.id}.html`,
+                    question.contentHtml
+                );
             }
-            setExportChunk([]);
-            setExportProgress({open: false, current: 0, total: 0,});
-            setSnackbar({open: true, severity: "success", message: `${totalPdfs} PDF${totalPdfs > 1 ? "s" : ""} erfolgreich exportiert.`,});
+
+            setExportQuestion(null);
+            const zipBlob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: {
+                    level: 9,
+                },
+            });
+
+            saveAs(
+                zipBlob,
+                `${survey.title}_Questions.zip`
+            );
+
+            setExportProgress({
+                open: false,
+                current: 0,
+                total: 0,
+            });
+
+            setSnackbar({
+                open: true,
+                severity: "success",
+                message: `${questions.length} Aufgaben erfolgreich exportiert.`,
+            });
+
         } catch (err) {
             console.error(err);
             setExportProgress({
@@ -251,13 +291,16 @@ const SurveyUpdatePage = () => {
                 current: 0,
                 total: 0,
             });
+
             setSnackbar({
                 open: true,
-                message: "Fehler beim Exportieren.",
                 severity: "error",
+                message: "Fehler beim Exportieren.",
             });
         } finally {
+            setExportQuestion(null);
             setPreparingExport(false);
+
         }
     };
 
@@ -515,33 +558,15 @@ const SurveyUpdatePage = () => {
                         Exportiere PDF {exportProgress.current} von {exportProgress.total}...
                     </Alert>
                 </Snackbar>
-            </Box>
-            <Box
-                sx={{
-                    position: "fixed",
-                    left: "-10000px",
-                    top: 0,
-                    width: "210mm",
-                    backgroundColor: "white",
-                    p: 2,
-                }}>
-                <Box ref={exportRef}>
-                    {exportChunk.map((q, i) => (
-                        <Box
-                            key={q.id}
-                            sx={{
-                                mb: 4,
-                                breakBefore: i === 0 ? "auto" : "page",
-                                pageBreakBefore: i === 0 ? "auto" : "always",
-                                breakInside: "avoid",
-                            }}>
-                            <Typography variant="h5">
-                                Aufgabe {i + 1} - ID {q.id}
-                            </Typography>
-
-                            <QuestionPdfPreview content={q.contentJson} />
-                        </Box>
-                    ))}
+                <Box sx={{position: "fixed", left: "-10000px", top: 0, width: "210mm", backgroundColor: "white", p: 2,}}>
+                    <Box ref={exportRef}>
+                        {exportQuestion && (
+                            <>
+                                <Typography variant="h5">Aufgabe ID {exportQuestion.id}</Typography>
+                                <QuestionPdfPreview key={exportQuestion.id} content={exportQuestion.contentJson}/>
+                            </>
+                        )}
+                    </Box>
                 </Box>
             </Box>
         </MainLayout>
