@@ -22,6 +22,7 @@ import StudentRegistrationPage from "../pages/sus/StudentRegistrationPage.tsx";
 import StudentDashboardPage from "../pages/sus/StudentDashboardPage.tsx";
 import TeacherProfilePage from "../pages/teacher/TeacherProfilePage.tsx";
 import TestDashboardPage from "../pages/teacher/TestDashboardPage.tsx";
+import StudentProfilePage from "../pages/sus/StudentProfilePage.tsx";
 
 function AppRoutes() {
     return (
@@ -45,6 +46,7 @@ function AppRoutes() {
 
                 {/* STUDENT TODO ADD AUTH */}
                 <Route path="/student/tests" element={<StudentDashboardPage />} />
+                <Route path="/student/profile" element={<StudentProfilePage />} />
 
                 {/* PROTECTED */}
                 <Route path="/dashboard" element={<LoggedInRoute><DashboardPage /></LoggedInRoute>} />

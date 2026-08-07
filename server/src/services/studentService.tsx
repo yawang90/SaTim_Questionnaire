@@ -82,3 +82,18 @@ export const loginStudentService = async (
         },
     });
 };
+
+export const getStudentService = async (
+    studentId: number
+) => {
+    return prisma.student.findUnique({
+        where: {
+            id: studentId,
+        },
+        select: {
+            id: true,
+            email: true,
+            birthday: true,
+        },
+    });
+};

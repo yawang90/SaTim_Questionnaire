@@ -4,8 +4,6 @@ import {studentAuthFetch} from "./StudentAuthFetchHelper.tsx";
 
 export interface Student {
     id: number;
-    first_name: string;
-    last_name: string;
     email?: string;
     birthday: string;
 }
@@ -112,4 +110,27 @@ export const getAssignedTests = async (): Promise<StudentTest[]> => {
 export const logoutStudent = () => {
     localStorage.removeItem("studentToken");
     localStorage.removeItem("studentId");
+};
+
+export const getStudentById = async (id: number): Promise<Student> => {
+
+    const response = await studentAuthFetch(
+        `${API_URL}/api/student/profile/${id}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.json();
+
+        throw new Error(
+            error.message || "Failed to fetch student"
+        );
+    }
+
+    return response.json();
 };
