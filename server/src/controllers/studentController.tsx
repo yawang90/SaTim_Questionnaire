@@ -20,9 +20,21 @@ interface StudentLoginRequestBody {
     password: string;
 }
 
-export const getStudents = async (_req: Request, res: Response) => {
+export const getStudents = async (
+    req: Request<{ classId: string }>,
+    res: Response
+) => {
     try {
-        const students = await getStudentsService();
+        const classId = Number(req.params.classId);
+
+        if (Number.isNaN(classId)) {
+            return res.status(400).json({
+                message: "Invalid class id",
+            });
+        }
+
+        const students = await getStudentsService(classId);
+
         res.json(students);
     } catch (err) {
         console.error(err);

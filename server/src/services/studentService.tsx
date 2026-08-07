@@ -10,16 +10,23 @@ interface RegisterStudentInput {
     registrationToken: string;
 }
 
-export const getStudentsService = async () => {
-
+export const getStudentsService = async (
+    classId: number
+) => {
     return prisma.student.findMany({
+        where: {
+            classId,
+        },
         select: {
             id: true,
             birthday: true,
             email: true,
             createdAt: true,
             classId: true,
-        }
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
     });
 };
 

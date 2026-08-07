@@ -85,7 +85,7 @@ export const getStudents = async (
     classId: number
 ): Promise<Student[]> => {
     const response = await teacherAuthFetch(
-        `${API_URL}/api/schoolclass/${classId}/students`,
+        `${API_URL}/api/student/${classId}`,
         {
             method: "GET",
             headers: {
