@@ -95,3 +95,23 @@ const saveTeacherSession = (result: TeacherLoginResponse) => {
     localStorage.setItem("teacherToken", result.token);
     localStorage.setItem("teacherId", result.teacherId.toString());
 };
+
+export const getTeacherById = async (
+    id: number
+): Promise<Teacher> => {
+    const response = await teacherAuthFetch(
+        `${API_URL}/api/teacher/${id}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch teacher");
+    }
+
+    return await response.json();
+};

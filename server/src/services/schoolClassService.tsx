@@ -1,5 +1,4 @@
 import prisma from "../config/prismaClient.js";
-import type { ClassTypes } from "../controllers/schoolClassController.js";
 import {getUserTeam} from "./teamServices.js";
 
 export const getClassesService = async (teacherId: number) => {
@@ -20,13 +19,7 @@ export const getClassesService = async (teacherId: number) => {
     });
 };
 
-export const createClassService = async (
-    teacherId: number,
-    {
-        name,
-        type,
-    }: ClassTypes
-) => {
+export const createClassService = async (teacherId: number, name: string, type: string) => {
     return prisma.schoolClass.create({
         data: {
             name,
@@ -43,13 +36,15 @@ export const createClassService = async (
     });
 };
 
+interface UpdateClassInput {
+    name: string;
+    type: string;
+}
+
 export const updateClassService = async (
     teacherId: number,
     classId: number,
-    {
-        name,
-        type,
-    }: ClassTypes
+    data: UpdateClassInput
 ) => {
     const schoolClass = await prisma.schoolClass.findFirst({
         where: {
@@ -67,8 +62,8 @@ export const updateClassService = async (
             id: classId,
         },
         data: {
-            name,
-            type,
+            name: data.name,
+            type: data.type,
         },
         include: {
             _count: {

@@ -71,3 +71,20 @@ export const loginTeacherService = async (email: string) => {
         },
     });
 };
+
+export const getTeacherByIdService = async (id: number) => {
+    return prisma.teacher.findUnique({
+        where: {
+            id,
+        },
+        select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            school_name: true,
+            school_address: true,
+            createdAt: true,
+        },
+    });
+};

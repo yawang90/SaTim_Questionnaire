@@ -20,19 +20,28 @@ import {
     createClass,
     getClasses,
     type SchoolClass,
-    SchoolClassType,
 } from "../../services/ClassService";
 import TeacherLayout from "../../layouts/TeacherLayout.tsx";
 import {useNavigate, useParams} from "react-router-dom";
+
+enum SchoolClassType {
+    KANTI_KURZ_1 = "KANTI_KURZ_1",
+    KANTI_KURZ_2 = "KANTI_KURZ_2",
+    KANTI_LANG_1 = "KANTI_LANG_1",
+    SEK_7 = "SEK_7",
+    SEK_8 = "SEK_8",
+    SEK_9 = "SEK_9",
+}
 
 const ClassOverviewPage = () => {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
-    const [newClass, setNewClass] = useState({name: "", type: SchoolClassType.SEK_7,});
+    const [newClass, setNewClass] = useState<{ name: string; type: SchoolClassType | string; }>({name: "", type: SchoolClassType.SEK_7,});
     const [snackbar, setSnackbar] = useState({open: false, message: "", severity: "success" as "success" | "error",});
     const navigate = useNavigate();
     const { teacherId } = useParams();
+    const [customType, setCustomType] = useState("");
 
     const fetchClasses = async () => {
         setLoading(true);
@@ -56,22 +65,26 @@ const ClassOverviewPage = () => {
     }, []);
 
     const handleCreateClass = async () => {
+        if (newClass.type === "CUSTOM" && customType.trim() === "") {
+               setSnackbar({open: true, message: "Bitte eigenen Schultyp eingeben.", severity: "error",});
+            return;
+        }
         try {
-            await createClass(newClass);
-
+            await createClass({
+                name: newClass.name,
+                type: newClass.type === "CUSTOM" ? customType : newClass.type,
+            });
             setSnackbar({
                 open: true,
                 message: "Klasse erfolgreich erstellt.",
                 severity: "success",
             });
-
             setOpenDialog(false);
-
             setNewClass({
                 name: "",
                 type: SchoolClassType.SEK_7,
             });
-
+            setCustomType("");
             fetchClasses();
         } catch (err) {
             console.error(err);
@@ -172,19 +185,32 @@ const ClassOverviewPage = () => {
                             onChange={(e) =>
                                 setNewClass({
                                     ...newClass,
-                                    type: e.target.value as SchoolClassType,
+                                    type: e.target.value,
                                 })
-                            }
-                        >
+                            }>
                             {Object.values(SchoolClassType).map((type) => (
                                 <MenuItem
                                     key={type}
-                                    value={type}
-                                >
+                                    value={type}>
                                     {type}
                                 </MenuItem>
                             ))}
+
+                            <MenuItem value="CUSTOM">
+                                Anderer Schultyp
+                            </MenuItem>
+
                         </TextField>
+                        {newClass.type === "CUSTOM" && (
+                            <TextField
+                                label="Eigener Schultyp"
+                                value={customType}
+                                onChange={(e) =>
+                                    setCustomType(e.target.value)
+                                }
+                                required
+                            />
+                        )}
                     </DialogContent>
 
                     <DialogActions>

@@ -251,12 +251,12 @@ model teacher {
 }
 
 model schoolClass {
-  id                Int             @id @default(autoincrement())
+  id                Int     @id @default(autoincrement())
   name              String
-  type              SchoolClassType
+  type              String
   teacherId         Int
-  teacher           teacher         @relation(fields: [teacherId], references: [id])
-  registrationToken String          @unique @default(uuid())
+  teacher           teacher @relation(fields: [teacherId], references: [id])
+  registrationToken String  @unique @default(uuid())
 
   student student[]
 
@@ -279,13 +279,4 @@ model student {
   schoolClass schoolClass? @relation(fields: [classId], references: [id])
 
   @@index([classId])
-}
-
-enum SchoolClassType {
-  KANTI_KURZ_1
-  KANTI_KURZ_2
-  KANTI_LANG_1
-  SEK_7
-  SEK_8
-  SEK_9
 }

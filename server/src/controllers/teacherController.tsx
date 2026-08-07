@@ -1,6 +1,11 @@
 import type {Request, Response} from "express";
 
-import {getTeachersService, loginTeacherService, registerTeacherService,} from "../services/teacherService.js";
+import {
+    getTeacherByIdService,
+    getTeachersService,
+    loginTeacherService,
+    registerTeacherService,
+} from "../services/teacherService.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -106,6 +111,36 @@ export const loginTeacher = async (
     } catch (err) {
         console.error("Teacher login error:", err);
 
+        res.status(500).json({
+            message: "Server error",
+        });
+    }
+};
+
+export const getTeacherById = async (
+    req: Request<{ id: string }>,
+    res: Response
+) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                message: "Invalid teacher id",
+            });
+        }
+
+        const teacher = await getTeacherByIdService(id);
+
+        if (!teacher) {
+            return res.status(404).json({
+                message: "Teacher not found",
+            });
+        }
+
+        res.json(teacher);
+    } catch (err) {
+        console.error(err);
         res.status(500).json({
             message: "Server error",
         });

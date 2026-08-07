@@ -9,20 +9,9 @@ import {
     updateClassService,
 } from "../services/schoolClassService.js";
 
-export interface ClassTypes {
-    name: string;
-    type:
-        | "KANTI_KURZ_1"
-        | "KANTI_KURZ_2"
-        | "KANTI_LANG_1"
-        | "SEK_7"
-        | "SEK_8"
-        | "SEK_9";
-}
-
 interface UpdateClassBody {
     name: string;
-    type: ClassTypes["type"];
+    type: string;
 }
 
 
@@ -50,13 +39,26 @@ export const getClasses = async (req: Request, res: Response) => {
     }
 };
 
+interface CreateClassBody {
+    name: string;
+    type: string;
+}
+
 export const createClass = async (
-    req: Request<{}, {}, ClassTypes>,
+    req: Request<{}, {}, CreateClassBody>,
     res: Response
 ) => {
     try {
-        const schoolClass = await createClassService(req.teacherId!, req.body);
+        const { name, type } = req.body;
+
+        const schoolClass = await createClassService(
+            req.teacherId!,
+            name,
+            type
+        );
+
         res.status(201).json(schoolClass);
+
     } catch (err) {
         console.error(err);
 

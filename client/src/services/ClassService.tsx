@@ -2,19 +2,10 @@ import { teacherAuthFetch } from "./TeacherAuthFetchHelper.tsx";
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
-export enum SchoolClassType {
-    KANTI_KURZ_1 = "KANTI_KURZ_1",
-    KANTI_KURZ_2 = "KANTI_KURZ_2",
-    KANTI_LANG_1 = "KANTI_LANG_1",
-    SEK_7 = "SEK_7",
-    SEK_8 = "SEK_8",
-    SEK_9 = "SEK_9",
-}
-
 export interface SchoolClass {
     id: number;
     name: string;
-    type: SchoolClassType;
+    type: string;
     teacherId: number;
     createdAt: string;
     studentCount: number;
@@ -31,12 +22,12 @@ export interface Student {
 
 export interface CreateSchoolClassRequest {
     name: string;
-    type: SchoolClassType;
+    type: string;
 }
 
 export interface UpdateSchoolClassRequest {
     name: string;
-    type: SchoolClassType;
+    type: string;
 }
 
 const getToken = () => localStorage.getItem("teacherToken");

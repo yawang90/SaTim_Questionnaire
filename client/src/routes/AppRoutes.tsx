@@ -20,6 +20,7 @@ import ClassOverviewPage from "../pages/teacher/ClassOverviewPage.tsx";
 import ClassPage from "../pages/teacher/ClassPage.tsx";
 import StudentRegistrationPage from "../pages/sus/StudentRegistrationPage.tsx";
 import StudentDashboardPage from "../pages/sus/StudentDashboardPage.tsx";
+import TeacherProfilePage from "../pages/teacher/TeacherProfilePage.tsx";
 
 function AppRoutes() {
     return (
@@ -38,6 +39,7 @@ function AppRoutes() {
                 <Route path="/teacher/classes" element={<ClassOverviewPage />} />
                 <Route path="/teacher/class/:id" element={<ClassPage/>} />
                 <Route path="/teacher/classes/:teacherId" element={<LoggedInRoute><ClassOverviewPage /></LoggedInRoute>}/>
+                <Route path="/teacher/profile" element={<TeacherProfilePage />} />
 
                 {/* STUDENT TODO ADD AUTH */}
                 <Route path="/student/tests" element={<StudentDashboardPage />} />
