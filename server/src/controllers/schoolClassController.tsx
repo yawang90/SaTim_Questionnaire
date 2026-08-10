@@ -1,7 +1,8 @@
 import type {Request, Response} from "express";
 
 import {
-    createClassService,
+    activateClassTestService,
+    createClassService, deactivateClassTestService,
     deleteClassService,
     ensureTeacherBelongsToUserTeam,
     getClassesService,
@@ -143,6 +144,90 @@ export const getClassTests = async (req: Request, res: Response) => {
 
         return res.status(500).json({
             message: "Failed to fetch class tests",
+        });
+    }
+};
+
+
+interface TestInstanceRequestBody {
+    testId: number;
+}
+
+
+export const activateClassTest = async (
+    req: Request<{}, {}, TestInstanceRequestBody>,
+    res: Response
+) => {
+    try {
+        const teacherId = req.teacherId;
+
+        if (!teacherId) {
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+
+        const testId = Number(req.body.testId);
+
+        if (!Number.isInteger(testId)) {
+            return res.status(400).json({
+                message: "Invalid test instance ID",
+            });
+        }
+        const test = await activateClassTestService(teacherId, testId);
+        return res.status(200).json(test);
+
+    } catch (err) {
+        console.error("Failed to activate class test:", err);
+
+        if (err instanceof Error && err.message === "Test instance not found") {
+            return res.status(404).json({
+                message: "Test instance not found",
+            });
+        }
+
+        return res.status(500).json({
+            message: "Failed to activate test",
+        });
+    }
+};
+
+
+export const deactivateClassTest = async (
+    req: Request<{}, {}, TestInstanceRequestBody>,
+    res: Response
+) => {
+    try {
+        const teacherId = req.teacherId;
+
+        if (!teacherId) {
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+
+        const testId = Number(req.body.testId);
+
+        if (!Number.isInteger(testId)) {
+            return res.status(400).json({
+                message: "Invalid test instance ID",
+            });
+        }
+
+        const test = await deactivateClassTestService(teacherId, testId);
+        return res.status(200).json(test);
+
+    } catch (err) {
+        console.error("Failed to deactivate class test:", err);
+
+        if (err instanceof Error && err.message === "Test instance not found") {
+            return res.status(404).json({
+                message: "Test instance not found",
+            });
+        }
+
+        return res.status(500).json({
+            message: "Failed to deactivate test",
         });
     }
 };

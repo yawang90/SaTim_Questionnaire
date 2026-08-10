@@ -1,9 +1,21 @@
 import React, {useEffect, useMemo, useState} from "react";
-import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Snackbar, TextField, Typography,} from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    Chip,
+    Snackbar,
+    TextField,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import {PlayArrow,} from "@mui/icons-material";
 
 import TeacherLayout from "../../layouts/TeacherLayout";
-import {activateTestId, getClassTests, type TeacherTest,} from "../../services/TestService";
+import {activateTestId, deactivateTest, getClassTests, type TeacherTest,} from "../../services/TestService";
 
 const TestDashboardPage = () => {
     const [tests, setTests] = useState<TeacherTest[]>([]);
@@ -22,12 +34,7 @@ const TestDashboardPage = () => {
                 setTests(testData);
             } catch (err) {
                 console.error(err);
-
-                setSnackbar({
-                    open: true,
-                    message: "Tests konnten nicht geladen werden.",
-                    severity: "error",
-                });
+                setSnackbar({open: true, message: "Tests konnten nicht geladen werden.", severity: "error",});
             }
         };
 
@@ -66,39 +73,16 @@ const TestDashboardPage = () => {
 
     const handleToggleTest = async (test: TeacherTest) => {
         try {
-            await activateTestId({
-                surveyId: test.surveyId,
-                classId: test.classId,
-            });
-
-            setSnackbar({
-                open: true,
-                message: test.active
-                    ? "Test wurde deaktiviert."
-                    : "Test wurde aktiviert.",
-                severity: "success",
-            });
-
-            setTests((currentTests) =>
-                currentTests.map((currentTest) =>
-                    currentTest.id === test.id
-                        ? {
-                            ...currentTest,
-                            active: !currentTest.active,
-                        }
-                        : currentTest
-                )
-            );
+            if (test.active) {
+                await deactivateTest(test.id);
+            } else {
+                await activateTestId(test.id);
+            }
+            setSnackbar({open: true, message: test.active ? "Test wurde deaktiviert." : "Test wurde aktiviert.", severity: "success",});
+            setTests((currentTests) => currentTests.map((currentTest) => currentTest.id === test.id ? {...currentTest, active: !currentTest.active,} : currentTest));
         } catch (err) {
             console.error(err);
-
-            setSnackbar({
-                open: true,
-                message: test.active
-                    ? "Test konnte nicht deaktiviert werden."
-                    : "Test konnte nicht aktiviert werden.",
-                severity: "error",
-            });
+            setSnackbar({open: true, message: test.active ? "Test konnte nicht deaktiviert werden." : "Test konnte nicht aktiviert werden.", severity: "error",});
         }
     };
 
@@ -108,12 +92,7 @@ const TestDashboardPage = () => {
                 <Snackbar
                     open={snackbar.open}
                     autoHideDuration={4000}
-                    onClose={() =>
-                        setSnackbar({
-                            ...snackbar,
-                            open: false,
-                        })
-                    }>
+                    onClose={() => setSnackbar({...snackbar, open: false,})}>
                     <Alert severity={snackbar.severity}>
                         {snackbar.message}
                     </Alert>
@@ -137,11 +116,9 @@ const TestDashboardPage = () => {
                     <CardContent>
                         <TextField
                             fullWidth
-                            label="Test oder Klasse suchen"
+                            label="Tests suchen"
                             value={search}
-                            onChange={(e) =>
-                                setSearch(e.target.value)
-                            }
+                            onChange={(e) => setSearch(e.target.value)}
                         />
                     </CardContent>
                 </Card>
@@ -150,10 +127,7 @@ const TestDashboardPage = () => {
                 {Object.keys(groupedTests).length === 0 && (
                     <Card>
                         <CardContent>
-                            <Typography
-                                color="text.secondary"
-                                textAlign="center"
-                            >
+                            <Typography color="text.secondary" textAlign="center">
                                 Keine Tests gefunden.
                             </Typography>
                         </CardContent>
@@ -168,46 +142,24 @@ const TestDashboardPage = () => {
                                 {/* Class header */}
                                 <CardHeader
                                     title={
-                                        <Typography
-                                            variant="h5"
-                                            fontWeight={600}
-                                        >
+                                        <Typography variant="h5" fontWeight={600}>
                                             {className}
                                         </Typography>
                                     }
-                                    subheader={`${classTests.length} ${
-                                        classTests.length === 1
-                                            ? "Test"
-                                            : "Tests"
-                                    }`}
+                                    subheader={`${classTests.length} ${classTests.length === 1 ? "Test" : "Tests"}`}
                                 />
 
                                 <CardContent sx={{pt: 0}}>
                                     {/* Table */}
-                                    <Box
-                                        sx={{
-                                            width: "100%",
-                                            overflowX: "auto",
-                                        }}
-                                    >
+                                    <Box sx={{width: "100%", overflowX: "auto",}}>
                                         <Box
                                             component="table"
-                                            sx={{
-                                                width: "100%",
-                                                borderCollapse: "collapse",
-                                            }}
-                                        >
+                                            sx={{width: "100%", borderCollapse: "collapse",}}>
                                             <Box
                                                 component="thead"
-                                                sx={{
-                                                    borderBottom: "1px solid",
-                                                    borderColor:
-                                                        "divider",
-                                                }}
-                                            >
+                                                sx={{borderBottom: "1px solid", borderColor: "divider",}}>
                                                 <Box component="tr">
-                                                    <Box
-                                                        component="th" sx={{textAlign: "left", p: 1.5,}}>
+                                                    <Box component="th" sx={{textAlign: "left", p: 1.5,}}>
                                                         Test
                                                     </Box>
 
@@ -231,16 +183,12 @@ const TestDashboardPage = () => {
                                                             {/* Test */}
                                                             <Box component="td" sx={{p: 1.5,}}>
                                                                 <Typography fontWeight={500}>
-                                                                    {
-                                                                        test.title
-                                                                    }
+                                                                    {test.title}
                                                                 </Typography>
 
                                                                 {test.description && (
                                                                     <Typography variant="body2" color="text.secondary" sx={{mt: 0.5,}}>
-                                                                        {
-                                                                            test.description
-                                                                        }
+                                                                        {test.description}
                                                                     </Typography>
                                                                 )}
                                                             </Box>
@@ -250,35 +198,22 @@ const TestDashboardPage = () => {
                                                             <Box component="td" sx={{p: 1.5,}}>
                                                                 <Chip
                                                                     size="small"
-                                                                    label={
-                                                                        test.active ? "Aktiv" : "Inaktiv"
-                                                                    }
-                                                                    color={
-                                                                        test.active ? "success" : "default"
-                                                                    }
+                                                                    label={test.active ? "Aktiv" : "Inaktiv"}
+                                                                    color={test.active ? "success" : "default"}
                                                                 />
                                                             </Box>
 
                                                             {/* Action */}
-                                                            <Box
-                                                                component="td"
-                                                                sx={{p: 1.5, textAlign: "right",}}>
+                                                            <Box component="td" sx={{p: 1.5, textAlign: "right",}}>
+                                                                <Tooltip title={"Aktive Tests werden den SuS angezeigt, deaktivierte Tests nicht."}>
                                                                 <Button
                                                                     variant={test.active ? "outlined" : "contained"}
                                                                     color={test.active ? "error" : "primary"}
                                                                     size="small"
-                                                                    startIcon={
-                                                                        !test.active ? (
-                                                                            <PlayArrow/>
-                                                                        ) : undefined
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleToggleTest(
-                                                                            test
-                                                                        )
-                                                                    }>
+                                                                    startIcon={!test.active ? (<PlayArrow/>) : undefined}
+                                                                    onClick={() => handleToggleTest(test)}>
                                                                     {test.active ? "Deaktivieren" : "Aktivieren"}
-                                                            </Button>
+                                                                </Button></Tooltip>
                                                             </Box>
                                                         </Box>
                                                     )

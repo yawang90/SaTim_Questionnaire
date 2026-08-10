@@ -27,12 +27,22 @@ export interface StudentLoginResponse {
 
 export interface StudentTest {
     id: number;
+
     instanceId: number;
+    surveyId: number;
+    classId: number;
+
     title: string;
-    description?: string;
+    description?: string | null;
+
+    name: string;
+
+    mode: string;
+
+    status: "OPEN" | "UPCOMING" | "FINISHED";
+
     validFrom: string;
     validTo: string;
-    status: "OPEN" | "FINISHED";
 }
 
 export const registerStudent = async (data: RegisterStudentRequest) => {
@@ -98,10 +108,23 @@ const saveStudentSession = (result: StudentLoginResponse) => {
 };
 
 export const getAssignedTests = async (): Promise<StudentTest[]> => {
-    const response = await studentAuthFetch(`${API_URL}/api/student/tests`);
+    const response = await studentAuthFetch(
+        `${API_URL}/api/student/assigned-tests`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
+            },
+        }
+    );
 
     if (!response.ok) {
-        throw new Error("Failed to fetch assigned tests");
+        const error = await response.text();
+
+        throw new Error(
+            `Failed to fetch assigned tests: ${error}`
+        );
     }
 
     return response.json();

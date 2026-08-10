@@ -95,18 +95,26 @@ const StudentDashboardPage = () => {
                                                     Gültig bis{" "}
                                                     {new Date(test.validTo).toLocaleDateString()}
                                                 </Typography>
+                                                <Chip
+                                                    label={test.status === "OPEN" ? "Offen" : test.status === "UPCOMING" ? "Noch nicht verfügbar" : "Abgeschlossen"}
+                                                    color={test.status === "OPEN" ? "info" : test.status === "UPCOMING" ? "warning" : "default"}
+                                                />
                                             </Box>
 
                                             <Box display="flex" flexDirection="column" gap={1} alignItems="flex-end">
-                                                <Chip label={test.status} color={test.status === "OPEN"
-                                                    ? "primary"
-                                                    : "success"}/>
 
-                                                <Button variant="contained"
-                                                    onClick={() => navigate(`/quiz/${test.instanceId}`)}>
+                                                <Button
+                                                    variant="contained"
+                                                    disabled={test.status !== "OPEN"}
+                                                    onClick={() =>
+                                                        navigate(`/quiz/${test.instanceId}`)
+                                                    }
+                                                >
                                                     {test.status === "OPEN"
                                                         ? "Starten"
-                                                        : "Ansehen"}
+                                                        : test.status === "UPCOMING"
+                                                            ? "Noch nicht verfügbar"
+                                                            : "Abgeschlossen"}
                                                 </Button>
                                             </Box>
                                         </CardContent>

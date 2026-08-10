@@ -1,9 +1,13 @@
 import express from "express";
 import {
-    getClasses,
+    activateClassTest,
     createClass,
+    deactivateClassTest,
+    deleteClass,
+    getClass,
+    getClasses,
+    getClassTests,
     updateClass,
-    deleteClass, getClass, getClassTests,
 } from "../controllers/schoolClassController.js";
 import {teacherAuth} from "../auth/teacherAuthenticate.js";
 import {authenticateToken} from "../auth/authenticate.js";
@@ -14,6 +18,8 @@ router.get("/list", teacherAuth, getClasses);
 router.get("/list/:teacherId", authenticateToken, getClasses);
 
 router.get("/tests", teacherAuth, getClassTests);
+router.post("/tests/activate", teacherAuth, activateClassTest);
+router.post("/tests/deactivate", teacherAuth, deactivateClassTest);
 router.get("/:id", teacherAuth, getClass);
 router.post("/", teacherAuth, createClass);
 router.put("/:id", teacherAuth, updateClass);

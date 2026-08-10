@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import {
     getStudentsService,
     registerStudentService,
-    loginStudentService, getStudentService,
+    loginStudentService, getStudentService, getAssignedTestsService,
 } from "../services/studentService.js";
 
 import bcrypt from "bcrypt";
@@ -144,6 +144,36 @@ export const getStudent = async (req: Request, res: Response) => {
 
         res.status(500).json({
             message: "Server error",
+        });
+    }
+};
+
+export const getAssignedTests = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const studentId = req.studentId;
+
+        if (!studentId) {return res.status(401).json({message: "Unauthorized",});}
+
+        const tests = await getAssignedTestsService(studentId);
+
+        return res.json(tests);
+    } catch (err) {
+        console.error("Failed to get assigned tests:", err);
+
+        if (
+            err instanceof Error &&
+            err.message === "Student not found"
+        ) {
+            return res.status(404).json({
+                message: "Student not found",
+            });
+        }
+
+        return res.status(500).json({
+            message: "Failed to fetch assigned tests",
         });
     }
 };

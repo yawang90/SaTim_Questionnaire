@@ -150,6 +150,9 @@ export const getClassTestsService = async (teacherId: number) => {
             schoolClass: {
                 teacherId: teacherId,
             },
+            survey: {
+                teacherAssigned: true,
+            }
         },
         include: {
             survey: {
@@ -193,4 +196,135 @@ export const getClassTestsService = async (teacherId: number) => {
         createdAt: instance.createdAt,
         updatedAt: instance.updatedAt,
     }));
+};
+
+export const activateClassTestService = async (
+    teacherId: number,
+    instanceId: number
+) => {
+    const instance = await prisma.classTestInstance.findFirst({
+        where: {
+            id: instanceId,
+            schoolClass: {
+                teacherId,
+            },
+        },
+    });
+
+    if (!instance) {
+        throw new Error("Test instance not found");
+    }
+
+    const updatedInstance = await prisma.classTestInstance.update({
+        where: {
+            id: instanceId,
+        },
+        data: {
+            active: true,
+        },
+        include: {
+            survey: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    mode: true,
+                    status: true,
+                },
+            },
+            schoolClass: {
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                },
+            },
+        },
+    });
+
+    return {
+        id: updatedInstance.id,
+        surveyId: updatedInstance.surveyId,
+        classId: updatedInstance.classId,
+
+        className: updatedInstance.schoolClass.name,
+        classType: updatedInstance.schoolClass.type,
+
+        title: updatedInstance.survey.title,
+        description: updatedInstance.survey.description,
+
+        status: updatedInstance.survey.status,
+        mode: updatedInstance.survey.mode,
+
+        active: updatedInstance.active,
+
+        createdAt: updatedInstance.createdAt,
+        updatedAt: updatedInstance.updatedAt,
+    };
+};
+
+
+export const deactivateClassTestService = async (
+    teacherId: number,
+    instanceId: number
+) => {
+    const instance = await prisma.classTestInstance.findFirst({
+        where: {
+            id: instanceId,
+            schoolClass: {
+                teacherId,
+            },
+        },
+    });
+
+    if (!instance) {
+        throw new Error("Test instance not found");
+    }
+
+    const updatedInstance = await prisma.classTestInstance.update({
+        where: {
+            id: instanceId,
+        },
+        data: {
+            active: false,
+        },
+        include: {
+            survey: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    mode: true,
+                    status: true,
+                },
+            },
+            schoolClass: {
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                },
+            },
+        },
+    });
+
+    return {
+        id: updatedInstance.id,
+        surveyId: updatedInstance.surveyId,
+        classId: updatedInstance.classId,
+
+        className: updatedInstance.schoolClass.name,
+        classType: updatedInstance.schoolClass.type,
+
+        title: updatedInstance.survey.title,
+        description: updatedInstance.survey.description,
+
+        status: updatedInstance.survey.status,
+        mode: updatedInstance.survey.mode,
+
+        active: updatedInstance.active,
+
+        createdAt: updatedInstance.createdAt,
+        updatedAt: updatedInstance.updatedAt,
+    };
 };

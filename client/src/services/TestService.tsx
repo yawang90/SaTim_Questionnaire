@@ -23,11 +23,6 @@ export interface TeacherTest {
     updatedAt: string;
 }
 
-export interface ActivateTestRequest {
-    surveyId: number;
-    classId: number;
-}
-
 export interface TestFilter {
     search?: string;
     status?: string;
@@ -68,9 +63,7 @@ export const getClassTests = async (): Promise<TeacherTest[]> => {
 /**
  * Activate a test for a class.
  */
-export const activateTestId = async (
-    data: ActivateTestRequest
-) => {
+export const activateTestId = async (testId: number) => {
     const response = await teacherAuthFetch(
         `${API_URL}/api/schoolclass/tests/activate`,
         {
@@ -79,7 +72,7 @@ export const activateTestId = async (
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({testId}),
         }
     );
 
@@ -98,17 +91,16 @@ export const activateTestId = async (
 /**
  * Deactivate a test instance.
  */
-export const deactivateTest = async (
-    instanceId: number
-) => {
+export const deactivateTest = async (testId: number) => {
     const response = await teacherAuthFetch(
-        `${API_URL}/api/schoolclass/tests/${instanceId}/deactivate`,
+        `${API_URL}/api/schoolclass/tests/deactivate`,
         {
-            method: "PATCH",
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
             },
+            body: JSON.stringify({testId})
         }
     );
 
