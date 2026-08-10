@@ -143,3 +143,54 @@ export const ensureTeacherBelongsToUserTeam = async (
         throw new Error("Access denied");
     }
 };
+
+export const getClassTestsService = async (teacherId: number) => {
+    const instances = await prisma.classTestInstance.findMany({
+        where: {
+            schoolClass: {
+                teacherId: teacherId,
+            },
+        },
+        include: {
+            survey: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    mode: true,
+                    status: true,
+                },
+            },
+            schoolClass: {
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                },
+            },
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+
+    return instances.map((instance) => ({
+        id: instance.id,
+        surveyId: instance.surveyId,
+        classId: instance.classId,
+
+        className: instance.schoolClass.name,
+        classType: instance.schoolClass.type,
+
+        title: instance.survey.title,
+        description: instance.survey.description,
+
+        status: instance.survey.status,
+        mode: instance.survey.mode,
+
+        active: instance.active,
+
+        createdAt: instance.createdAt,
+        updatedAt: instance.updatedAt,
+    }));
+};

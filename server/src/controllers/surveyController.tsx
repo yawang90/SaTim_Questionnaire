@@ -11,7 +11,7 @@ import {
     getSurveyById,
     getSurveyExport,
     getSurveyInstances,
-    processSurveyExcels,
+    processSurveyExcels, setSurveyTeacherAssignableService,
     updateSurveyById,
     updateSurveyInstanceById,
 } from "../services/surveyService.js";
@@ -330,5 +330,32 @@ export const getQuestionDetailsByIdsHandler = async (req: Request, res: Response
     } catch (err) {
         console.error("Error exporting question details:", err);
         res.status(500).json({message: "Failed to export question details"});
+    }
+};
+
+export const setSurveyTeacherAssignableHandler = async (req: Request<{ surveyId: string }>, res: Response) => {
+    try {
+        const surveyId = Number(req.params.surveyId);
+
+        if (Number.isNaN(surveyId)) {
+            return res.status(400).json({
+                message: "Invalid survey id",
+            });
+        }
+        const { teacherAssigned } = req.body; if (typeof teacherAssigned !== "boolean") { return res.status(400).json({ message: "teacherAssigned must be a boolean", }); }
+        const survey = await setSurveyTeacherAssignableService(surveyId, teacherAssigned);
+        return res.json(survey);
+    } catch (err) {
+        console.error(err);
+
+        if (err instanceof Error && err.message === "Survey not found") {
+            return res.status(404).json({
+                message: "Survey not found",
+            });
+        }
+
+        return res.status(500).json({
+            message: "Failed to assign survey to teachers",
+        });
     }
 };

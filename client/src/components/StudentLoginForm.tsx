@@ -45,7 +45,7 @@ export const StudentLoginForm = ({
             onSuccess?.();
             navigate("/student/tests");
         } catch (err: any) {
-            setSnackbar({open: true, message: err?.message ?? "Login fehlgeschlagen.", severity: "error",});
+            setSnackbar({open: true, message: "Login fehlgeschlagen. Überprüfen Sie ihre Informationen.", severity: "error",});
         } finally {
             setIsLoading(false);
         }

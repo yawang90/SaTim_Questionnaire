@@ -17,7 +17,7 @@ export default function StudentLayout({
         localStorage.removeItem("studentToken");
         localStorage.removeItem("studentId");
 
-        window.location.href = "/student/login";
+        window.location.href = "/";
     };
 
     return (

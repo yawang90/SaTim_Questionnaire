@@ -40,7 +40,7 @@ function AppRoutes() {
                 {/* TEACHER TODO ADD AUTH*/}
                 <Route path="/teacher/classes" element={<ClassOverviewPage />} />
                 <Route path="/teacher/class/:id" element={<ClassPage/>} />
-                <Route path="/teacher/testboard/:id" element={<TestDashboardPage/>} />
+                <Route path="/teacher/testboard" element={<TestDashboardPage/>} />
                 <Route path="/teacher/classes/:teacherId" element={<LoggedInRoute><ClassOverviewPage /></LoggedInRoute>}/>
                 <Route path="/teacher/profile" element={<TeacherProfilePage />} />
 

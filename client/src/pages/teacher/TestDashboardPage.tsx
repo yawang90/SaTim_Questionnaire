@@ -1,225 +1,299 @@
-import React, {useEffect, useState} from "react";
-import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    MenuItem,
-    Select,
-    Snackbar,
-    TextField,
-    Typography,
-} from "@mui/material";
-import {PlayArrow, Search} from "@mui/icons-material";
+import React, {useEffect, useMemo, useState} from "react";
+import {Alert, Box, Button, Card, CardContent, CardHeader, Chip, Snackbar, TextField, Typography,} from "@mui/material";
+import {PlayArrow,} from "@mui/icons-material";
 
 import TeacherLayout from "../../layouts/TeacherLayout";
-import {activateTestId, getTeacherTests, type TeacherTest} from "../../services/TestService";
-import {getClasses, type SchoolClass} from "../../services/ClassService";
+import {activateTestId, getClassTests, type TeacherTest,} from "../../services/TestService";
 
 const TestDashboardPage = () => {
     const [tests, setTests] = useState<TeacherTest[]>([]);
-    const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [search, setSearch] = useState("");
-    const [selectedTest, setSelectedTest] = useState<TeacherTest | null>(null);
-    const [selectedClass, setSelectedClass] = useState<number | "">("");
-    const [openDialog, setOpenDialog] = useState(false);
-    const teacherId = Number(localStorage.getItem("teacherId"));
-    const [snackbar, setSnackbar] = useState({
-        open:false,
-        message:"",
-        severity:"success" as "success" | "error"
-    });
 
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success" as "success" | "error",
+    });
 
     useEffect(() => {
         const load = async () => {
             try {
-                const testData = await getTeacherTests(teacherId);
+                const testData = await getClassTests();
                 setTests(testData);
-                const classData = await getClasses();
-                setClasses(classData);
-            } catch(err) {
+            } catch (err) {
                 console.error(err);
+
+                setSnackbar({
+                    open: true,
+                    message: "Tests konnten nicht geladen werden.",
+                    severity: "error",
+                });
             }
         };
+
         load();
     }, []);
 
-    const filteredTests = tests.filter(test =>
-        test.title
-            .toLowerCase()
-            .includes(search.toLowerCase())
-    );
+    /**
+     * Filter tests by title or class name.
+     */
+    const filteredTests = useMemo(() => {
+        const searchValue = search.toLowerCase().trim();
 
-    const activateTest = async () => {
-        if(!selectedTest || !selectedClass){
-            return;
+        if (!searchValue) {
+            return tests;
         }
-        try {
-            await activateTestId({surveyId: selectedTest.id, classId: selectedClass});
-            setSnackbar({open:true, message:"Test wurde aktiviert.", severity:"success"});
-            setOpenDialog(false);
-            setSelectedClass("");
 
-        } catch(err){
-            console.error(err);
+        return tests.filter((test) =>
+            test.title.toLowerCase().includes(searchValue));
+    }, [tests, search]);
+
+    const groupedTests = useMemo(() => {
+        return filteredTests.reduce<Record<string, TeacherTest[]>>(
+            (groups, test) => {
+                if (!groups[test.className]) {
+                    groups[test.className] = [];
+                }
+
+                groups[test.className].push(test);
+
+                return groups;
+            },
+            {}
+        );
+    }, [filteredTests]);
+
+
+    const handleToggleTest = async (test: TeacherTest) => {
+        try {
+            await activateTestId({
+                surveyId: test.surveyId,
+                classId: test.classId,
+            });
+
             setSnackbar({
-                open:true,
-                message:"Test konnte nicht aktiviert werden.",
-                severity:"error"
+                open: true,
+                message: test.active
+                    ? "Test wurde deaktiviert."
+                    : "Test wurde aktiviert.",
+                severity: "success",
+            });
+
+            setTests((currentTests) =>
+                currentTests.map((currentTest) =>
+                    currentTest.id === test.id
+                        ? {
+                            ...currentTest,
+                            active: !currentTest.active,
+                        }
+                        : currentTest
+                )
+            );
+        } catch (err) {
+            console.error(err);
+
+            setSnackbar({
+                open: true,
+                message: test.active
+                    ? "Test konnte nicht deaktiviert werden."
+                    : "Test konnte nicht aktiviert werden.",
+                severity: "error",
             });
         }
     };
 
     return (
         <TeacherLayout>
-            <Box sx={{maxWidth:1000, mx:"auto", py:3}}>
-                <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({...snackbar, open:false})}>
+            <Box sx={{maxWidth: 1100, mx: "auto", py: 4,}}>
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={4000}
+                    onClose={() =>
+                        setSnackbar({
+                            ...snackbar,
+                            open: false,
+                        })
+                    }>
                     <Alert severity={snackbar.severity}>
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Box>
-                        <Typography variant="h4">
-                            Meine Tests
-                        </Typography>
 
-                        <Typography color="text.secondary">
-                            Tests verwalten und für Klassen aktivieren.
-                        </Typography>
-                    </Box>
+                {/* Header */}
+                <Box mb={4}>
+                    <Typography variant="h4" fontWeight={600}>
+                        Meine Tests
+                    </Typography>
+
+                    <Typography color="text.secondary" mt={1}>
+                        Tests verwalten und für deine Klassen aktivieren.
+                    </Typography>
                 </Box>
 
-                <Card sx={{mb:3}}>
-                    <CardHeader title="Filter"/>
-                    <CardContent>
+                {/* Search */}
+                <Card sx={{mb: 4}}>
+                    <CardHeader title="Tests suchen"/>
 
+                    <CardContent>
                         <TextField
                             fullWidth
-                            label="Test suchen"
+                            label="Test oder Klasse suchen"
                             value={search}
-                            onChange={(e)=>
+                            onChange={(e) =>
                                 setSearch(e.target.value)
                             }
-                            InputProps={{
-                                startAdornment:<Search/>
-                            }}
                         />
                     </CardContent>
                 </Card>
 
-                <Card>
+                {/* No results */}
+                {Object.keys(groupedTests).length === 0 && (
+                    <Card>
+                        <CardContent>
+                            <Typography
+                                color="text.secondary"
+                                textAlign="center"
+                            >
+                                Keine Tests gefunden.
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                )}
 
-                    <CardHeader
-                        title={`Tests (${filteredTests.length})`}
-                    />
-                    <CardContent>
-                        {
-                            filteredTests.length === 0 ? (
-                                <Typography color="text.secondary">
-                                    Keine Tests gefunden.
-                                </Typography>
-                            ) : (
-                                <Box display="flex" flexDirection="column" gap={2}>
-                                    {
-                                        filteredTests.map(test => (
-                                            <Card key={test.id} variant="outlined">
+                {/* Classes */}
+                <Box display="flex" flexDirection="column" gap={4}>
+                    {Object.entries(groupedTests).map(
+                        ([className, classTests]) => (
+                            <Card key={className}>
+                                {/* Class header */}
+                                <CardHeader
+                                    title={
+                                        <Typography
+                                            variant="h5"
+                                            fontWeight={600}
+                                        >
+                                            {className}
+                                        </Typography>
+                                    }
+                                    subheader={`${classTests.length} ${
+                                        classTests.length === 1
+                                            ? "Test"
+                                            : "Tests"
+                                    }`}
+                                />
 
-                                                <CardContent>
+                                <CardContent sx={{pt: 0}}>
+                                    {/* Table */}
+                                    <Box
+                                        sx={{
+                                            width: "100%",
+                                            overflowX: "auto",
+                                        }}
+                                    >
+                                        <Box
+                                            component="table"
+                                            sx={{
+                                                width: "100%",
+                                                borderCollapse: "collapse",
+                                            }}
+                                        >
+                                            <Box
+                                                component="thead"
+                                                sx={{
+                                                    borderBottom: "1px solid",
+                                                    borderColor:
+                                                        "divider",
+                                                }}
+                                            >
+                                                <Box component="tr">
                                                     <Box
-                                                        display="flex"
-                                                        justifyContent="space-between">
-
-                                                        <Typography variant="h6">
-                                                            {test.title}
-                                                        </Typography>
-
-                                                        <Chip label={test.status}/>
+                                                        component="th" sx={{textAlign: "left", p: 1.5,}}>
+                                                        Test
                                                     </Box>
 
-                                                    <Typography color="text.secondary" mt={1}>
-                                                        {test.description || "Keine Beschreibung"}
-                                                    </Typography>
+                                                    <Box component="th" sx={{textAlign: "left", p: 1.5,}}>
+                                                        Status
+                                                    </Box>
 
-                                                    <Button sx={{mt:2}} variant="contained" startIcon={<PlayArrow/>} onClick={()=>{setSelectedTest(test);setOpenDialog(true);}}>
-                                                        Aktivieren
-                                                    </Button>
-                                                </CardContent>
-                                            </Card>
+                                                    <Box component="th" sx={{textAlign: "right", p: 1.5,}}>
+                                                        Aktion
+                                                    </Box>
+                                                </Box>
+                                            </Box>
 
-                                        ))}
-                                </Box>)}
-                    </CardContent>
+                                            <Box component="tbody">
+                                                {classTests.map(
+                                                    (test) => (
+                                                        <Box
+                                                            component="tr"
+                                                            key={test.id}
+                                                            sx={{borderBottom: "1px solid", borderColor: "divider", "&:last-child": {borderBottom: "none",},}}>
+                                                            {/* Test */}
+                                                            <Box component="td" sx={{p: 1.5,}}>
+                                                                <Typography fontWeight={500}>
+                                                                    {
+                                                                        test.title
+                                                                    }
+                                                                </Typography>
 
-                </Card>
-
-                <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
-
-                    <DialogTitle>
-                        Test aktivieren
-                    </DialogTitle>
-
-                    <DialogContent>
-                        <Typography mb={2}>
-                            {selectedTest?.title}
-                        </Typography>
-
-
-                        <Select
-                            fullWidth
-                            value={selectedClass}
-                            onChange={(e)=> setSelectedClass(Number(e.target.value))}
-                            displayEmpty>
-
-                            <MenuItem value="">
-                                Klasse auswählen
-                            </MenuItem>
+                                                                {test.description && (
+                                                                    <Typography variant="body2" color="text.secondary" sx={{mt: 0.5,}}>
+                                                                        {
+                                                                            test.description
+                                                                        }
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
 
 
-                            {
-                                classes.map(c=>(
-                                    <MenuItem
-                                        key={c.id}
-                                        value={c.id}
-                                    >
-                                        {c.name}
-                                    </MenuItem>
-                                ))
-                            }
+                                                            {/* Status */}
+                                                            <Box component="td" sx={{p: 1.5,}}>
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={
+                                                                        test.active ? "Aktiv" : "Inaktiv"
+                                                                    }
+                                                                    color={
+                                                                        test.active ? "success" : "default"
+                                                                    }
+                                                                />
+                                                            </Box>
 
-                        </Select>
-
-                    </DialogContent>
-                    <DialogActions>
-
-                        <Button onClick={()=> setOpenDialog(false)}>
-                            Abbrechen
-                        </Button>
-
-
-                        <Button variant="contained" onClick={activateTest}>
-                            Aktivieren
-                        </Button>
-
-                    </DialogActions>
-
-
-                </Dialog>
-
+                                                            {/* Action */}
+                                                            <Box
+                                                                component="td"
+                                                                sx={{p: 1.5, textAlign: "right",}}>
+                                                                <Button
+                                                                    variant={test.active ? "outlined" : "contained"}
+                                                                    color={test.active ? "error" : "primary"}
+                                                                    size="small"
+                                                                    startIcon={
+                                                                        !test.active ? (
+                                                                            <PlayArrow/>
+                                                                        ) : undefined
+                                                                    }
+                                                                    onClick={() =>
+                                                                        handleToggleTest(
+                                                                            test
+                                                                        )
+                                                                    }>
+                                                                    {test.active ? "Deaktivieren" : "Aktivieren"}
+                                                            </Button>
+                                                            </Box>
+                                                        </Box>
+                                                    )
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        )
+                    )}
+                </Box>
             </Box>
-
         </TeacherLayout>
-
     );
 };
-
 
 export default TestDashboardPage;

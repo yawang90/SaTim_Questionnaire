@@ -113,13 +113,15 @@ model survey {
   bookletMappingExcelUrl String?
   bookletVersion         Int              @default(0)
   isTwoTier              Boolean          @default(false)
+  teacherAssigned        Boolean          @default(false)
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
   answer    answer[] @relation("BelogsToSurvey")
 
-  team_id Int?
-  team    team? @relation(fields: [team_id], references: [id])
+  team_id           Int?
+  team              team?               @relation(fields: [team_id], references: [id])
+  classTestInstance classTestInstance[]
 }
 
 model surveyInstance {
@@ -258,7 +260,8 @@ model schoolClass {
   teacher           teacher @relation(fields: [teacherId], references: [id])
   registrationToken String  @unique @default(uuid())
 
-  student student[]
+  student       student[]
+  testInstances classTestInstance[]
 
   createdAt DateTime @default(now())
 
@@ -279,4 +282,19 @@ model student {
   schoolClass schoolClass? @relation(fields: [classId], references: [id])
 
   @@index([classId])
+}
+
+model classTestInstance {
+  id          Int         @id @default(autoincrement())
+  surveyId    Int
+  survey      survey      @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  classId     Int
+  schoolClass schoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  active      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([surveyId, classId])
+  @@index([classId])
+  @@index([surveyId])
 }

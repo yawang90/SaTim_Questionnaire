@@ -27,6 +27,7 @@ export interface SurveyResponse {
     }[];
     hasActiveInstance?: boolean;
     isTwoTier: boolean;
+    teacherAssigned: boolean;
 }
 
 export interface QuestionExport {
@@ -344,4 +345,32 @@ export async function getQuestionDetailsByIds(ids: number[], surveyTitle: string
     }
 
     return await res.blob();
+}
+
+export async function assignSurveyToTeachers(surveyId: number, teacherAssigned: boolean): Promise<SurveyResponse> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("User not authenticated");
+    }
+    const response = await fetch(
+        `${API_BASE}/api/survey/teacher-assign/${surveyId}`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ teacherAssigned, }),
+        }
+    );
+
+    if (!response.ok) {
+        const message = await response.text();
+
+        throw new Error(
+            `Failed to assign survey to teachers: ${message}`
+        );
+    }
+
+    return await response.json();
 }

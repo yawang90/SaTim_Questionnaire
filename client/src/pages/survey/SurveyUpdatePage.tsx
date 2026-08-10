@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import MainLayout from "../../layouts/MainLayout.tsx";
 import {
+    assignSurveyToTeachers,
     type Booklet,
     getQuestionDetailsByIds,
     getQuestionsByIds,
@@ -62,6 +63,7 @@ interface SurveyDetail {
     file2?: File | null;
     hasActiveInstance?: boolean;
     isTwoTier: boolean;
+    teacherAssigned: boolean;
 }
 
 const statusLabels: Record<SurveyDetail["status"], string> = {
@@ -118,7 +120,8 @@ const SurveyUpdatePage = () => {
                     file1: null,
                     file2: null,
                     hasActiveInstance: data.hasActiveInstance,
-                    isTwoTier: data.isTwoTier
+                    isTwoTier: data.isTwoTier,
+                    teacherAssigned: data.teacherAssigned
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
@@ -336,6 +339,38 @@ const SurveyUpdatePage = () => {
         }
     };
 
+    const handleSurveyAssignmentClick = async () => {
+        try {
+            if (!survey) return;
+            const teacherAssigned = !survey.teacherAssigned;
+            await assignSurveyToTeachers(survey.id, teacherAssigned);
+            setSurvey((prev) => ({...prev, teacherAssigned: teacherAssigned,}));
+
+            if (teacherAssigned) {
+                setSnackbar({
+                    open: true,
+                    message: "Test wurde den Lehrpersonen zugewiesen.",
+                    severity: "success",
+                });
+            } else {
+                setSnackbar({
+                    open: true,
+                    message: "Zuweisung wurde entfernt.",
+                    severity: "success",
+                });
+            }
+
+        } catch (error) {
+            console.error(error);
+
+            setSnackbar({
+                open: true,
+                message: "Test konnte nicht zugewiesen werden.",
+                severity: "error",
+            });
+        }
+    };
+
 
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
@@ -442,32 +477,6 @@ const SurveyUpdatePage = () => {
                         <Button variant="outlined" sx={{mr: 2}} onClick={() => setBookletDialogOpen(true)}>
                             Booklets anzeigen ({booklets.length})
                         </Button>
-                        <Button
-                            variant="outlined"
-                            sx={{ mr: 2 }}
-                            startIcon={<FileDownload />}
-                            onClick={handleExportClick}
-                            disabled={saving || preparingExport}
-                        >
-                            {preparingExport ? (
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <CircularProgress size={20} />
-                                    Exportiere...
-                                </Box>
-                            ) : (
-                                <>Booklet Items (PDF)</>
-                            )}
-                        </Button>
-                        <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExcelExportClick} disabled={saving || excelExport}>
-                            {excelExport ? (
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <CircularProgress size={20} />
-                                    Laden...
-                                </Box>) : (
-                                <>Aufgaben Details (XLSX)
-                                </>
-                            )}
-                        </Button>
                         <Dialog open={bookletDialogOpen} onClose={() => setBookletDialogOpen(false)} fullScreen maxWidth="sm">
                             <DialogTitle>Booklets</DialogTitle>
                             <DialogContent>
@@ -488,7 +497,36 @@ const SurveyUpdatePage = () => {
                         </Dialog>
                     </Paper>
                 )}
-
+                <Paper sx={{ p: 3 }}>
+                    <Typography sx={{ pb: 3 }} variant="h5">Exports</Typography>
+                    <Button variant="outlined" sx={{ mr: 2 }} startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
+                        {preparingExport ? (
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <CircularProgress size={20} />
+                                Exportiere...
+                            </Box>
+                        ) : (
+                            <>Booklet Items (PDF)</>
+                        )}
+                    </Button>
+                    <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExcelExportClick} disabled={saving || excelExport}>
+                        {excelExport ? (
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <CircularProgress size={20} />
+                                Laden...
+                            </Box>) : (
+                            <>Aufgaben Details (XLSX)
+                            </>
+                        )}
+                    </Button>
+                </Paper>
+                <Paper sx={{ p: 3 }}>
+                    <Typography sx={{ pb: 3 }} variant="h5">Zuweisung an alle Lehrpersonen</Typography>
+                    <Typography sx={{ pb: 1 }}>Schaltet die Erhebung für alle Lehrer frei, die Lehrperson kann dann eigenständig die Erhebung für einzelne Klassen aktivieren/deaktivieren.</Typography>
+                    <Button variant="contained" onClick={handleSurveyAssignmentClick}>
+                        {survey.teacherAssigned ? "Zuweisung entfernen" : "Zuweisen"}
+                    </Button>
+                </Paper>
                 <Dialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)} fullWidth maxWidth="sm">
                     <DialogTitle>Excel Dateien hochladen</DialogTitle>
                     <DialogContent>

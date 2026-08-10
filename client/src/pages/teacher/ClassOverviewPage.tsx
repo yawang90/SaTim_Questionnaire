@@ -146,10 +146,6 @@ const ClassOverviewPage = () => {
                                                 onClick={() => navigate(`/teacher/class/${schoolClass.id}`)}>
                                                 Verwalten
                                             </Button>
-                                            <Button variant="contained" size="small"
-                                                    onClick={() => navigate(`/teacher/testboard/${schoolClass.id}`)}>
-                                                Test Übersicht
-                                            </Button>
                                         </Box>
                                     </CardContent>
                                 </Card>

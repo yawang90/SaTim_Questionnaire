@@ -17,7 +17,7 @@ export default function TeacherLayout({
         localStorage.removeItem("teacherToken");
         localStorage.removeItem("teacherId");
 
-        window.location.href = "/teacher/login";
+        window.location.href = "/";
     };
 
     return (
@@ -42,7 +42,16 @@ export default function TeacherLayout({
                         >
                             Klassen
                         </Link>
-
+                        <Link
+                            component={RouterLink}
+                            to="/teacher/testboard"
+                            color="inherit"
+                            underline="none"
+                            sx={{ mr: 3 }}
+                            variant="button"
+                        >
+                            Testübersicht
+                        </Link>
                         <Link
                             component={RouterLink}
                             to="/teacher/profile"

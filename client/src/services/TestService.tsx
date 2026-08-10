@@ -1,31 +1,32 @@
-import { teacherAuthFetch } from "./TeacherAuthFetchHelper.tsx";
+import {teacherAuthFetch} from "./TeacherAuthFetchHelper.tsx";
 
 // @ts-ignore
 const API_URL = import.meta.env.VITE_API_URL;
 
-
 export interface TeacherTest {
     id: number;
+    surveyId: number;
+    classId: number;
+
+    className: string;
+    classType: string;
+
     title: string;
-    description?: string;
+    description?: string | null;
+
     status: string;
     mode: string;
+
+    active: boolean;
+
     createdAt: string;
-
-    assignedClasses?: {
-        id: number;
-        name: string;
-    }[];
-
-    activeInstances?: number;
+    updatedAt: string;
 }
-
 
 export interface ActivateTestRequest {
     surveyId: number;
     classId: number;
 }
-
 
 export interface TestFilter {
     search?: string;
@@ -34,21 +35,15 @@ export interface TestFilter {
 }
 
 
-export const getTeacherTests = async (teacherId: number, filters?: TestFilter): Promise<TeacherTest[]> => {
-    const params = new URLSearchParams();
-    if (filters?.search) {
-        params.append("search", filters.search);
-    }
+/**
+ * Get all test instances assigned to a specific class.
+ *
+ * The teacher is authenticated through teacherAuthFetch.
+ */
+export const getClassTests = async (): Promise<TeacherTest[]> => {
 
-    if (filters?.status) {
-        params.append("status", filters.status);
-    }
-
-    if (filters?.mode) {
-        params.append("mode", filters.mode);
-    }
     const response = await teacherAuthFetch(
-        `${API_URL}/api/teacher/${teacherId}/tests?${params.toString()}`,
+        `${API_URL}/api/schoolclass/tests`,
         {
             method: "GET",
             headers: {
@@ -57,16 +52,27 @@ export const getTeacherTests = async (teacherId: number, filters?: TestFilter): 
             },
         }
     );
+
     if (!response.ok) {
-        throw new Error("Failed to fetch teacher tests");
+        const error = await response.text();
+
+        throw new Error(
+            `Failed to fetch class tests: ${error}`
+        );
     }
+
     return response.json();
 };
 
 
-export const activateTestId = async (data: ActivateTestRequest) => {
+/**
+ * Activate a test for a class.
+ */
+export const activateTestId = async (
+    data: ActivateTestRequest
+) => {
     const response = await teacherAuthFetch(
-        `${API_URL}/api/teacher/tests/activate`,
+        `${API_URL}/api/schoolclass/tests/activate`,
         {
             method: "POST",
             headers: {
@@ -76,6 +82,7 @@ export const activateTestId = async (data: ActivateTestRequest) => {
             body: JSON.stringify(data),
         }
     );
+
     if (!response.ok) {
         const error = await response.json();
 
@@ -83,37 +90,19 @@ export const activateTestId = async (data: ActivateTestRequest) => {
             error.message || "Failed to activate test"
         );
     }
+
     return response.json();
 };
 
 
-export const getClassTests = async (
-    classId: number
-): Promise<TeacherTest[]> => {
-
-    const response = await teacherAuthFetch(
-        `${API_URL}/api/teacher/class/${classId}/tests`,
-        {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            },
-        }
-    )
-
-    if (!response.ok) {
-        throw new Error("Failed to fetch class tests");
-    }
-    return response.json();
-};
-
-
+/**
+ * Deactivate a test instance.
+ */
 export const deactivateTest = async (
     instanceId: number
 ) => {
     const response = await teacherAuthFetch(
-        `${API_URL}/api/teacher/tests/${instanceId}/deactivate`,
+        `${API_URL}/api/schoolclass/tests/${instanceId}/deactivate`,
         {
             method: "PATCH",
             headers: {
@@ -122,8 +111,14 @@ export const deactivateTest = async (
             },
         }
     );
+
     if (!response.ok) {
-        throw new Error("Failed to deactivate test");
+        const error = await response.json();
+
+        throw new Error(
+            error.message || "Failed to deactivate test"
+        );
     }
+
     return response.json();
 };

@@ -12,7 +12,7 @@ import {
     uploadSurveyExcelsHandler,
     getSurveyBookletsHandler,
     getSurveyExportHandler,
-    getQuestionsByIdsHandler, getQuestionDetailsByIdsHandler,
+    getQuestionsByIdsHandler, getQuestionDetailsByIdsHandler, setSurveyTeacherAssignableHandler,
 } from "../controllers/surveyController.js";
 import { authenticateToken } from "../auth/authenticate.js";
 import multer from "multer";
@@ -36,7 +36,7 @@ router.delete("/instance/:id", deleteSurveyInstanceHandler);
 
 router.get("/:id/booklets", getSurveyBookletsHandler);
 router.post("/:id/export", getSurveyExportHandler);
-
+router.post("/teacher-assign/:surveyId", setSurveyTeacherAssignableHandler);
 router.post("/questions", getQuestionsByIdsHandler);
 router.post("/questionDetails", getQuestionDetailsByIdsHandler);
 

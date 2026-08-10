@@ -34,10 +34,7 @@ export const TeacherLoginForm = ({
         } catch (err: any) {
             setSnackbar({
                 open: true,
-                message:
-                    err?.message ??
-                    "Login fehlgeschlagen.",
-                severity: "error",
+                message: "Login fehlgeschlagen. Überprüfen Sie ihre Informationen.", severity: "error",
             });
         } finally {
             setIsLoading(false);

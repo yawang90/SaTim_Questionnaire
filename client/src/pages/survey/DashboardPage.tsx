@@ -45,6 +45,7 @@ interface Survey {
     }[];
     hasActiveInstance?: boolean;
     isTwoTier: boolean;
+    teacherAssigned: boolean;
 }
 
 const DashboardPage = () => {
@@ -92,7 +93,8 @@ const DashboardPage = () => {
                 createdAt: created.createdAt,
                 status: mapStatus(created.status ?? "IN_PROGRESS"),
                 mode: newSurvey.mode,
-                isTwoTier: created.isTwoTier
+                isTwoTier: created.isTwoTier,
+                teacherAssigned: false
             };
             setSurveys([survey, ...surveys]);
             setSnackbar({open: true, message: "Erhebung erfolgreich erstellt!", severity: "success",});
@@ -167,7 +169,8 @@ const DashboardPage = () => {
                             mode: s.mode.toLowerCase() as "adaptiv" | "design",
                             instances: s.instances,
                             hasActiveInstance: s.hasActiveInstance,
-                            isTwoTier: s.isTwoTier
+                            isTwoTier: s.isTwoTier,
+                            teacherAssigned: s.teacherAssigned
                         };
                     })
                 );
@@ -299,6 +302,8 @@ const DashboardPage = () => {
                                         </Box>
                                         <Box  mt={1}>
                                             {survey.isTwoTier && (<Chip label="Zweistufig" size="small"/>)}
+                                            {survey.teacherAssigned && (<Tooltip title={"Die Erhebung wurde an Klassen verteilt"} arrow>
+                                                <Chip label="Lehrpersonen zugewiesen" color="info" size="small" sx={{ cursor: "help" }}/></Tooltip>)}
                                         </Box>
                                     </CardContent>
                                     <CardActions>

@@ -937,3 +937,48 @@ function sanitizeExcelValue(value:any) {
         ""
     );
 }
+
+export const setSurveyTeacherAssignableService = async (surveyId: number, teacherAssigned: boolean
+) => {
+    return prisma.$transaction(async (tx) => {
+        const survey = await tx.survey.findUnique({
+            where: {
+                id: surveyId,
+            },
+        });
+
+        if (!survey) {
+            throw new Error("Survey not found");
+        }
+
+        const updatedSurvey = await tx.survey.update({
+            where: {
+                id: surveyId,
+            },
+            data: {
+                teacherAssigned,
+            },
+        });
+
+        if (teacherAssigned) {
+            const classes = await tx.schoolClass.findMany({
+                select: {
+                    id: true,
+                },
+            });
+
+            if (classes.length > 0) {
+                await tx.classTestInstance.createMany({
+                    data: classes.map((schoolClass) => ({
+                        surveyId,
+                        classId: schoolClass.id,
+                        active: false,
+                    })),
+                    skipDuplicates: true,
+                });
+            }
+        }
+
+        return updatedSurvey;
+    });
+};
