@@ -344,8 +344,16 @@ const SurveyUpdatePage = () => {
             if (!survey) return;
             const teacherAssigned = !survey.teacherAssigned;
             await assignSurveyToTeachers(survey.id, teacherAssigned);
-            setSurvey((prev) => ({...prev, teacherAssigned: teacherAssigned,}));
+            setSurvey((prev) => {
+                if (!prev) {
+                    return prev;
+                }
 
+                return {
+                    ...prev,
+                    teacherAssigned: !prev.teacherAssigned,
+                };
+            });
             if (teacherAssigned) {
                 setSnackbar({
                     open: true,

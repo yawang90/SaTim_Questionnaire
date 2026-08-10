@@ -24,6 +24,7 @@ import {
 import TeacherLayout from "../../layouts/TeacherLayout.tsx";
 import {useNavigate, useParams} from "react-router-dom";
 
+// @ts-ignore
 enum SchoolClassType {
     KANTI_KURZ_1 = "KANTI_KURZ_1",
     KANTI_KURZ_2 = "KANTI_KURZ_2",
@@ -31,7 +32,7 @@ enum SchoolClassType {
     SEK_7 = "SEK_7",
     SEK_8 = "SEK_8",
     SEK_9 = "SEK_9",
-}
+};
 
 const ClassOverviewPage = () => {
     const [classes, setClasses] = useState<SchoolClass[]>([]);
