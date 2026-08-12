@@ -47,6 +47,7 @@ interface SurveyDetail {
     mode: "DESIGN" | "ADAPTIV";
     booklet?: { id: number }[];
     hasBooklet?: boolean;
+    knowledgeSpaceFileUrl?: string;
 }
 
 interface SurveyInstance {
@@ -108,7 +109,8 @@ const SurveyInstancePage = () => {
                 status: (data.status ?? "IN_PROGRESS") as surveyStatus,
                 mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                 booklet: data.booklet,
-                hasBooklet: data.hasBooklet
+                hasBooklet: data.hasBooklet,
+                knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl
             });
 
             const inst = await getSurveyInstances(data.id);
@@ -240,8 +242,25 @@ const SurveyInstancePage = () => {
                 <Paper sx={{ p: 3 }}>
                         <Typography variant="h5" gutterBottom>Durchführungen</Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <Tooltip title={!survey.hasBooklet ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden." : survey.status === "FINISHED" ? "Die Erhebung wurde bereits geschlossen, es können keine Durchführungen mehr angelegt werden.": ""} arrow>
-                       <span><Button disabled={!survey.hasBooklet || survey.status === "FINISHED"} variant="contained" color="primary" startIcon={<Add />} onClick={() => setInstanceDialogOpen(true)}>Neue Durchführung erstellen</Button></span>
+                    <Tooltip
+                        title={
+                            survey.status === "FINISHED"
+                                ? "Die Erhebung wurde bereits geschlossen, es können keine Durchführungen mehr angelegt werden."
+                                : survey.mode === "ADAPTIV" && !survey.knowledgeSpaceFileUrl
+                                    ? "Vor der Erstellung muss ein Knowledge Space hochgeladen werden."
+                                    : survey.mode === "DESIGN" && !survey.hasBooklet
+                                        ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden."
+                                        : ""} arrow>
+                        <span>
+                            <Button
+                                disabled={survey.status === "FINISHED" || (survey.mode === "ADAPTIV" && !survey.knowledgeSpaceFileUrl) || (survey.mode === "DESIGN" && !survey.hasBooklet)}
+                                variant="contained"
+                                color="primary"
+                                startIcon={<Add />}
+                                onClick={() => setInstanceDialogOpen(true)}>
+                                Neue Durchführung erstellen
+                            </Button>
+                        </span>
                     </Tooltip>
                     <Button sx={{ ml: 2 }}  variant="contained" color="primary" startIcon={<FileDownload />} onClick={() => setExportDialogOpen(true)} disabled={instances.length === 0}>
                         Ergebnisse Exportieren

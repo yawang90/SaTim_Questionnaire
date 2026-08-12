@@ -13,7 +13,7 @@ import {
     getSurveyInstances,
     processSurveyExcels, setSurveyTeacherAssignableService,
     updateSurveyById,
-    updateSurveyInstanceById,
+    updateSurveyInstanceById, uploadKnowledgeSpaceService,
 } from "../services/surveyService.js";
 import fs from "fs";
 /**
@@ -357,5 +357,20 @@ export const setSurveyTeacherAssignableHandler = async (req: Request<{ surveyId:
         return res.status(500).json({
             message: "Failed to assign survey to teachers",
         });
+    }
+};
+
+export const uploadKnowledgeSpace = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const surveyId = Number(req.params.surveyId);
+        if (!req.file) {return res.status(400).json({message: "Keine Excel-Datei hochgeladen.",});}
+        const result = await uploadKnowledgeSpaceService(surveyId, req.file);
+        return res.status(200).json({message: "Knowledge Space erfolgreich hochgeladen.", ...result,});
+    } catch (error: any) {
+        console.error("Knowledge Space upload error:", error);
+        return res.status(400).json({message: error?.message ?? "Knowledge Space konnte nicht verarbeitet werden.",});
     }
 };

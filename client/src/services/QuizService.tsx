@@ -23,6 +23,7 @@ export interface Quiz {
     skippedQuestions: number[];
     isTwoTier: boolean;
     feedback: {[key: string]: string};
+    isAdaptive: boolean;
 }
 
 export interface LineEquationAnswer {

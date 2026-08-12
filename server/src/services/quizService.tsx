@@ -1,5 +1,8 @@
 import prisma from "../config/prismaClient.js";
 import type {Prisma} from "@prisma/client";
+import type {survey, surveyInstance} from "@prisma/client";
+import * as XLSX from "xlsx";
+import {halfsplitQuestion} from "./assessmentService.js";
 
 export interface QuizQuestion {
     id: number;
@@ -25,6 +28,7 @@ export interface NextQuestion {
     isTwoTier: boolean;
     feedback?: Record<string, string> | null;
     solved: boolean;
+    isAdaptive: boolean;
 }
 
 export async function getQuiz(instanceId: string, userId: string, questionId?: number, nextQuestionId?: number, freeParam?: string): Promise<NextQuestion> {
@@ -40,9 +44,101 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         where: {id: instance.surveyId},
     });
     if (!survey) throw new Error("Test nicht gefunden.");
+    if (survey.mode === "ADAPTIV") {
+        return getAdaptiveQuiz(survey, instance, userId, questionId, nextQuestionId, freeParam);
+    }
+    return getDesignQuiz(survey, instance, userId, questionId, nextQuestionId, freeParam);
+}
+
+const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId: string, questionId?: number, nextQuestionId?: number, freeParam?: string): Promise<NextQuestion> => {
+    let adaptiveAnswer = await prisma.adaptiveAnswer.findUnique({
+        where: {
+            surveyId_surveyInstanceId_userId: {
+                surveyId: survey.id,
+                surveyInstanceId: instance.id,
+                userId,
+            },
+        },
+        include: {
+            questionsAnswers: {
+                include: {
+                    feedbackAnswer: true,
+                },
+            },
+        },
+    });
+
+    if (!adaptiveAnswer) {
+        if (!survey.knowledgeSpaceFileUrl) {
+            throw new Error("KNOWLEDGE_SPACE_NOT_FOUND");
+        }
+        const { ks, itemColumns } = await fetchKnowledgeSpace(survey.knowledgeSpaceFileUrl);
+        const initialProbability = 1 / ks.length;
+        const probs = ks.map(() => initialProbability);
+        adaptiveAnswer = await prisma.adaptiveAnswer.create({
+            data: {
+                surveyId: survey.id,
+                surveyInstanceId: instance.id,
+                userId,
+                knowledgeSpace: ks,
+                adaptiveProbs: probs,
+                freeParam: freeParam ?? null,
+                questionIds: [],
+            },
+            include: {
+                questionsAnswers: {
+                    include: {
+                        feedbackAnswer: true,
+                    },
+                },
+            },
+        });
+    }
+    if (!adaptiveAnswer) {throw new Error("adaptive answer should exist");}
+
+    const ks = adaptiveAnswer.knowledgeSpace as number[][];
+    const questionIds = adaptiveAnswer.questionIds;
+
+    let nextQuestion: QuizQuestion | null = null;
+
+    const probs = Array(ks.length).fill(1/ks.length);
+    // TODO some sort of probability threshold need to be checked here
+
+    const selectedQuestionId = await halfsplitQuestion(probs, ks);
+    nextQuestion = await prisma.question.findUnique({
+        where: {
+            id: selectedQuestionId,
+        }});
+
+    const cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion.id, contentJson: nextQuestion.contentJson,} : null;
+    return {
+        surveyId: survey.id,
+        surveyTitle: survey.title,
+        instanceId: instance.id,
+        question: cleanNextQuestion,
+        answerId: adaptiveAnswer.id,
+        bookletId: 99999,
+        totalQuestions: 0,
+        answeredQuestions: 0,
+        questionIds,
+        answeredQuestionIds: [],
+        skipped: false,
+        solved: false,
+        previousAnswer: null,
+        skippedQuestions: [],
+        isTwoTier: survey.isTwoTier,
+        feedback: null,
+        isAdaptive: true
+    };
+};
+
+const getDesignQuiz = async (survey: survey, instance: surveyInstance, userId: string, questionId?: number, nextQuestionId?: number, freeParam?: string): Promise<NextQuestion> => {
     let answerRecord = await prisma.answer.findFirst({
-        where: { surveyId: survey.id, instanceId: instance.id, userId },
-        include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: { orderBy: { position: "asc" } } } } },
+        where: {surveyId: survey.id, instanceId: instance.id, userId},
+        include: {
+            questionsAnswers: {include: {feedbackAnswer: true},},
+            booklet: {include: {bookletQuestion: {orderBy: {position: "asc"}}}}
+        },
     });
     if (!answerRecord) {
         const booklet = await assignBookletToUser(survey.id);
@@ -52,26 +148,29 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
                 instanceId: instance.id,
                 bookletId: booklet.id,
                 userId,
-                freeParam: freeParam ? freeParam: null,
+                freeParam: freeParam ? freeParam : null,
                 questionIds: booklet.bookletQuestion.map(bq => bq.question.id),
             },
-            include: { questionsAnswers: {include: {feedbackAnswer: true},}, booklet: { include: { bookletQuestion: true } } },
+            include: {
+                questionsAnswers: {include: {feedbackAnswer: true},},
+                booklet: {include: {bookletQuestion: true}}
+            },
         });
     }
     let nextQuestion: QuizQuestion | null = null;
     if (questionId !== undefined) {
-        nextQuestion = await prisma.question.findUnique({ where: { id: questionId } });
+        nextQuestion = await prisma.question.findUnique({where: {id: questionId}});
     } else {
         if (nextQuestionId !== undefined) {
             const i = answerRecord.questionIds.indexOf(nextQuestionId);
             const nextId = answerRecord.questionIds[i + 1];
             if (nextId) {
-                nextQuestion = await prisma.question.findUnique({where: { id: nextId},});
+                nextQuestion = await prisma.question.findUnique({where: {id: nextId},});
             }
         } else {
             const firstId = answerRecord.questionIds[0];
             if (firstId) {
-                nextQuestion = await prisma.question.findUnique({where: { id: firstId},});
+                nextQuestion = await prisma.question.findUnique({where: {id: firstId},});
             }
         }
     }
@@ -120,6 +219,7 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
     const answeredQuestions = answeredQuestionIds.length;
     let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion?.id, contentJson: nextQuestion?.contentJson} : null;
     return {
+        isAdaptive: false,
         surveyId: survey.id,
         surveyTitle: survey.title,
         instanceId: instance.id,
@@ -129,15 +229,16 @@ export async function getQuiz(instanceId: string, userId: string, questionId?: n
         totalQuestions,
         answeredQuestions,
         questionIds: answerRecord.questionIds,
-        answeredQuestionIds:answeredQuestionIds,
+        answeredQuestionIds: answeredQuestionIds,
         skipped: previousAnswer ? previousAnswer.skipped : false,
         solved: previousAnswer ? previousAnswer.solved : false,
         previousAnswer: previousAnswer ? previousAnswer.answerJson : null,
         skippedQuestions: skippedQuestionIds,
         isTwoTier: survey.isTwoTier,
-        feedback: previousFeedback? previousFeedback : null
+        feedback: previousFeedback ? previousFeedback : null
     };
 }
+
 
 export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue, isSolved: boolean) {
     const answerRecord = await prisma.answer.findFirst({
@@ -172,16 +273,16 @@ async function assignBookletToUser(surveyId: number) {
     return prisma.$transaction(async tx => {
 
         const booklets = await tx.booklet.findMany({
-            where: { surveyId },
+            where: {surveyId},
             include: {
                 bookletQuestion: {
-                    orderBy: { position: "asc" },
+                    orderBy: {position: "asc"},
                     include: {
                         question: true,
                     },
                 },
                 answer: {
-                    select: { id: true },
+                    select: {id: true},
                 },
             },
         });
@@ -225,8 +326,8 @@ async function assignBookletToUser(surveyId: number) {
 
 export async function skipQuestion(userId: string, questionId: number, instanceId: number) {
     const answerRecord = await prisma.answer.findFirst({
-        where: { userId, instanceId },
-        include: { questionsAnswers: true },
+        where: {userId, instanceId},
+        include: {questionsAnswers: true},
     });
     if (!answerRecord) {
         throw new Error("ANSWER_RECORD_NOT_FOUND");
@@ -238,7 +339,7 @@ export async function skipQuestion(userId: string, questionId: number, instanceI
         throw new Error("ANSWER_QUESTIONS_RECORD_NOT_FOUND");
     }
     return prisma.questionAnswer.update({
-        where: { id: qa.id },
+        where: {id: qa.id},
         data: {
             skipped: true,
             solved: false,
@@ -268,13 +369,14 @@ export async function trackQuestionTime(userId: string, questionId: number, inst
         data: {
             solvedTime: {
                 increment: seconds
-            }}
+            }
+        }
     })
 }
 
 export async function startQuestionSession(userId: string, questionId: number, instanceId: number) {
     const answer = await prisma.answer.findFirst({
-        where: { userId, instanceId }
+        where: {userId, instanceId}
     });
     if (!answer) return;
     const qa = await prisma.questionAnswer.findUnique({
@@ -301,15 +403,15 @@ export async function startQuestionSession(userId: string, questionId: number, i
         });
     } else {
         await prisma.questionSolvingSession.update({
-            where: { id: openSession.id },
-            data: { endTime: new Date() }
+            where: {id: openSession.id},
+            data: {endTime: new Date()}
         });
     }
 }
 
 export async function endQuestionSession(userId: string, questionId: number, instanceId: number) {
     const answer = await prisma.answer.findFirst({
-        where: { userId, instanceId }
+        where: {userId, instanceId}
     });
     if (!answer) return;
     const qa = await prisma.questionAnswer.findUnique({
@@ -330,33 +432,38 @@ export async function endQuestionSession(userId: string, questionId: number, ins
     if (!openSession) return;
     const now = new Date();
     await prisma.questionSolvingSession.update({
-        where: { id: openSession.id },
-        data: { endTime: now }
+        where: {id: openSession.id},
+        data: {endTime: now}
     });
     const duration =
         (now.getTime() - openSession.startTime.getTime()) / 1000;
     await prisma.questionAnswer.update({
-        where: { id: qa.id },
+        where: {id: qa.id},
         data: {
-            solvedTime: { increment: duration }
+            solvedTime: {increment: duration}
         }
     });
 }
 
 export async function endQuizSession(userId: string, instanceId: number) {
     const answer = await prisma.answer.findFirst({
-        where: { userId, instanceId }
+        where: {userId, instanceId}
     });
     if (!answer) return;
     await prisma.answer.update({
-        where: { id: answer.id },
+        where: {id: answer.id},
         data: {
             endedAt: new Date(),
         },
     });
 }
 
-export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: { instanceId: number; questionId: number; userId: string; feedback: Record<string, string>; }) => {
+export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: {
+    instanceId: number;
+    questionId: number;
+    userId: string;
+    feedback: Record<string, string>;
+}) => {
     const answerRecord = await prisma.answer.findFirst({
         where: {userId, instanceId,},
         include: {questionsAnswers: true,},
@@ -391,12 +498,12 @@ export const saveFeedback = async ({instanceId, questionId, userId, feedback,}: 
 
     await prisma.$transaction(operations);
 
-    return { success: true };
+    return {success: true};
 };
 
 export const syncAnonymousUser = async (externalId: string) => {
     const user = await prisma.anonymousUser.upsert({
-        where: { externalId },
+        where: {externalId},
         update: {},
         create: {
             externalId,
@@ -404,3 +511,49 @@ export const syncAnonymousUser = async (externalId: string) => {
     });
     return user;
 };
+
+async function fetchKnowledgeSpace(knowledgeSpaceFileUrl: string): Promise<{ ks: number[][]; itemColumns: string[]; }> {
+    const response = await fetch(knowledgeSpaceFileUrl);
+    if (!response.ok) {
+        throw new Error(`Knowledge Space konnte nicht geladen werden: ${response.status} ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const workbook = XLSX.read(Buffer.from(arrayBuffer), {type: "buffer",});
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+        throw new Error("Knowledge Space Excel-Datei enthält kein Tabellenblatt.");
+    }
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {
+        throw new Error(`Das Tabellenblatt "${sheetName}" konnte nicht gefunden werden.`);
+    }
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+        defval: null,
+    });
+    if (rows.length === 0) {
+        throw new Error("Knowledge Space Excel-Datei ist leer.");
+    }
+    const firstRow = rows[0];
+
+    if (!firstRow) {
+        throw new Error("Knowledge Space Excel-Datei ist leer.");
+    }
+    const columns = Object.keys(firstRow);
+    if (columns.length < 2) {
+        throw new Error("Knowledge Space muss mindestens eine Zustands-Spalte und eine Aufgaben-Spalte enthalten.");
+    }
+
+    const itemColumns = columns.slice(1);
+
+    const ks = rows.map((row, rowIndex) => {
+        return itemColumns.map((column) => {
+            const value = row[column];
+            if (value !== 0 && value !== 1) {
+                throw new Error(`Ungültiger Wert in Zeile ${rowIndex + 2}, Spalte "${column}".`);
+            }
+            return Number(value);
+        });
+    });
+
+    return {ks, itemColumns,};
+}

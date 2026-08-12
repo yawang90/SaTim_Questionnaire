@@ -104,12 +104,21 @@ export default function QuizPage() {
 
     useEffect(() => {
         const initUser = async () => {
+            const studentId = localStorage.getItem("studentId");
+            if (studentId) {
+                setUserId(studentId);
+                setInternalUserId(studentId);
+                return;
+            }
+
             const key = "quizUserId";
             const expiryKey = "quizUserIdExpiry";
+
             let storedUser = localStorage.getItem(key);
             const expiry = localStorage.getItem(expiryKey);
-            const now = new Date().getTime();
-            if (!storedUser || !expiry || now > parseInt(expiry)) {
+            const now = Date.now();
+
+            if (!storedUser || !expiry || now > parseInt(expiry, 10)) {
                 storedUser = uuidv4();
                 const fourteenDays = 14 * 24 * 60 * 60 * 1000;
                 localStorage.setItem(key, storedUser);
@@ -120,7 +129,7 @@ export default function QuizPage() {
                 const user = await syncAnonymousUser(storedUser);
                 setInternalUserId(user.id);
             } catch (err) {
-                console.error("Failed to sync user:", err);
+                console.error("Failed to sync anonymous user:", err);
             }
         };
         initUser();
@@ -150,13 +159,17 @@ export default function QuizPage() {
             }
             setQuiz(data);
             setFeedback(data.feedback || {});
-            setQuizFinished(data.answeredQuestions === data.totalQuestions);
-            if (!questionIds.length && data.questionIds) {
-                setQuestionIds(data.questionIds);
-            }
-            if (data.question && data.questionIds) {
-                const idx = data.questionIds.indexOf(data.question.id);
-                setCurrentIndex(idx >= 0 ? idx : 0);
+            if (data.isAdaptive) {
+                setQuizFinished(!data.question);
+            } else {
+                setQuizFinished(data.answeredQuestions !== undefined && data.totalQuestions !== undefined && data.answeredQuestions === data.totalQuestions);
+                if (!questionIds.length && data.questionIds) {
+                    setQuestionIds(data.questionIds);
+                }
+                if (data.question && data.questionIds) {
+                    const idx = data.questionIds.indexOf(data.question.id);
+                    setCurrentIndex(idx >= 0 ? idx : 0);
+                }
             }
             setGeoGebraAnswers([]);
         } catch (err: any){
@@ -193,6 +206,11 @@ export default function QuizPage() {
         try {
             setSubmitting(true);
             await submitAnswer(answerDTO, userId);
+            if (quiz.isAdaptive) {
+                setSnackbar({open: true, message: `Die Antwort ist gespeichert.`, severity: 'success',});
+                await fetchQuizData(answerDTO.questionId);
+                return;
+            }
             if (solved) {
                 setSnackbar({open: true, message: `Die Antwort ist gespeichert, du kannst sie jederzeit wieder ändern.`, severity: 'success',});
             }
@@ -284,7 +302,8 @@ export default function QuizPage() {
         <>
             <AppBar position="static" sx={{ width: '100%' }}>
                 <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1, px: 2 }}>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+                    {!quiz?.isAdaptive && (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
                         {questionIds.map((qid, index) => {
                             const isCurrent = quiz?.question?.id === qid;
                             const isAnswered = quiz?.answeredQuestionIds?.includes(qid);
@@ -309,7 +328,11 @@ export default function QuizPage() {
                                 </Button></Tooltip>
                             );
                         })}
-                    </Box>
+                    </Box>)}
+                    {quiz?.isAdaptive ? (
+                        <Typography variant="body2">Adaptiver Test</Typography>) : (
+                        <Typography variant="body2">AufgabenId: {quiz?.question?.id}</Typography>
+                    )}
                     <Box sx={{ color: "white", ml: 2 }}>
                         <Stack spacing={0.5}>
                             <Typography variant="body2">UserId: {internalUserId ?? userId}</Typography>
@@ -321,9 +344,9 @@ export default function QuizPage() {
 
             <main style={{padding: '2rem'}}>
                 {!quizFinished ? (
-                    <Box sx={{mt: 4, display: "flex", alignItems: "center", margin: "auto", mb: 4,}}>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Button
+                    <Box sx={{mb: 4, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", width: "100%"}}>
+                        {!quiz?.isAdaptive && (<Box sx={{ display: "flex", gap: 1, position: "absolute", left: 0}}>
+                                <Button
                                 variant="outlined"
                                 onClick={async () => {
                                     await handleTestAnswers(false);
@@ -350,11 +373,12 @@ export default function QuizPage() {
                                 disabled={currentIndex >= questionIds.length - 1}>
                                 Weiter
                             </Button>
-                        </Box>
-                        <Box sx={{display: "flex", gap: 1, mx: "auto",}}>
-                            <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
+                        </Box>)}
+                        <Box sx={{display: "flex", gap: 1}}>
+                            {!quiz?.isAdaptive && (
+                                <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
                                 Überspringen
-                            </Button>
+                            </Button>)}
                             <Button
                                 variant="contained"
                                 color="primary"
@@ -368,11 +392,9 @@ export default function QuizPage() {
                                 )}
                             </Button>
                         </Box>
-                        <Box sx={{ width: 300 }} />
                     </Box>
                 ) : (<></>)}
                 <Box sx={{border: '2px solid', borderRadius: 2, p: 3, mb: 4}}>
-
                     {quizFinished ? (
                         <Box sx={{ textAlign: 'center', py: 6 }}>
                             <Typography variant="body1">
@@ -382,9 +404,10 @@ export default function QuizPage() {
                                 Bitte füllen Sie jetzt diese Umfrage aus!
                             </Button>
                             <Box sx={{pb: 4}}></Box>
-                            <Button color="secondary" onClick={() => {setQuizFinished(false)}}>
+                            {!quiz?.isAdaptive && (
+                                <Button color="secondary" onClick={() => {setQuizFinished(false)}}>
                                 Zurück zu den Aufgaben
-                            </Button>
+                            </Button>)}
                         </Box>
                     ) : (quiz?.question && (<Preview content={quiz.question.contentJson} editorRef={editorRef} onGeoGebraChange={handleGeoGebraChange}/>))}
                 </Box>
@@ -414,9 +437,10 @@ export default function QuizPage() {
                 {!quizFinished ? (
                     <Box sx={{mt: 4, display: "flex", alignItems: "center", margin: "auto", mb: 4,}}>
                         <Box sx={{display: "flex", gap: 1, mx: "auto",}}>
-                        <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
+                            {!quiz?.isAdaptive && (
+                                <Button startIcon={<SkipNextIcon />} variant="outlined" color="warning" onClick={handleSkip} disabled={submitting}>
                             Überspringen
-                        </Button>
+                        </Button>)}
                         <Button
                             variant="contained"
                             color="primary"

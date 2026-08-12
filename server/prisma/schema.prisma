@@ -114,6 +114,7 @@ model survey {
   bookletVersion         Int              @default(0)
   isTwoTier              Boolean          @default(false)
   teacherAssigned        Boolean          @default(false)
+  knowledgeSpaceFileUrl  String?
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])
@@ -122,6 +123,7 @@ model survey {
   team_id           Int?
   team              team?               @relation(fields: [team_id], references: [id])
   classTestInstance classTestInstance[]
+  adaptiveAnswer    adaptiveAnswer[]
 }
 
 model surveyInstance {
@@ -136,10 +138,11 @@ model surveyInstance {
   updatedById    Int
   bookletVersion Int      @default(0)
 
-  survey    survey   @relation(fields: [surveyId], references: [id])
-  createdBy users    @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
-  updatedBy users    @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
-  answer    answer[] @relation("BelongsToInstance")
+  survey         survey           @relation(fields: [surveyId], references: [id])
+  createdBy      users            @relation("CreatedSurveyInstances", fields: [createdById], references: [id])
+  updatedBy      users            @relation("UpdatedSurveyInstances", fields: [updatedById], references: [id])
+  answer         answer[]         @relation("BelongsToInstance")
+  adaptiveAnswer adaptiveAnswer[] @relation("BelongsToAdaptiveInstance")
 
   team_id Int?
   team    team? @relation(fields: [team_id], references: [id])
@@ -189,9 +192,31 @@ model answer {
   @@index([userId, instanceId])
 }
 
+model adaptiveAnswer {
+  id                Int              @id @default(autoincrement())
+  surveyId          Int
+  surveyInstanceId  Int
+  userId            String
+  questionIds       Int[]
+  questionsAnswers  questionAnswer[] @relation("AdaptiveQuestionAnswers")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  endedAt           DateTime?
+  freeParam         String?
+  adaptiveProbs     Json?
+  currentQuestionId Int?
+  knowledgeSpace    Json
+
+  survey         survey         @relation(fields: [surveyId], references: [id])
+  surveyInstance surveyInstance @relation("BelongsToAdaptiveInstance", fields: [surveyInstanceId], references: [id])
+
+  @@unique([surveyId, surveyInstanceId, userId])
+  @@index([userId, surveyInstanceId])
+}
+
 model questionAnswer {
   id               Int                      @id @default(autoincrement())
-  answerId         Int
+  answerId         Int?
   questionId       Int
   answerJson       Json?
   createdAt        DateTime                 @default(now())
@@ -200,11 +225,16 @@ model questionAnswer {
   solvingTimeEnd   DateTime?
   skipped          Boolean                  @default(false)
   solved           Boolean                  @default(false)
-  answer           answer                   @relation("BelongsToAnswer", fields: [answerId], references: [id])
+  answer           answer?                  @relation("BelongsToAnswer", fields: [answerId], references: [id])
   sessions         questionSolvingSession[]
   feedbackAnswer   feedbackAnswer[]
+  adaptiveAnswer   adaptiveAnswer?          @relation("AdaptiveQuestionAnswers", fields: [adaptiveAnswerId], references: [id])
+  adaptiveAnswerId Int?
 
   @@unique([answerId, questionId])
+  @@unique([adaptiveAnswerId, questionId])
+  @@index([answerId])
+  @@index([adaptiveAnswerId])
 }
 
 model questionSolvingSession {

@@ -374,3 +374,30 @@ export async function assignSurveyToTeachers(surveyId: number, teacherAssigned: 
 
     return await response.json();
 }
+
+export const uploadKnowledgeSpace = async (surveyId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("knowledgeSpace", file);
+    const response = await fetch(
+        `${API_BASE}/api/survey/${surveyId}/knowledge-space`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+            },
+            body: formData,
+        }
+    );
+
+    if (!response.ok) {
+        let error;
+        try {
+            error = await response.json();
+        } catch {
+            error = {message: "Knowledge Space konnte nicht hochgeladen werden.",};
+        }
+
+        throw {response: {data: error,},};
+    }
+    return response.json();
+};

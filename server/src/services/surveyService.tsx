@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import os from "os";
 import path from "path";
 import {evaluateAnswersService, type UserAnswerInput} from "./solverService.js";
+import {supabase} from "../supabaseClient.js";
 
 /**
  * Interface for creating a new survey
@@ -981,4 +982,100 @@ export const setSurveyTeacherAssignableService = async (surveyId: number, teache
 
         return updatedSurvey;
     });
+};
+
+export const uploadKnowledgeSpaceService = async (
+    surveyId: number,
+    file: Express.Multer.File
+) => {
+    const workbook = XLSX.read(file.buffer, {
+        type: "buffer",
+    });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+        throw new Error("Excel-Datei enthält kein Tabellenblatt.");
+    }
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {throw new Error(`Das Tabellenblatt "${sheetName}" konnte nicht gefunden werden.`);}
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {defval: null,});
+    if (rows.length === 0) {
+        throw new Error("Knowledge Space Excel-Datei ist leer.");
+    }
+    const firstRow = rows[0];
+    if (!firstRow) {throw new Error("Knowledge Space Excel-Datei ist leer.");}
+    const columns = Object.keys(firstRow);
+    if (columns.length < 2) {throw new Error("Knowledge Space muss mindestens eine Zustands-Spalte und eine Aufgaben-Spalte enthalten.");}
+    const stateColumn = columns[0];
+    const itemColumns = columns.slice(1);
+    const ks = rows.map((row, index) => {
+        return itemColumns.map((column) => {
+            const value = row[column];
+
+            if (value !== 0 && value !== 1) {
+                throw new Error(
+                    `Ungültiger Wert in Zeile ${index + 2}, Spalte "${column}". ` +
+                    `Erlaubt sind nur 0 und 1.`
+                );
+            }
+
+            return Number(value);
+        });
+    });
+    const survey = await prisma.survey.findUnique({
+        where: {
+            id: surveyId,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    if (!survey) {
+        throw new Error("Erhebung wurde nicht gefunden.");
+    }
+
+    const safeName = file.originalname
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+
+    const fileName = `${Date.now()}_${safeName}`;
+
+    const filePath = `surveys/${surveyId}/knowledge-space/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from("knowledge-spaces")
+        .upload(filePath, file.buffer, {
+            contentType:
+                file.mimetype ||
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            upsert: false,
+        });
+
+    if (uploadError) {
+        throw new Error(
+            "Knowledge Space konnte nicht in Supabase gespeichert werden: " +
+            uploadError.message
+        );
+    }
+    const { data: publicUrlData } = supabase.storage
+        .from("knowledge-spaces")
+        .getPublicUrl(filePath);
+    const knowledgeSpaceFileUrl = publicUrlData.publicUrl;
+    await prisma.survey.update({
+        where: {
+            id: surveyId,
+        },
+        data: {
+            knowledgeSpaceFileUrl,
+        },
+    });
+
+    return {
+        stateColumn,
+        itemColumns,
+        ks,
+        numberOfStates: ks.length,
+        numberOfItems: itemColumns.length,
+        knowledgeSpaceFileUrl,
+    };
 };

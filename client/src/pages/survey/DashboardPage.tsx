@@ -58,7 +58,7 @@ const DashboardPage = () => {
     const [creating, setCreating] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [snackbar, setSnackbar] = useState({open: false, message: "", severity: "success" as "success" | "error",});
-    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design"; isTwoTier: boolean }>({title: "", description: "", fromDate: "", toDate: "", mode: "design", isTwoTier: false});
+    const [newSurvey, setNewSurvey] = useState<{ title: string; description: string; fromDate: string; toDate: string; mode: "design" | "adaptiv"; isTwoTier: boolean }>({title: "", description: "", fromDate: "", toDate: "", mode: "design", isTwoTier: false});
 
     useEffect(() => {
         const loadTeam = async () => {
@@ -244,9 +244,10 @@ const DashboardPage = () => {
                             <RadioGroup row value={newSurvey.mode} onChange={(e) =>
                                 setNewSurvey({
                                     ...newSurvey,
-                                    mode: e.target.value as "design",
+                                    mode: e.target.value as "design" | "adaptiv",
                                 })}>
                                 <FormControlLabel value="design" control={<Radio />} label="Design Matrix"/>
+                                <FormControlLabel value="adaptiv" control={<Radio />} label="Adaptiver Test"/>
                             </RadioGroup>
                             <Typography variant="subtitle1" gutterBottom>
                                 Zweistufiger Test
@@ -301,9 +302,14 @@ const DashboardPage = () => {
                                             </Box>
                                         </Box>
                                         <Box  mt={1}>
+                                            <Chip
+                                                label={survey.mode === "adaptiv" ? "Adaptiver Test" : "Design Matrix"}
+                                                color={survey.mode === "adaptiv" ? "default" : "default"}
+                                                size="small"
+                                            />
                                             {survey.isTwoTier && (<Chip label="Zweistufig" size="small"/>)}
                                             {survey.teacherAssigned && (<Tooltip title={"Die Erhebung wurde an Klassen verteilt"} arrow>
-                                                <Chip label="Lehrpersonen zugewiesen" color="info" size="small" sx={{ cursor: "help" }}/></Tooltip>)}
+                                                <Chip label="Lehrpersonen zugewiesen" color="default" size="small" sx={{ cursor: "help" }}/></Tooltip>)}
                                         </Box>
                                     </CardContent>
                                     <CardActions>

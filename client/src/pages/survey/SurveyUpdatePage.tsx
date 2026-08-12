@@ -27,6 +27,7 @@ import {
     getSurveyBooklets,
     getSurveyById,
     updateSurvey,
+    uploadKnowledgeSpace,
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
 import {FileDownload} from "@mui/icons-material";
@@ -35,7 +36,7 @@ import html2pdf from "html2pdf.js";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import QuestionPdfPreview from "./QuestionPdfPreview.tsx";
-
+import { UploadFile, Download } from "@mui/icons-material";
 export type surveyStatus = "ACTIVE" | "PREPARED" | "IN_PROGRESS" | "FINISHED";
 
 interface UserRef {
@@ -64,6 +65,7 @@ interface SurveyDetail {
     hasActiveInstance?: boolean;
     isTwoTier: boolean;
     teacherAssigned: boolean;
+    knowledgeSpaceFileUrl?: string | null;
 }
 
 const statusLabels: Record<SurveyDetail["status"], string> = {
@@ -97,6 +99,8 @@ const SurveyUpdatePage = () => {
     const [excelExport, setExcelExport] = useState(false);
     const [exportProgress, setExportProgress] = useState<{ open: boolean; current: number; total: number; }>({open: false, current: 0, total: 0,});
     const [exportQuestion, setExportQuestion] = useState<Question | null>(null);
+    const [knowledgeSpaceFile, setKnowledgeSpaceFile] = useState<File | null>(null);
+    const [uploadingKnowledgeSpace, setUploadingKnowledgeSpace] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -121,7 +125,8 @@ const SurveyUpdatePage = () => {
                     file2: null,
                     hasActiveInstance: data.hasActiveInstance,
                     isTwoTier: data.isTwoTier,
-                    teacherAssigned: data.teacherAssigned
+                    teacherAssigned: data.teacherAssigned,
+                    knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl ?? null
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
@@ -379,6 +384,29 @@ const SurveyUpdatePage = () => {
         }
     };
 
+    const handleKnowledgeSpaceUpload = async () => {
+        if (!survey || !knowledgeSpaceFile) {
+            return;
+        }
+        setUploadingKnowledgeSpace(true);
+        try {
+            const result = await uploadKnowledgeSpace(survey.id.toString(), knowledgeSpaceFile);
+
+            setSurvey((prev) => {
+                if (!prev) return prev;
+                return {...prev, knowledgeSpaceFileUrl: result?.knowledgeSpaceFileUrl ?? prev.knowledgeSpaceFileUrl,};
+            });
+
+            setSnackbar({open: true, message: "Knowledge Space erfolgreich hochgeladen.", severity: "success",});
+            setKnowledgeSpaceFile(null);
+
+        } catch (err: any) {
+            console.error("Knowledge Space upload failed:", err);
+            setSnackbar({open: true, message: err?.response?.data?.message ?? "Fehler beim Hochladen des Knowledge Space.", severity: "error",});
+        } finally {
+            setUploadingKnowledgeSpace(false);
+        }
+    };
 
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
@@ -414,6 +442,7 @@ const SurveyUpdatePage = () => {
                         <strong>Zuletzt geändert am:</strong> {new Date(survey.updatedAt).toLocaleString()}
                     </Typography>
                 </Paper>
+
                 <Paper sx={{ p: 3 }}>
                     <Typography variant="h5" sx={{ pb: 3 }}  gutterBottom>
                         Erhebung bearbeiten
@@ -461,6 +490,66 @@ const SurveyUpdatePage = () => {
                     </Grid>
                 </Paper>
 
+                {survey.mode === "ADAPTIV" && (
+                    <Paper sx={{ p: 2 }}>
+                        <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
+                            <Box>
+                                <Typography variant="h5">
+                                    Knowledge Space
+                                </Typography>
+
+                                <Typography color="text.secondary"  sx={{ pb: 3 }}>
+                                    Excel-Datei mit der Knowledge-Space-Matrix
+                                </Typography>
+                                <Button variant="outlined" component="label" startIcon={<UploadFile />} disabled={uploadingKnowledgeSpace}>
+                                    {uploadingKnowledgeSpace ? "Hochladen..." : survey.knowledgeSpaceFileUrl || knowledgeSpaceFile ? "Ersetzen" : "Excel hochladen"
+                                    }
+                                    <input hidden type="file" accept=".xlsx,.xls"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+
+                                            if (file) {
+                                                setKnowledgeSpaceFile(file);
+                                            }
+                                            e.target.value = "";
+                                        }}
+                                    />
+                                </Button>
+
+                                {survey.knowledgeSpaceFileUrl && (
+                                    <Button sx={{ ml: 2 }} variant="outlined" startIcon={<Download />} component="a" href={survey.knowledgeSpaceFileUrl} target="_blank" rel="noopener noreferrer">
+                                        KS Excel herunterladen
+                                    </Button>
+                                )}
+                            </Box>
+                        </Box>
+
+                        {(knowledgeSpaceFile || survey.knowledgeSpaceFileUrl) && (
+                            <Box sx={{mt: 2, p: 1.5, borderRadius: 1, backgroundColor: "action.hover", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2,}}>
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Typography variant="body2" fontWeight="bold" noWrap>
+                                        {knowledgeSpaceFile ? knowledgeSpaceFile.name : "Knowledge Space Excel"}
+                                    </Typography>
+
+                                    {survey.knowledgeSpaceFileUrl && !knowledgeSpaceFile && (
+                                        <Typography variant="caption" color="text.secondary">Bereits hochgeladen</Typography>
+                                    )}
+
+                                    {knowledgeSpaceFile && (
+                                        <Typography variant="caption" color="text.secondary">Neue Datei ausgewählt</Typography>
+                                    )}
+                                </Box>
+
+                                {knowledgeSpaceFile && (
+                                  <Button size="small" variant="contained" onClick={handleKnowledgeSpaceUpload} disabled={uploadingKnowledgeSpace}>
+                                        {uploadingKnowledgeSpace ? "Hochladen..." : "Speichern"}
+                                    </Button>
+                                )}
+                            </Box>
+                        )}
+                    </Paper>
+                )}
+
                 {survey.mode === "DESIGN" && (
                 <Paper sx={{ p: 3 }}>
                     <Typography sx={{ pb: 3 }} variant="h5" gutterBottom>Aufgaben Zuordnung (Booklet)</Typography>
@@ -507,7 +596,7 @@ const SurveyUpdatePage = () => {
                 )}
                 <Paper sx={{ p: 3 }}>
                     <Typography sx={{ pb: 3 }} variant="h5">Exports</Typography>
-                    <Button variant="outlined" sx={{ mr: 2 }} startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
+                    {survey.mode === "DESIGN" && (<Button variant="outlined" sx={{ mr: 2 }} startIcon={<FileDownload />} onClick={handleExportClick} disabled={saving || preparingExport}>
                         {preparingExport ? (
                             <Box display="flex" alignItems="center" gap={1}>
                                 <CircularProgress size={20} />
@@ -516,7 +605,7 @@ const SurveyUpdatePage = () => {
                         ) : (
                             <>Booklet Items (PDF)</>
                         )}
-                    </Button>
+                    </Button>)}
                     <Button variant="outlined" startIcon={<FileDownload />} onClick={handleExcelExportClick} disabled={saving || excelExport}>
                         {excelExport ? (
                             <Box display="flex" alignItems="center" gap={1}>
@@ -529,8 +618,8 @@ const SurveyUpdatePage = () => {
                     </Button>
                 </Paper>
                 <Paper sx={{ p: 3 }}>
-                    <Typography sx={{ pb: 3 }} variant="h5">Zuweisung an alle Lehrpersonen</Typography>
-                    <Typography sx={{ pb: 1 }}>Schaltet die Erhebung für alle Lehrer frei, die Lehrperson kann dann eigenständig die Erhebung für einzelne Klassen aktivieren/deaktivieren.</Typography>
+                    <Typography variant="h5">Zuweisung an alle Lehrpersonen</Typography>
+                    <Typography sx={{ pb: 3 }}  color="text.secondary" >Schaltet die Erhebung für alle Lehrer frei, die Lehrperson kann dann eigenständig die Erhebung für einzelne Klassen aktivieren/deaktivieren.</Typography>
                     <Button variant="contained" onClick={handleSurveyAssignmentClick}>
                         {survey.teacherAssigned ? "Zuweisung entfernen" : "Zuweisen"}
                     </Button>
