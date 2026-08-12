@@ -241,6 +241,54 @@ const getDesignQuiz = async (survey: survey, instance: surveyInstance, userId: s
 
 
 export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue, isSolved: boolean) {
+    const surveyInstance = await prisma.surveyInstance.findUnique({
+        where: {
+            id: instanceId,
+        },
+        include: {
+            survey: {
+                select: {
+                    mode: true,
+                },
+            },
+        },
+    });
+
+    if (!surveyInstance) {
+        throw new Error("SURVEY_INSTANCE_NOT_FOUND");
+    }
+
+    const isAdaptive = surveyInstance.survey.mode === "ADAPTIV";
+    if (isAdaptive) {
+        const adaptiveAnswer = await prisma.adaptiveAnswer.findUnique({
+            where: {
+                surveyId_surveyInstanceId_userId: {
+                    surveyId: surveyInstance.surveyId,
+                    surveyInstanceId: instanceId,
+                    userId,
+                },
+            },
+            include: {
+                questionsAnswers: true,
+            },
+        });
+        if (!adaptiveAnswer) {throw new Error("ADAPTIVE_ANSWER_RECORD_NOT_FOUND");}
+        const questionAnswer = adaptiveAnswer.questionsAnswers.find(qa => qa.questionId === questionId);
+        if (!questionAnswer) {throw new Error("ADAPTIVE_ANSWER_QUESTION_RECORD_NOT_FOUND");}
+        // TODO call bayesian update here
+        return prisma.questionAnswer.update({
+            where: {
+                id: questionAnswer.id,
+            },
+            data: {
+                answerJson,
+                skipped: isSolved ? false : questionAnswer.skipped,
+                solved: isSolved,
+                solvingTimeEnd: new Date(),
+            },
+        });
+    }
+
     const answerRecord = await prisma.answer.findFirst({
         where: {userId, instanceId,},
         include: {questionsAnswers: true,},
