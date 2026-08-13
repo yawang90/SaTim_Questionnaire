@@ -2,7 +2,8 @@ import prisma from "../config/prismaClient.js";
 import type {Prisma} from "@prisma/client";
 import type {survey, surveyInstance} from "@prisma/client";
 import * as XLSX from "xlsx";
-import {halfsplitQuestion} from "./assessmentService.js";
+import {bayesianUpdate, halfsplitQuestion} from "./assessmentService.js";
+import {evaluateAnswersService} from "./solverService.js";
 
 export interface QuizQuestion {
     id: number;
@@ -72,16 +73,18 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
         if (!survey.knowledgeSpaceFileUrl) {
             throw new Error("KNOWLEDGE_SPACE_NOT_FOUND");
         }
-        const { ks, itemColumns } = await fetchKnowledgeSpace(survey.knowledgeSpaceFileUrl);
-        const initialProbability = 1 / ks.length;
-        const probs = ks.map(() => initialProbability);
+        if (!survey.probabilityDistributionFileUrl) {
+            throw new Error("Prob_file_NOT_FOUND");
+        }
+        const {ks, itemColumns} = await fetchKnowledgeSpace(survey.knowledgeSpaceFileUrl);
+        const initialProbs = await fetchProbabilityDistribution(survey.probabilityDistributionFileUrl);
         adaptiveAnswer = await prisma.adaptiveAnswer.create({
             data: {
                 surveyId: survey.id,
                 surveyInstanceId: instance.id,
                 userId,
                 knowledgeSpace: ks,
-                adaptiveProbs: probs,
+                adaptiveProbs: initialProbs,
                 freeParam: freeParam ?? null,
                 questionIds: [],
             },
@@ -98,19 +101,75 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
 
     const ks = adaptiveAnswer.knowledgeSpace as number[][];
     const questionIds = adaptiveAnswer.questionIds;
-
     let nextQuestion: QuizQuestion | null = null;
+    const probs = adaptiveAnswer.adaptiveProbs as number[];
+    const threshold = survey.adaptiveThreshold;
 
-    const probs = Array(ks.length).fill(1/ks.length);
-    // TODO some sort of probability threshold need to be checked here
-
+    if (threshold !== null && probs.some(prob => prob >= threshold)) {return {
+            surveyId: survey.id,
+            surveyTitle: survey.title,
+            instanceId: instance.id,
+            question: null,
+            answerId: adaptiveAnswer.id,
+            bookletId: 99999,
+            totalQuestions: adaptiveAnswer.questionIds.length,
+            answeredQuestions: adaptiveAnswer.questionsAnswers
+                .filter(qa => qa.solved || qa.skipped)
+                .length,
+            questionIds: adaptiveAnswer.questionIds,
+            answeredQuestionIds: adaptiveAnswer.questionsAnswers
+                .filter(qa => qa.solved || qa.skipped)
+                .map(qa => qa.questionId),
+            skipped: false,
+            solved: false,
+            previousAnswer: null,
+            skippedQuestions: adaptiveAnswer.questionsAnswers
+                .filter(qa => qa.skipped)
+                .map(qa => qa.questionId),
+            isTwoTier: survey.isTwoTier,
+            feedback: null,
+            isAdaptive: true,
+        };
+    }
     const selectedQuestionId = await halfsplitQuestion(probs, ks);
     nextQuestion = await prisma.question.findUnique({
         where: {
             id: selectedQuestionId,
-        }});
+        }
+    });
 
-    const cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion.id, contentJson: nextQuestion.contentJson,} : null;
+    if (nextQuestion) {
+        await prisma.questionAnswer.upsert({
+            where: {
+                adaptiveAnswerId_questionId: {
+                    adaptiveAnswerId: adaptiveAnswer.id,
+                    questionId: nextQuestion.id,
+                },
+            },
+            create: {
+                adaptiveAnswerId: adaptiveAnswer.id,
+                questionId: nextQuestion.id,
+            },
+            update: {},
+        });
+        if (!questionIds.includes(nextQuestion.id)) {
+            questionIds.push(nextQuestion.id);
+
+            await prisma.adaptiveAnswer.update({
+                where: {
+                    id: adaptiveAnswer.id,
+                },
+                data: {
+                    questionIds,
+                    currentQuestionId: nextQuestion.id,
+                },
+            });
+        }
+    }
+    const cleanNextQuestion: QuizQuestion | null = nextQuestion ? {
+        id: nextQuestion.id,
+        contentJson: nextQuestion.contentJson,
+    } : null;
     return {
         surveyId: survey.id,
         surveyTitle: survey.title,
@@ -120,7 +179,7 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
         bookletId: 99999,
         totalQuestions: 0,
         answeredQuestions: 0,
-        questionIds,
+        questionIds: questionIds,
         answeredQuestionIds: [],
         skipped: false,
         solved: false,
@@ -217,7 +276,10 @@ const getDesignQuiz = async (survey: survey, instance: surveyInstance, userId: s
         .map(qa => qa.questionId);
     const totalQuestions = answerRecord.questionIds.length;
     const answeredQuestions = answeredQuestionIds.length;
-    let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {id: nextQuestion?.id, contentJson: nextQuestion?.contentJson} : null;
+    let cleanNextQuestion: QuizQuestion | null = nextQuestion ? {
+        id: nextQuestion?.id,
+        contentJson: nextQuestion?.contentJson
+    } : null;
     return {
         isAdaptive: false,
         surveyId: survey.id,
@@ -271,10 +333,30 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
                 questionsAnswers: true,
             },
         });
-        if (!adaptiveAnswer) {throw new Error("ADAPTIVE_ANSWER_RECORD_NOT_FOUND");}
+        if (!adaptiveAnswer) {
+            throw new Error("ADAPTIVE_ANSWER_RECORD_NOT_FOUND");
+        }
         const questionAnswer = adaptiveAnswer.questionsAnswers.find(qa => qa.questionId === questionId);
-        if (!questionAnswer) {throw new Error("ADAPTIVE_ANSWER_QUESTION_RECORD_NOT_FOUND");}
+        if (!questionAnswer) {
+            throw new Error("ADAPTIVE_ANSWER_QUESTION_RECORD_NOT_FOUND");
+        }
         // TODO call bayesian update here
+        const answerArray = Array.isArray(answerJson) ? answerJson as any[] : [];
+        const input = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
+        const probs = adaptiveAnswer.adaptiveProbs as number[];
+        const ks = adaptiveAnswer.knowledgeSpace as number[][];
+        const evaluation = await evaluateAnswersService(questionId, input);
+        if (!evaluation) {throw new Error("ANSWER_EVALUATION_FAILED");}
+        const result: 0 | 1 = evaluation.score.length > 0 && evaluation.score.every(score => score === 1) ? 1 : 0;
+        const bayesianResult = await bayesianUpdate(probs, ks, 0, 0, questionId, result);
+        await prisma.adaptiveAnswer.update({
+            where: {
+                id: adaptiveAnswer.id,
+            },
+            data: {
+                adaptiveProbs: bayesianResult,
+            },
+        });
         return prisma.questionAnswer.update({
             where: {
                 id: questionAnswer.id,
@@ -603,4 +685,61 @@ async function fetchKnowledgeSpace(knowledgeSpaceFileUrl: string): Promise<{ ks:
     });
 
     return {ks, itemColumns,};
+}
+
+async function fetchProbabilityDistribution(
+    probabilityFileUrl: string
+): Promise<number[]> {
+    const response = await fetch(probabilityFileUrl);
+
+    if (!response.ok) {
+        throw new Error(
+            `Probability Distribution konnte nicht geladen werden: ${response.status} ${response.statusText}`
+        );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+
+    const workbook = XLSX.read(Buffer.from(arrayBuffer), {
+        type: "buffer",
+    });
+
+    const sheetName = workbook.SheetNames[0];
+
+    if (!sheetName) {
+        throw new Error(
+            "Probability Distribution Excel-Datei enthält kein Tabellenblatt."
+        );
+    }
+
+    const sheet = workbook.Sheets[sheetName];
+
+    if (!sheet) {
+        throw new Error(
+            `Das Tabellenblatt "${sheetName}" konnte nicht gefunden werden.`
+        );
+    }
+
+    const rows = XLSX.utils.sheet_to_json<{ ID: number; Probability: number; }>(sheet, {defval: null,});
+    if (rows.length === 0) {
+        throw new Error("Probability Distribution Excel-Datei ist leer.");
+    }
+    const probabilities = rows.map((row, index) => {
+        if (row.Probability < 0) {
+            throw new Error(
+                `Wahrscheinlichkeit darf nicht negativ sein in Zeile ${index + 2}.`
+            );
+        }
+        return row.Probability;
+    });
+
+    const sum = probabilities.reduce((sum, probability) => sum + probability, 0);
+
+    if (sum <= 0) {
+        throw new Error(
+            "Die Wahrscheinlichkeitsverteilung muss eine positive Summe haben."
+        );
+    }
+
+    return probabilities.map(probability => probability / sum);
 }
