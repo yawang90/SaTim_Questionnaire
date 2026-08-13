@@ -48,6 +48,8 @@ interface SurveyDetail {
     booklet?: { id: number }[];
     hasBooklet?: boolean;
     knowledgeSpaceFileUrl?: string;
+    probabilityDistributionFileUrl?: string | null;
+    adaptiveThreshold?: number | null;
 }
 
 interface SurveyInstance {
@@ -110,7 +112,9 @@ const SurveyInstancePage = () => {
                 mode: data.mode?.toUpperCase() === "ADAPTIV" ? "ADAPTIV" : "DESIGN",
                 booklet: data.booklet,
                 hasBooklet: data.hasBooklet,
-                knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl
+                knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl,
+                probabilityDistributionFileUrl: data.probabilityDistributionFileUrl ?? null,
+                adaptiveThreshold: data.adaptiveThreshold ?? null,
             });
 
             const inst = await getSurveyInstances(data.id);
@@ -248,12 +252,24 @@ const SurveyInstancePage = () => {
                                 ? "Die Erhebung wurde bereits geschlossen, es können keine Durchführungen mehr angelegt werden."
                                 : survey.mode === "ADAPTIV" && !survey.knowledgeSpaceFileUrl
                                     ? "Vor der Erstellung muss ein Knowledge Space hochgeladen werden."
-                                    : survey.mode === "DESIGN" && !survey.hasBooklet
-                                        ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden."
-                                        : ""} arrow>
+                                    : survey.mode === "ADAPTIV" && !survey.probabilityDistributionFileUrl
+                                        ? "Vor der Erstellung muss eine Wahrscheinlichkeitsverteilung hochgeladen werden."
+                                        : survey.mode === "ADAPTIV" &&
+                                        (survey.adaptiveThreshold === null ||
+                                            survey.adaptiveThreshold === undefined)
+                                            ? "Vor der Erstellung muss ein Abbruch Threshold festgelegt werden."
+                                            : survey.mode === "DESIGN" && !survey.hasBooklet
+                                                ? "Vor der Erstellung muss eine Design-Matrix (Booklet) hochgeladen werden."
+                                                : ""
+                        } arrow>
                         <span>
                             <Button
-                                disabled={survey.status === "FINISHED" || (survey.mode === "ADAPTIV" && !survey.knowledgeSpaceFileUrl) || (survey.mode === "DESIGN" && !survey.hasBooklet)}
+                                disabled={survey.status === "FINISHED" || (survey.mode === "ADAPTIV" && (
+                                    !survey.knowledgeSpaceFileUrl ||
+                                    !survey.probabilityDistributionFileUrl ||
+                                    survey.adaptiveThreshold === null ||
+                                    survey.adaptiveThreshold === undefined
+                                )) || (survey.mode === "DESIGN" && !survey.hasBooklet)}
                                 variant="contained"
                                 color="primary"
                                 startIcon={<Add />}
