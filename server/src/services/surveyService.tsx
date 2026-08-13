@@ -34,6 +34,7 @@ interface UpdateSurveyInput {
     mode?: survey_mode;
     updatedById: number;
     status?: survey_status;
+    adaptiveThreshold?: number | null;
 }
 
 /**
@@ -148,7 +149,7 @@ export const updateSurveyById = async (id: number, data: UpdateSurveyInput): Pro
     if (data.description !== undefined) updateData.description = data.description;
     if (data.mode !== undefined) updateData.mode = data.mode;
     if (data.status !== undefined) updateData.status = data.status;
-
+    if (data.adaptiveThreshold !== undefined) {updateData.adaptiveThreshold = data.adaptiveThreshold;}
     return prisma.survey.update({
         where: {id},
         data: updateData,
@@ -1077,5 +1078,99 @@ export const uploadKnowledgeSpaceService = async (
         numberOfStates: ks.length,
         numberOfItems: itemColumns.length,
         knowledgeSpaceFileUrl,
+    };
+};
+
+export const uploadProbabilityService = async (
+    surveyId: number,
+    file: Express.Multer.File
+) => {
+    if (!file) {throw new Error("Keine Excel-Datei hochgeladen.");}
+    const workbook = XLSX.read(file.buffer, {type: "buffer",});
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {throw new Error("Excel-Datei enthält kein Tabellenblatt.");}
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) {throw new Error(`Das Tabellenblatt "${sheetName}" konnte nicht gefunden werden.`);}
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {defval: null,});
+    if (rows.length === 0) {throw new Error("Probability Excel-Datei ist leer.");}
+
+    const firstRow = rows[0];
+    if (!firstRow) {throw new Error("Probability Excel-Datei ist leer.");}
+
+    const columns = Object.keys(firstRow);
+    if (columns.length < 2) {throw new Error("Probability Excel muss mindestens eine ID-Spalte und eine Probability-Spalte enthalten.");}
+    const idColumn = columns[0];
+    const probabilityColumn = columns[1];
+    if (!idColumn) {throw new Error("idColumn ist leer.");}
+    if (!probabilityColumn) {throw new Error("probabilityColumn ist leer.");}
+
+    const probabilities = rows.map((row, index) => {
+        const id = row[idColumn];
+        const probability = row[probabilityColumn];
+        if (id === null || id === undefined || id === "") {
+            throw new Error(`Fehlende ID in Zeile ${index + 2}.`);
+        }
+        if (probability === null || probability === undefined || probability === "") {
+            throw new Error(`Fehlende Probability in Zeile ${index + 2}.`);
+        }
+        const numericProbability = Number(probability);
+        if (!Number.isFinite(numericProbability)) {
+            throw new Error(`Ungültige Probability in Zeile ${index + 2}: "${probability}".`);
+        }
+        if (numericProbability < 0 || numericProbability > 1) {
+            throw new Error(`Probability in Zeile ${index + 2} muss zwischen 0 und 1 liegen.`);
+        }
+        return {id, probability: numericProbability,};
+    });
+
+    const survey = await prisma.survey.findUnique({
+        where: {
+            id: surveyId,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    if (!survey) {
+        throw new Error("Erhebung wurde nicht gefunden.");
+    }
+
+    const safeName = file.originalname
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+
+    const fileName = `${Date.now()}_${safeName}`;
+    const filePath = `surveys/${surveyId}/probability/${fileName}`;
+    const { error: uploadError } = await supabase.storage
+        .from("probabilities")
+        .upload(filePath, file.buffer, {
+            contentType:
+                file.mimetype ||
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            upsert: false,
+        });
+
+    if (uploadError) {
+        throw new Error("Probability Excel konnte nicht in Supabase gespeichert werden: " + uploadError.message);
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("probabilities").getPublicUrl(filePath);
+    const probabilityFileUrl = publicUrlData.publicUrl;
+    await prisma.survey.update({
+        where: {
+            id: surveyId,
+        },
+        data: {
+            probabilityDistributionFileUrl: probabilityFileUrl,
+        },
+    });
+
+    return {
+        idColumn,
+        probabilityColumn,
+        probabilities,
+        numberOfEntries: probabilities.length,
+        probabilityFileUrl,
     };
 };

@@ -99,22 +99,24 @@ enum survey_status {
 }
 
 model survey {
-  id                     Int              @id @default(autoincrement())
-  title                  String
-  description            String?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  createdById            Int
-  updatedById            Int
-  status                 survey_status    @default(IN_PROGRESS)
-  mode                   survey_mode
-  instances              surveyInstance[]
-  booklet                booklet[]
-  bookletMappingExcelUrl String?
-  bookletVersion         Int              @default(0)
-  isTwoTier              Boolean          @default(false)
-  teacherAssigned        Boolean          @default(false)
-  knowledgeSpaceFileUrl  String?
+  id                             Int              @id @default(autoincrement())
+  title                          String
+  description                    String?
+  createdAt                      DateTime         @default(now())
+  updatedAt                      DateTime         @updatedAt
+  createdById                    Int
+  updatedById                    Int
+  status                         survey_status    @default(IN_PROGRESS)
+  mode                           survey_mode
+  instances                      surveyInstance[]
+  booklet                        booklet[]
+  bookletMappingExcelUrl         String?
+  bookletVersion                 Int              @default(0)
+  isTwoTier                      Boolean          @default(false)
+  teacherAssigned                Boolean          @default(false)
+  knowledgeSpaceFileUrl          String?
+  probabilityDistributionFileUrl String?
+  adaptiveThreshold              Float?
 
   createdBy users    @relation("CreatedSurveys", fields: [createdById], references: [id])
   updatedBy users    @relation("UpdatedSurveys", fields: [updatedById], references: [id])

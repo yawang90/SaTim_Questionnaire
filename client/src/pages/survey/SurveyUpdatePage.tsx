@@ -28,6 +28,7 @@ import {
     getSurveyById,
     updateSurvey,
     uploadKnowledgeSpace,
+    uploadProbabilityDistribution,
     uploadSurveyExcels
 } from "../../services/SurveyService.tsx";
 import {FileDownload} from "@mui/icons-material";
@@ -66,6 +67,8 @@ interface SurveyDetail {
     isTwoTier: boolean;
     teacherAssigned: boolean;
     knowledgeSpaceFileUrl?: string | null;
+    probabilityDistributionFileUrl?: string | null;
+    adaptiveThreshold?: number | null;
 }
 
 const statusLabels: Record<SurveyDetail["status"], string> = {
@@ -101,6 +104,8 @@ const SurveyUpdatePage = () => {
     const [exportQuestion, setExportQuestion] = useState<Question | null>(null);
     const [knowledgeSpaceFile, setKnowledgeSpaceFile] = useState<File | null>(null);
     const [uploadingKnowledgeSpace, setUploadingKnowledgeSpace] = useState(false);
+    const [probabilityDistributionFile, setProbabilityDistributionFile] = useState<File | null>(null);
+    const [uploadingProbabilityDistribution, setUploadingProbabilityDistribution] = useState(false);
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -126,7 +131,9 @@ const SurveyUpdatePage = () => {
                     hasActiveInstance: data.hasActiveInstance,
                     isTwoTier: data.isTwoTier,
                     teacherAssigned: data.teacherAssigned,
-                    knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl ?? null
+                    knowledgeSpaceFileUrl: data.knowledgeSpaceFileUrl ?? null,
+                    probabilityDistributionFileUrl: data.probabilityDistributionFileUrl ?? null,
+                    adaptiveThreshold: data.adaptiveThreshold ?? null
                 });
             } catch (err) {
                 console.error("Failed to fetch survey:", err);
@@ -186,6 +193,7 @@ const SurveyUpdatePage = () => {
                 title: survey.title,
                 description: survey.description,
                 status: survey.status,
+                adaptiveThreshold: survey.mode === "ADAPTIV" ? survey.adaptiveThreshold : null,
             });
             setSnackbar({ open: true, message: "Änderungen erfolgreich gespeichert.", severity: "success" });
         } catch (err) {
@@ -408,8 +416,50 @@ const SurveyUpdatePage = () => {
         }
     };
 
+    const handleProbabilityDistributionUpload = async () => {
+        if (!survey || !probabilityDistributionFile) {return;}
+        setUploadingProbabilityDistribution(true);
+        try {
+            const result = await uploadProbabilityDistribution(survey.id.toString(), probabilityDistributionFile);
+
+            setSurvey(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    probabilityDistributionFileUrl:
+                        result?.probabilityDistributionFileUrl ??
+                        prev.probabilityDistributionFileUrl,
+                };
+            });
+
+            setSnackbar({open: true, message: "Wahrscheinlichkeitsverteilung erfolgreich hochgeladen.", severity: "success",});
+            setProbabilityDistributionFile(null);
+
+        } catch (err: any) {
+            console.error("Probability distribution upload failed:", err);
+            setSnackbar({open: true, message: err?.response?.data?.message ?? "Fehler beim Hochladen der Wahrscheinlichkeitsverteilung.", severity: "error",});
+        } finally {
+            setUploadingProbabilityDistribution(false);
+        }
+    };
+
+    const handleSaveAdaptiveThreshold = async () => {
+        if (!survey) return;
+        setSaving(true);
+        try {
+            await updateSurvey(survey.id.toString(), {adaptiveThreshold: survey.adaptiveThreshold,});
+            setSnackbar({open: true, message: "Abbruch Threshold erfolgreich gespeichert.", severity: "success",});
+        } catch (err) {
+            console.error("Failed to update adaptive threshold:", err);
+            setSnackbar({open: true, message: "Fehler beim Speichern des Thresholds.", severity: "error",});
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return <LinearProgress />;
     if (!survey) return <Typography>Survey not found</Typography>;
+
     return (
         <MainLayout>
             <Box sx={{ minHeight: "100vh", py: 3, px: 2, mt: 6, display: "flex", flexDirection: "column", gap: 3 }}>
@@ -459,14 +509,7 @@ const SurveyUpdatePage = () => {
 
                         {survey.status === "PREPARED" && (
                             <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
-                                    select
-                                    label="Status"
-                                    fullWidth
-                                    value={survey.status}
-                                    onChange={(e) =>
-                                        setSurvey({ ...survey, status: e.target.value as surveyStatus })
-                                    }>
+                                <TextField select label="Status" fullWidth value={survey.status} onChange={(e) => setSurvey({ ...survey, status: e.target.value as surveyStatus })}>
                                     <MenuItem value="PREPARED">Vorbereitet</MenuItem>
                                     <MenuItem value="FINISHED">Geschlossen</MenuItem>
                                 </TextField>
@@ -492,6 +535,13 @@ const SurveyUpdatePage = () => {
 
                 {survey.mode === "ADAPTIV" && (
                     <Paper sx={{ p: 2 }}>
+                        <Typography variant="h5">
+                            Adaptive Einstellungen
+                        </Typography>
+                        <Typography color="text.secondary" sx={{ pb: 3 }}>
+                            Diese Einstellungen sind für adaptive Erhebungen zwingend erforderlich.
+                        </Typography>
+                        <Divider sx={{ my: 3 }} />
                         <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
                             <Box>
                                 <Typography variant="h5">
@@ -523,7 +573,6 @@ const SurveyUpdatePage = () => {
                                 )}
                             </Box>
                         </Box>
-
                         {(knowledgeSpaceFile || survey.knowledgeSpaceFileUrl) && (
                             <Box sx={{mt: 2, p: 1.5, borderRadius: 1, backgroundColor: "action.hover", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2,}}>
                                 <Box sx={{ minWidth: 0 }}>
@@ -547,7 +596,165 @@ const SurveyUpdatePage = () => {
                                 )}
                             </Box>
                         )}
+                        <Divider sx={{ my: 3 }} />
+                        <Box>
+                            <Divider sx={{ my: 3 }} />
+
+                            <Box>
+                                <Typography variant="h5">
+                                    Wahrscheinlichkeitsverteilung
+                                </Typography>
+
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Excel-Datei mit der initialen Wahrscheinlichkeitsverteilung.
+                                </Typography>
+
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                    <Button
+                                        variant="outlined"
+                                        component="label"
+                                        startIcon={<UploadFile />}
+                                        disabled={uploadingProbabilityDistribution}
+                                    >
+                                        {uploadingProbabilityDistribution
+                                            ? "Hochladen..."
+                                            : survey.probabilityDistributionFileUrl ||
+                                            probabilityDistributionFile
+                                                ? "Ersetzen"
+                                                : "Excel hochladen"
+                                        }
+
+                                        <input
+                                            hidden
+                                            type="file"
+                                            accept=".xlsx,.xls"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+
+                                                if (file) {
+                                                    setProbabilityDistributionFile(file);
+                                                }
+
+                                                e.target.value = "";
+                                            }}
+                                        />
+                                    </Button>
+
+                                    {survey.probabilityDistributionFileUrl && (
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<Download />}
+                                            component="a"
+                                            href={survey.probabilityDistributionFileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Probability Excel herunterladen
+                                        </Button>
+                                    )}
+                                </Box>
+
+                                {(probabilityDistributionFile ||
+                                    survey.probabilityDistributionFileUrl) && (
+                                    <Box
+                                        sx={{
+                                            mt: 2,
+                                            p: 1.5,
+                                            borderRadius: 1,
+                                            backgroundColor: "action.hover",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight="bold"
+                                                noWrap
+                                            >
+                                                {probabilityDistributionFile
+                                                    ? probabilityDistributionFile.name
+                                                    : "Probability Distribution Excel"}
+                                            </Typography>
+
+                                            {survey.probabilityDistributionFileUrl &&
+                                                !probabilityDistributionFile && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                    >
+                                                        Bereits hochgeladen
+                                                    </Typography>
+                                                )}
+
+                                            {probabilityDistributionFile && (
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                >
+                                                    Neue Datei ausgewählt
+                                                </Typography>
+                                            )}
+                                        </Box>
+
+                                        {probabilityDistributionFile && (
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onClick={handleProbabilityDistributionUpload}
+                                                disabled={uploadingProbabilityDistribution}
+                                            >
+                                                {uploadingProbabilityDistribution
+                                                    ? "Hochladen..."
+                                                    : "Speichern"}
+                                            </Button>
+                                        )}
+                                    </Box>
+                                )}
+                            </Box>
+                            <Divider sx={{ my: 3 }} />
+                            <Box>
+                                <Typography variant="h5">
+                                    Abbruch Threshold
+                                </Typography>
+
+                                <TextField
+                                    label="Threshold"
+                                    type="number"
+                                    value={survey.adaptiveThreshold ?? ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+
+                                        if (value === "") {setSurvey(prev => prev ? {...prev, adaptiveThreshold: null,} : prev);
+                                            return;
+                                        }
+                                        const numberValue = Number(value);
+                                        if (numberValue >= 0 && numberValue <= 100) {
+                                            setSurvey(prev => prev ? {
+                                                ...prev,
+                                                adaptiveThreshold: numberValue,
+                                            } : prev);
+                                        }
+                                    }}
+                                    slotProps={{htmlInput: {
+                                        min: 0, max: 100, step: 1,},
+                                    }}
+                                    InputProps={{endAdornment: <Typography>%</Typography>,}}
+                                    helperText="Schwellenwert für das Beenden der adaptiven Erhebung (0–100%)."
+                                    sx={{ maxWidth: 400 }}
+                                />
+
+                                <Box sx={{ mt: 2 }}>
+                                    <Button variant="contained" onClick={handleSaveAdaptiveThreshold} disabled={saving}>
+                                        {saving ? "Speichern..." : "Threshold speichern"}
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Paper>
+
                 )}
 
                 {survey.mode === "DESIGN" && (

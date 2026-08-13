@@ -141,6 +141,7 @@ export async function updateSurvey(id: string, data: {
     title?: string;
     description?: string;
     status?: surveyStatus;
+    adaptiveThreshold?: number | null;
 }) {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("User not authenticated");
@@ -399,5 +400,35 @@ export const uploadKnowledgeSpace = async (surveyId: string, file: File) => {
 
         throw {response: {data: error,},};
     }
+    return response.json();
+};
+
+export const uploadProbabilityDistribution = async (
+    surveyId: string,
+    file: File
+) => {
+    const formData = new FormData();
+    formData.append("probabilityDistribution", file);
+
+    const response = await fetch(
+        `${API_BASE}/api/survey/${surveyId}/probability-distribution`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: formData,
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+
+        throw new Error(
+            error.message ??
+            "Fehler beim Hochladen der Wahrscheinlichkeitsverteilung."
+        );
+    }
+
     return response.json();
 };

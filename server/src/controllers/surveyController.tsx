@@ -13,7 +13,7 @@ import {
     getSurveyInstances,
     processSurveyExcels, setSurveyTeacherAssignableService,
     updateSurveyById,
-    updateSurveyInstanceById, uploadKnowledgeSpaceService,
+    updateSurveyInstanceById, uploadKnowledgeSpaceService, uploadProbabilityService,
 } from "../services/surveyService.js";
 import fs from "fs";
 /**
@@ -102,14 +102,14 @@ export const updateSurveyHandler = async (req: Request, res: Response) => {
         const userId = Number((req as any).user?.id);
         if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
-        const { title, description, mode, status } = req.body;
+        const { title, description, mode, status, adaptiveThreshold,} = req.body;
 
         const updatePayload: any = { updatedById: userId };
         if (title) updatePayload.title = title;
         if (description !== undefined) updatePayload.description = description;
         if (mode) updatePayload.mode = mode === "adaptiv" ? "ADAPTIV" : "DESIGN";
         if (status) updatePayload.status = status;
-
+        if (adaptiveThreshold !== undefined) {updatePayload.adaptiveThreshold = adaptiveThreshold;}
         const updatedSurvey = await updateSurveyById(id, updatePayload);
 
         res.json(updatedSurvey);
@@ -372,5 +372,22 @@ export const uploadKnowledgeSpace = async (
     } catch (error: any) {
         console.error("Knowledge Space upload error:", error);
         return res.status(400).json({message: error?.message ?? "Knowledge Space konnte nicht verarbeitet werden.",});
+    }
+};
+
+export const uploadProbabilityDistribution = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const surveyId = Number(req.params.surveyId);
+        if (!surveyId || Number.isNaN(surveyId)) {return res.status(400).json({message: "Ungültige Survey ID.",});}
+        if (!req.file) {return res.status(400).json({message: "Keine Excel-Datei hochgeladen.",});}
+
+        const result = await uploadProbabilityService(surveyId, req.file);
+        return res.status(200).json({message: "Wahrscheinlichkeitsverteilung erfolgreich hochgeladen.", ...result,});
+    } catch (error: any) {
+        console.error("Probability distribution upload error:", error);
+        return res.status(400).json({message: error?.message ?? "Wahrscheinlichkeitsverteilung konnte nicht verarbeitet werden.",});
     }
 };
