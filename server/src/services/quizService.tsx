@@ -239,7 +239,6 @@ const getDesignQuiz = async (survey: survey, instance: surveyInstance, userId: s
     };
 }
 
-
 export async function submitQuizAnswer(userId: string, questionId: number, instanceId: number, answerJson: Prisma.InputJsonValue, isSolved: boolean) {
     const surveyInstance = await prisma.surveyInstance.findUnique({
         where: {

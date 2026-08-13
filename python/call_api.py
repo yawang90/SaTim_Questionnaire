@@ -4,6 +4,9 @@ import numpy as np
 from assessment import halfsplit_question, bayesian_update
 app = Flask(__name__)
 
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 @app.post("/halfsplit")
 def halfsplit():
