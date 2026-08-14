@@ -153,7 +153,7 @@ export const evaluateAnswersService = async (questionId: number, userAnswers: Us
                     for (const condition of conditions) {
                         const condValue = Number(condition.value);
                         let check = false;
-                        const EPS = 1e-12;
+                        const EPS = 0.005;
                         switch (condition.operator) {
                             case "=":
                                 check = Math.abs(userVal - condValue) < EPS;
@@ -284,7 +284,7 @@ function matchPoint(userPoint: { x: number; y: number }, correctPoint: { x: Nume
 }
 
 function checkNumericConditions(value: number, conditions: NumericCondition[]): boolean {
-    const EPS = 1e-12;
+    const EPS = 0.005;
     let result = conditions[0]?.logic !== "or";
 
     for (const cond of conditions) {
@@ -424,7 +424,7 @@ function checkAlgebraEquality(correctLatex: string, userLatex: string, ): boolea
 
         const diff = ce.box(["Subtract", userExpr, correctExpr]).simplify().canonical;
         const num = Number(diff.N().valueOf());
-        return Math.abs(num) < 1e-12;
+        return Math.abs(num) < 0.005;
     } catch (err) {
         console.log("Algebra comparison failed:", err);
         return false;
