@@ -87,6 +87,7 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
                 adaptiveProbs: initialProbs,
                 freeParam: freeParam ?? null,
                 questionIds: [],
+                itemColumns: itemColumns
             },
             include: {
                 questionsAnswers: {
@@ -100,11 +101,11 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
     if (!adaptiveAnswer) {throw new Error("adaptive answer should exist");}
 
     const ks = adaptiveAnswer.knowledgeSpace as number[][];
+    const itemColumns = adaptiveAnswer.itemColumns as number[];
     const questionIds = adaptiveAnswer.questionIds;
-    let nextQuestion: QuizQuestion | null = null;
     const probs = adaptiveAnswer.adaptiveProbs as number[];
+    let nextQuestion: QuizQuestion | null = null;
     const threshold = survey.adaptiveThreshold;
-
     if (threshold !== null && probs.some(prob => prob >= threshold)) {return {
             surveyId: survey.id,
             surveyTitle: survey.title,
@@ -131,7 +132,9 @@ const getAdaptiveQuiz = async (survey: survey, instance: surveyInstance, userId:
             isAdaptive: true,
         };
     }
-    const selectedQuestionId = await halfsplitQuestion(probs, ks);
+    const selectedItemIndex  = await halfsplitQuestion(probs, ks);
+    const selectedQuestionId = itemColumns[selectedItemIndex-1];
+    if (selectedQuestionId === undefined) {throw new Error(`No question ID found for item index ${selectedItemIndex}`);}
     nextQuestion = await prisma.question.findUnique({
         where: {
             id: selectedQuestionId,
@@ -340,15 +343,17 @@ export async function submitQuizAnswer(userId: string, questionId: number, insta
         if (!questionAnswer) {
             throw new Error("ADAPTIVE_ANSWER_QUESTION_RECORD_NOT_FOUND");
         }
-        // TODO call bayesian update here
         const answerArray = Array.isArray(answerJson) ? answerJson as any[] : [];
         const input = answerArray.map(a => ({key: a.key, value: a.value, m: a.m, c: a.c}));
         const probs = adaptiveAnswer.adaptiveProbs as number[];
         const ks = adaptiveAnswer.knowledgeSpace as number[][];
+        const itemColumns = adaptiveAnswer.itemColumns as number[];
         const evaluation = await evaluateAnswersService(questionId, input);
         if (!evaluation) {throw new Error("ANSWER_EVALUATION_FAILED");}
         const result: 0 | 1 = evaluation.score.length > 0 && evaluation.score.every(score => score === 1) ? 1 : 0;
-        const bayesianResult = await bayesianUpdate(probs, ks, 0, 0, questionId, result);
+        const itemIndex = itemColumns.indexOf(questionId) + 1;
+        if (itemIndex <= 0) {throw new Error(`Question ID ${questionId} not found in knowledge-space itemColumns`);}
+        const bayesianResult = await bayesianUpdate(probs, ks, 0, 0, itemIndex, result);
         await prisma.adaptiveAnswer.update({
             where: {
                 id: adaptiveAnswer.id,
@@ -641,7 +646,7 @@ export const syncAnonymousUser = async (externalId: string) => {
     return user;
 };
 
-async function fetchKnowledgeSpace(knowledgeSpaceFileUrl: string): Promise<{ ks: number[][]; itemColumns: string[]; }> {
+async function fetchKnowledgeSpace(knowledgeSpaceFileUrl: string): Promise<{ ks: number[][]; itemColumns: number[]; }> {
     const response = await fetch(knowledgeSpaceFileUrl);
     if (!response.ok) {
         throw new Error(`Knowledge Space konnte nicht geladen werden: ${response.status} ${response.statusText}`);
@@ -672,14 +677,16 @@ async function fetchKnowledgeSpace(knowledgeSpaceFileUrl: string): Promise<{ ks:
         throw new Error("Knowledge Space muss mindestens eine Zustands-Spalte und eine Aufgaben-Spalte enthalten.");
     }
 
-    const itemColumns = columns.slice(1);
+    const itemColumns: number[] = columns.map((column) => {
+        const id = Number(column);
+        if (Number.isNaN(id)) {throw new Error(`Ungültige Question-ID: "${column}"`);}
+        return id;
+    });
 
     const ks = rows.map((row, rowIndex) => {
-        return itemColumns.map((column) => {
+        return columns.map((column) => {
             const value = row[column];
-            if (value !== 0 && value !== 1) {
-                throw new Error(`Ungültiger Wert in Zeile ${rowIndex + 2}, Spalte "${column}".`);
-            }
+            if (value !== 0 && value !== 1) {throw new Error(`Ungültiger Wert in Zeile ${rowIndex + 2}, Spalte "${column}".`);}
             return Number(value);
         });
     });

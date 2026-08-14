@@ -727,22 +727,33 @@ const SurveyUpdatePage = () => {
                                     onChange={(e) => {
                                         const value = e.target.value;
 
-                                        if (value === "") {setSurvey(prev => prev ? {...prev, adaptiveThreshold: null,} : prev);
+                                        if (value === "") {
+                                            setSurvey(prev =>
+                                                prev
+                                                    ? {
+                                                        ...prev,
+                                                        adaptiveThreshold: null,
+                                                    }
+                                                    : prev
+                                            );
                                             return;
                                         }
+
                                         const numberValue = Number(value);
-                                        if (numberValue >= 0 && numberValue <= 100) {
-                                            setSurvey(prev => prev ? {
-                                                ...prev,
-                                                adaptiveThreshold: numberValue,
-                                            } : prev);
+
+                                        if (numberValue >= 0 && numberValue <= 1) {
+                                            setSurvey(prev =>
+                                                prev
+                                                    ? {
+                                                        ...prev,
+                                                        adaptiveThreshold: numberValue,
+                                                    }
+                                                    : prev
+                                            );
                                         }
                                     }}
-                                    slotProps={{htmlInput: {
-                                        min: 0, max: 100, step: 1,},
-                                    }}
-                                    InputProps={{endAdornment: <Typography>%</Typography>,}}
-                                    helperText="Schwellenwert für das Beenden der adaptiven Erhebung (0–100%)."
+                                    slotProps={{htmlInput: {min: 0, max: 1, step: 0.01,},}}
+                                    helperText="Schwellenwert zwischen 0 und 1 (z.B. 0.8 = 80%)."
                                     sx={{ maxWidth: 400 }}
                                 />
 

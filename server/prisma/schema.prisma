@@ -208,6 +208,7 @@ model adaptiveAnswer {
   adaptiveProbs     Json?
   currentQuestionId Int?
   knowledgeSpace    Json
+  itemColumns       Int[]
 
   survey         survey         @relation(fields: [surveyId], references: [id])
   surveyInstance surveyInstance @relation("BelongsToAdaptiveInstance", fields: [surveyInstanceId], references: [id])
